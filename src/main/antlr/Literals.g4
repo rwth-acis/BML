@@ -3,7 +3,6 @@ lexer grammar Literals;
 /*
  * String literal
  */
-IntegerLiteral : '0' | (NonZeroDigit (Digits? | Underscores Digits)) ;
 StringLiteral :	'"' StringCharacters? '"' ;
 
 fragment StringCharacters : StringCharacter+ ;
@@ -30,7 +29,7 @@ fragment OctalDigit : [0-7] ;
 /*
  * Integer literal
  */
-
+IntegerLiteral : '0' | (NonZeroDigit (Digits? | Underscores Digits)) ;
 
 fragment Digits : Digit (DigitsAndUnderscores? Digit)? ;
 
