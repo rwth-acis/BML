@@ -5,14 +5,31 @@ import Literals;
 /*
  * Parser Rules
  */
-bot : 'Bot' parameterList botBody ;
+program : bot EOF ;
 
-parameterList : '(' parameter (',' parameter)* ')';
-parameter : Identifier '=' (StringLiteral | IntegerLiteral) ;
+bot : 'Bot' '(' elementValuePairList ')' botBody ;
+
+elementValuePairList : elementValuePair (',' elementValuePair)* ;
+
+elementValuePair : Identifier '=' elementValue ;
+
+elementValue : StringLiteral
+               | IntegerLiteral ;
 
 botBody : '{' botBodyDeclaration* '}' ;
 
-botBodyDeclaration : . ;
+botBodyDeclaration : eventListenerDeclaration
+                     | componentDeclaration ; // Semantic rule: ComponentDeclaration should only appear once in body
+
+eventListenerDeclaration : '@' eventListenerType eventListenerHead eventListenerBody ;
+
+eventListenerType : Identifier ('(' elementValuePairList? ')')? ;
+
+eventListenerHead : Identifier '(' Identifier ')' ;
+
+eventListenerBody : '{' '}' ;
+
+componentDeclaration : 'Components' '{'  '}' ;
 
 /*
  * Lexer Rules
