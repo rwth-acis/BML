@@ -1,4 +1,10 @@
 Bot(url="localhost:8080") {
+
+    Components {
+        Telegram telegram(token="myTelegramToken")
+        Map subscribedUsers() // Alternative?: Map subscribedUsers()
+    }
+
     @TelegramChatStarted
     welcomeUser(data) {
 
