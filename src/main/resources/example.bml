@@ -1,4 +1,6 @@
-
 Bot(url="localhost:8080") {
+    @TelegramChatStarted
+    welcomeUser(data) {
 
+    }
 }
