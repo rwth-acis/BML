@@ -1,12 +1,56 @@
 Bot(url="localhost:8080") {
-
+    // Non-volatile components of the bot
     Components {
-        Telegram telegram(token="myTelegramToken")
-        Map subscribedUsers() // Alternative?: Map subscribedUsers()
+        Telegram telegram(token="myTelegramToken") // Make context-aware suggestions for parameter names
+        Map userAge() // map : user -> age
+        List someList()
     }
 
-    @TelegramChatStarted
-    welcomeUser(data) {
+    @TelegramUserSentMessage
+    eventListenerExample(data) {
 
+    }
+
+    @TelegramUserSentMessage
+    welcomeUser(data) {
+        /* Explain bot */
+    }
+
+    @TelegramUserSentMessage
+    forEachLoops(data) {
+        forEach a in [0, 100] {
+            /* Do something */
+        }
+
+        forEach (user, age) in userAge {
+            /* Do something */
+        }
+
+        forEach item in someList {
+            /* Do something */
+        }
+    }
+
+    @TelegramUserSentMessage
+    ifStatements(data) {
+        if data.intent == "hello" {
+            telegram.send(receiver=data.sender, message="Hi there!")
+        } else {
+            /* Do something else */
+        }
+
+        if data.intent == "hello"
+            telegram.send(receiver=data.sender, message="Hi there!")
+    }
+
+    @TelegramUserSentMessage
+    objectAccess(data) {
+        foundIntent = data.intent
+        telegram.send(receiver=data.sender, message="Found intent {foundIntent}")
+    }
+
+    @Routine(rate="1h")
+    sendMessageToUser(data) {
+        telegram.send(receiver="@some_username", message="Here's your update!")
     }
 }
