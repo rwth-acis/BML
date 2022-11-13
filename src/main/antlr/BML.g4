@@ -21,6 +21,9 @@ botBody : '{' botBodyDeclaration* '}' ;
 botBodyDeclaration : eventListenerDeclaration
                      | componentDeclaration ; // Semantic rule: ComponentDeclaration should only appear once in body
 
+/*
+ * Event listener declaration
+ */
 eventListenerDeclaration : '@' eventListenerType eventListenerHead eventListenerBody ;
 
 eventListenerType : Identifier ('(' elementValuePairList? ')')? ;
@@ -29,7 +32,16 @@ eventListenerHead : Identifier '(' Identifier ')' ;
 
 eventListenerBody : '{' '}' ;
 
-componentDeclaration : 'Components' '{'  '}' ;
+/*
+ * Component list
+ */
+componentDeclaration : 'Components' '{' componentBody '}' ;
+
+componentBody : component* ;
+
+component : componentType Identifier '(' elementValuePairList? ')';
+
+componentType : Identifier ;
 
 /*
  * Lexer Rules
