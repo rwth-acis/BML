@@ -14,7 +14,8 @@ public class BML {
     public static void main(String[] args) {
         var inputString = "";
         try {
-            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource("example.bml"));
+            //var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource("example.bml"));
+            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource("OpenAPIPetStoreWithTelegramExample.bml"));
             inputString = Files.readString(Paths.get(inputResource.toURI()));
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -27,11 +28,12 @@ public class BML {
         JFrame frame = new JFrame("BML AST");
         JPanel panel = new JPanel();
         TreeViewer viewer = new TreeViewer(Arrays.asList(bmlParser.getRuleNames()), bmlParser.program());
-        viewer.setScale(1.5);
+        viewer.setScale(1);
         panel.add(viewer);
         frame.add(panel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
+
     }
 }

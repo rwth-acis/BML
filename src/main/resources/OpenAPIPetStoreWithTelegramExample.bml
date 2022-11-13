@@ -1,0 +1,41 @@
+Bot(url="localhost:8080") {
+    Components {
+        OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+        Telegram telegram(token="myTelegramToken") // Make context-aware suggestions for parameter names
+        NLU nlu(url="nlu.com/myNLU")
+        Map subscribedUsers()
+    }
+
+    @TelegramSentMessage
+    collectPetId(data) {
+        // if not specified otherwise, send back to user that message was received from
+
+        if data.intent == "id" {
+            pet = petStore(method="GET", resource="/pet/" + petId)
+
+            if pet.success {
+                telegram.send(message="Thank you, I'll keep you posted about {pet.name} with id {data.entity}")
+                subscribedUsers.add(key=data.user, value=data.entity)
+            } else {
+                telegram.send(message="I'm sorry, it seems there is no pet with id {pet.id}.")
+            }
+        } else {
+           /* Do some dialogue to help user send a pet id */
+        }
+    }
+
+    @TelegramChatStarted // Alternative?: @TelegramChatStarted()
+    welcomeUser(data) {
+        /* Explain bot & tell user to pick a pet (aka id) */
+    }
+
+    @Routine(rate="1h")
+    reportPetStatus(data) {
+        forEach (user, petId) in subscribed {
+            pet = petStore(method=GET, resource="/pet/" + petId) // Should GET be a 'keyword'? Alternative?: petStore("GET", "/pet/" + petId)
+            msg = "{data.timeStamp}:\n {pet.name} is _{pet.status}_!"
+            telegram.send(receiver=user, message=msg)
+            // Alternative?: telegram.send(recipient=user, text=msg)
+        }
+    }
+}
