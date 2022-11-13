@@ -34,12 +34,54 @@ componentDeclaration : 'Components' '{'  '}' ;
 /*
  * Lexer Rules
  */
+// Keywords
+BOT : 'Bot' ;
+COMPONENTS : 'Components' ;
 
-// BASIC TOKENS
-Identifier : [a-zA-Z]+ ;
+// Separators
+LPAREN : '(' ;
+RPAREN : ')' ;
+LBRACE : '{' ;
+RBRACE : '}' ;
+LBRACK : '[' ;
+RBRACK : ']' ;
+DOT : '.' ;
+COMMA : ',' ;
+AT : '@' ;
+
+// Operators
+ASSIGN : '=' ;
+GT : '>' ;
+LT : '<' ;
+BANG : '!' ;
+TILDE : '~' ;
+QUESTION : '?' ;
+COLON : ':' ;
+ARROW : '->' ;
+EQUAL : '==' ;
+LE : '<=' ;
+GE : '>=' ;
+NOTEQUAL : '!=' ;
+AND : '&&' ;
+OR : '||' ;
+INC : '++' ;
+DEC : '--' ;
+ADD : '+' ;
+SUB : '-' ;
+MUL : '*' ;
+DIV : '/' ;
+MOD : '%' ;
+ADD_ASSIGN : '+=' ;
+SUB_ASSIGN : '-=' ;
+MUL_ASSIGN : '*=' ;
+DIV_ASSIGN : '/=' ;
+MOD_ASSIGN : '%=' ;
 
 // IGNORED
 COMMENT : '/*' .*? '*/' -> skip ;
 LINE_COMMENT : '//' ~[\r\n]* -> skip ;
 WHITESPACE : (' ' | '\t')+ -> skip ;
 NEWLINE : ('\r'? '\n' | '\r')+ -> skip ;
+SEMICOLON : ';' -> skip ;
+
+Identifier : [a-zA-Z]+ ;
