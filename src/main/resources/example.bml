@@ -6,17 +6,17 @@ Bot(url="localhost:8080") {
         List someList()
     }
 
-    @TelegramUserSentMessage
+    @UserSentMessage
     eventListenerExample(data) {
 
     }
 
-    @TelegramUserSentMessage
+    @UserStartedChat
     welcomeUser(data) {
         /* Explain bot */
     }
 
-    @TelegramUserSentMessage
+    @UserSentMessage
     forEachLoops(data) {
         forEach a in [0, 100] {
             /* Do something */
@@ -31,7 +31,7 @@ Bot(url="localhost:8080") {
         }
     }
 
-    @TelegramUserSentMessage
+    @UserSentMessage
     ifStatements(data) {
         if data.intent == "hello" {
             telegram.send(receiver=data.sender, message="Hi there!")
@@ -43,10 +43,17 @@ Bot(url="localhost:8080") {
             telegram.send(receiver=data.sender, message="Hi there!")
     }
 
-    @TelegramUserSentMessage
+    @UserSentMessage
     objectAccess(data) {
         foundIntent = data.intent
+        foundIntent += "_"
         telegram.send(receiver=data.sender, message="Found intent {foundIntent}")
+    }
+
+    @UserSentMessage
+    functionInvocation(data) {
+        if data.sender == "some_username"
+            telegram.send(receiver=data.sender, message="Calling func")
     }
 
     @Routine(rate="1h")
