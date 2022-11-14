@@ -15,7 +15,7 @@ elementValuePair : Identifier '=' elementValue ;
 
 elementValue : literal ;
 
-literal : StringLiteral | IntegerLiteral | FloatingPointLiteral ;
+literal : StringLiteral | IntegerLiteral | FloatingPointLiteral | BooleanLiteral ;
 
 botBody : '{' botBodyDeclaration* '}' ;
 
@@ -38,81 +38,22 @@ eventListenerBody : block ;
 /*
  * Statement blocks
  */
-block : '{' blockStatement* '}' ;
-
-blockStatement : localVariableDeclaration
-               | statement ;
-
-localVariableDeclaration : localVariableName '='  localVariableInitializer ;
-
-localVariableName : Identifier ;
-
-localVariableInitializer : expression ;
+block : '{' statement* '}' ;
 
 statement : statementWithoutTrailingSubstatement
-         | ifThenStatement // done
-         | ifThenElseStatement // done
-         | whileStatement // done
-         | forEachStatement ; // done
+         | ifThenStatement 
+         | ifThenElseStatement 
+         | forEachStatement ;
 
 statementWithoutTrailingSubstatement : block
-                                     | statementExpression ;
-
-ifThenStatement : 'if' expression statement ;
-
-ifThenElseStatement : 'if' expression statementNoShortIf 'else' statement ;
-
-ifThenElseStatementNoShortIf : 'if' expression statementNoShortIf 'else' statementNoShortIf ;
+                                     | assignment
+                                     | functionInvocation ;
 
 statementNoShortIf : statementWithoutTrailingSubstatement
 	               | ifThenElseStatementNoShortIf
-	               | whileStatementNoShortIf
 	               | forStatementNoShortIf ;
 
-whileStatement : 'while' expression statement ;
-
-whileStatementNoShortIf : 'while' expression statementNoShortIf ;
-
-forEachStatement : 'forEach' forEachVariable 'in' forEachDomain statement ;
-
-forStatementNoShortIf : 'forEach' forEachVariable 'in' forEachDomain statementNoShortIf ;
-
-forEachVariable : Identifier | ('(' Identifier ',' Identifier ')') ;
-
-forEachDomain : Identifier | domainExpression ;
-
-domainExpression : '[' domainLimit ',' domainLimit ']' ;
-
-domainLimit : Identifier | IntegerLiteral ;
-
-expression : literal
-           | Identifier
-           | objectAccess
-           | unary
-           | expression '==' expression
-           | expression '!=' expression
-           | expression '<' expression
-           | expression '<=' expression
-           | expression '>' expression
-           | expression '>=' expression
-           | expression '+' expression
-           | expression '-' expression
-           | expression '*' expression
-           | expression '/' expression
-           | expression '%'  expression
-           | grouping ;
-
-objectAccess : Identifier ('.' Identifier)* ;
-
-unary : ('-' | '+' | '!') expression ;
-
-grouping : '(' expression ')' ;
-
-statementExpression : assignment
-                    | prefixExpression
-                    | postfixExpression
-                    | functionInvocation;
-
+// Assignment
 assignment : leftHandSide assignmentOperator rightHandSide ;
 
 leftHandSide : Identifier ;
@@ -124,23 +65,86 @@ assignmentOperator : '='
                    | '+='
                    | '-=' ;
 
-rightHandSide : prefixExpression
-              | postfixExpression
+rightHandSide : expression
               | functionInvocation ;
 
-prefixExpression : ('++' | '--') Identifier ;
-
-postfixExpression : Identifier ('++' | '--')? ;
-
+// Function invocation (TODO: what are the return values?)
 functionInvocation : (functionName | objectFunction) '(' elementExpressionPairList? ')' ;
+
+elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
+
+elementExpressionPair : Identifier '=' expression ;
 
 functionName : Identifier ;
 
 objectFunction : Identifier '.' functionName ;
 
-elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
+// If Statement
+ifThenStatement : 'if' expression statement ;
 
-elementExpressionPair : Identifier '=' expression ;
+ifThenElseStatement : 'if' expression statementNoShortIf 'else' statement ;
+
+ifThenElseStatementNoShortIf : 'if' expression statementNoShortIf 'else' statementNoShortIf ;
+
+// ForEach Statement
+forEachStatement : 'forEach' forEachVariable 'in' forEachDomain statement ;
+
+forStatementNoShortIf : 'forEach' forEachVariable 'in' forEachDomain statementNoShortIf ;
+
+forEachVariable : Identifier | (Identifier ',' Identifier) ;
+
+forEachDomain : Identifier | domainExpression ;
+
+domainExpression : '[' domainLimit ',' domainLimit ']' ;
+
+domainLimit : Identifier | IntegerLiteral ;
+
+/*
+ * Expressions
+ */
+expression : conditionalExpression ;
+
+conditionalExpression : conditionalOrExpression
+	                  | conditionalOrExpression '?' expression ':' conditionalExpression ;
+
+conditionalOrExpression : conditionalAndExpression
+	                    | conditionalOrExpression '||' conditionalAndExpression ;
+
+conditionalAndExpression : equalityExpression
+                         | conditionalAndExpression '&&' equalityExpression ;
+
+equalityExpression : relationalExpression
+	               | equalityExpression '==' relationalExpression
+	               | equalityExpression '!=' relationalExpression ;
+
+relationalExpression : additiveExpression
+                     | relationalExpression '<' additiveExpression
+                     | relationalExpression '>' additiveExpression
+                     | relationalExpression '<=' additiveExpression
+                     | relationalExpression '>=' additiveExpression ;
+
+additiveExpression : multiplicativeExpression
+	               | additiveExpression '+' multiplicativeExpression
+	               | additiveExpression '-' multiplicativeExpression ;
+
+multiplicativeExpression : unaryPlusMinusExpression
+                         | multiplicativeExpression '*' unaryPlusMinusExpression
+                         | multiplicativeExpression '/' unaryPlusMinusExpression
+                         | multiplicativeExpression '%' unaryPlusMinusExpression ;
+
+unaryPlusMinusExpression : '+' unaryPlusMinusExpression
+	            | '-' unaryPlusMinusExpression
+	            | unaryNegationExpression ;
+
+unaryNegationExpression : atomExpression | '!' unaryNegationExpression ;
+
+atomExpression : Identifier
+               | '(' expression ')'
+               | literal
+               | objectAccess ;
+
+// Object attribute access (type is usually complex, e.g., JSON object, table, etc.)
+objectAccess : Identifier ('.' Identifier)* ;
 
 /*
  * Component list
@@ -149,7 +153,7 @@ componentDeclaration : 'Components' componentBody ;
 
 componentBody : '{' component* '}' ;
 
-component : componentType Identifier '(' elementValuePairList? ')';
+component : componentType Identifier '(' elementValuePairList? ')' ;
 
 componentType : Identifier ;
 
@@ -161,8 +165,8 @@ BOT : 'Bot' ;
 COMPONENTS : 'Components' ;
 IF : 'if' ;
 ELSE : 'else' ;
-WHILE : 'while' ;
 FOREACH : 'forEach' ;
+IN : 'in' ;
 
 // Separators
 LPAREN : '(' ;
@@ -180,7 +184,6 @@ ASSIGN : '=' ;
 GT : '>' ;
 LT : '<' ;
 BANG : '!' ;
-TILDE : '~' ;
 QUESTION : '?' ;
 COLON : ':' ;
 ARROW : '->' ;

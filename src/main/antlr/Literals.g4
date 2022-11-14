@@ -62,3 +62,9 @@ fragment UnicodeEscape : '\\' 'u'+ HexDigit HexDigit HexDigit HexDigit ;
 fragment HexDigit : [0-9a-fA-F] ;
 
 fragment OctalDigit : [0-7] ;
+
+/*
+ * String literal
+ */
+BooleanLiteral : 'true'
+	           | 'false' ;
