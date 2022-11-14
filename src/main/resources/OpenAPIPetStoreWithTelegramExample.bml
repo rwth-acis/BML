@@ -2,10 +2,11 @@ Bot(url="localhost:8080") {
 
     Components {
         OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
-        Telegram telegram(token="myTelegramToken", nlu="nlu.com/myNLU:8000")
-        Slack slack(token="mySlackToken", nlu="nlu.com/myNLU:8000")
-        Discord discord(token="myDiscordToken", nlu="nlu.com/myNLU:8000")
-        RocketChat rocketChat(token="myRocketChatToken", nlu="nlu.com/myNLU:8000")
+        Rasa rasa(url="nlu.com/myNLU:8000") // Automatically used by messengers
+        Telegram telegram(token="myTelegramToken")
+        Slack slack(token="mySlackToken")
+        Discord discord(token="myDiscordToken")
+        RocketChat rocketChat(token="myRocketChatToken")
         Map subscribedUsers()
     }
 
