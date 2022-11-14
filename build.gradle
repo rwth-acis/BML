@@ -38,6 +38,7 @@ configurations {
 
 generateGrammarSource {
     maxHeapSize = "64m"
+    arguments += ["-listener", "-visitor", "-long-messages"]
 
     // Keep a copy of generated sources
     doLast {
