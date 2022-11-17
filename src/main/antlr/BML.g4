@@ -2,12 +2,20 @@ grammar BML;
 
 import Literals;
 
+@header {
+    package generatedParser;
+
+    import org.antlr.symtab.*;
+}
+
 /*
  * Parser Rules
  */
-program : bot EOF ;
+program : botDeclaration EOF ;
 
-bot : 'Bot' '(' elementValuePairList ')' botBody ;
+botDeclaration returns [Scope scope] : head=botHead body=botBody ;
+
+botHead : 'Bot' '(' elementValuePairList ')' ;
 
 elementValuePairList : elementValuePair (',' elementValuePair)* ;
 
@@ -15,25 +23,25 @@ elementValuePair : Identifier '=' elementValue ;
 
 elementValue : literal ;
 
-literal : StringLiteral | IntegerLiteral | FloatingPointLiteral | BooleanLiteral ;
+literal returns [Type type] : StringLiteral | IntegerLiteral | FloatingPointLiteral | BooleanLiteral ;
 
-botBody : '{' botBodyDeclaration* '}' ;
+botBody : '{' (eventListenerDeclaration | component)* '}' ;
 
-botBodyDeclaration : eventListenerDeclaration
-                   | componentDeclaration ; // Semantic rule: ComponentDeclaration should only appear once in body
+/*
+ * Components
+ */
+component : type=componentType name=Identifier '(' elementValuePairList? ')' ;
+
+componentType : Identifier ;
 
 /*
  * Event listener declaration
  */
-eventListenerDeclaration : '@' eventListenerType eventListenerHead eventListenerBody ;
+eventListenerDeclaration returns [Scope scope] : '@' type=eventListenerType head=eventListenerHead body=block ;
 
-eventListenerType : Identifier ('(' elementValuePairList? ')')? ;
+eventListenerType : typeString=Identifier ('(' elementValuePairList? ')')? ;
 
-eventListenerHead : eventListenerName '(' Identifier ')' ;
-
-eventListenerName : Identifier ;
-
-eventListenerBody : block ;
+eventListenerHead : listenerName=Identifier '(' parameterName=Identifier ')' ;
 
 /*
  * Statement blocks
@@ -54,9 +62,7 @@ statementNoShortIf : statementWithoutTrailingSubstatement
 	               | forStatementNoShortIf ;
 
 // Assignment
-assignment : leftHandSide assignmentOperator rightHandSide ;
-
-leftHandSide : Identifier ;
+assignment : name=Identifier op=assignmentOperator (expression | functionInvocation) ;
 
 assignmentOperator : '='
                    | '*='
@@ -65,11 +71,8 @@ assignmentOperator : '='
                    | '+='
                    | '-=' ;
 
-rightHandSide : expression
-              | functionInvocation ;
-
 // Function invocation (TODO: what are the return values?)
-functionInvocation : (functionName | objectFunction) '(' elementExpressionPairList? ')' ;
+functionInvocation returns [Type type] : (functionName | objectFunction) '(' elementExpressionPairList? ')' ;
 
 elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
 
@@ -102,67 +105,30 @@ domainLimit : Identifier | IntegerLiteral ;
 /*
  * Expressions
  */
-expression : conditionalExpression ;
+expression returns [Type type] : op='(' expr=expression ')'
+           | op='!' expr=expression
+           | op=('-' | '+') expr=expression
+           | left=expression op=('*' | '/' | '%') right=expression
+           | left=expression op=('+' | '-') right=expression
+           | left=expression op=('<' | '<=' | '>' | '>=') right=expression
+           | left=expression op=('==' | '!=') right=expression
+           | left=expression op='and' right=expression
+           | left=expression op='or' right=expression
+           | expression op='?' expression ':' expression
+           | atom ;
 
-conditionalExpression : conditionalOrExpression
-	                  | conditionalOrExpression '?' expression ':' conditionalExpression ;
-
-conditionalOrExpression : conditionalAndExpression
-	                    | conditionalOrExpression '||' conditionalAndExpression ;
-
-conditionalAndExpression : equalityExpression
-                         | conditionalAndExpression '&&' equalityExpression ;
-
-equalityExpression : relationalExpression
-	               | equalityExpression '==' relationalExpression
-	               | equalityExpression '!=' relationalExpression ;
-
-relationalExpression : additiveExpression
-                     | relationalExpression '<' additiveExpression
-                     | relationalExpression '>' additiveExpression
-                     | relationalExpression '<=' additiveExpression
-                     | relationalExpression '>=' additiveExpression ;
-
-additiveExpression : multiplicativeExpression
-	               | additiveExpression '+' multiplicativeExpression
-	               | additiveExpression '-' multiplicativeExpression ;
-
-multiplicativeExpression : unaryPlusMinusExpression
-                         | multiplicativeExpression '*' unaryPlusMinusExpression
-                         | multiplicativeExpression '/' unaryPlusMinusExpression
-                         | multiplicativeExpression '%' unaryPlusMinusExpression ;
-
-unaryPlusMinusExpression : '+' unaryPlusMinusExpression
-	            | '-' unaryPlusMinusExpression
-	            | unaryNegationExpression ;
-
-unaryNegationExpression : atomExpression | '!' unaryNegationExpression ;
-
-atomExpression : Identifier
-               | '(' expression ')'
-               | literal
-               | objectAccess ;
+atom returns [Type type] : literal
+                         | Identifier
+                         | objectAccess ;
 
 // Object attribute access (type is usually complex, e.g., JSON object, table, etc.)
-objectAccess : Identifier ('.' Identifier)* ;
-
-/*
- * Component list
- */
-componentDeclaration : 'Components' componentBody ;
-
-componentBody : '{' component* '}' ;
-
-component : componentType Identifier '(' elementValuePairList? ')' ;
-
-componentType : Identifier ;
+objectAccess : object=Identifier ('.' Identifier)+ ;
 
 /*
  * Lexer Rules
  */
 // Keywords
 BOT : 'Bot' ;
-COMPONENTS : 'Components' ;
 IF : 'if' ;
 ELSE : 'else' ;
 FOREACH : 'forEach' ;
