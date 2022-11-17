@@ -1,27 +1,35 @@
 Bot(url="localhost:8080") {
 
-    Components {
-        OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
-        Rasa rasa(url="nlu.com/myNLU:8000") // Automatically used by messengers
-        Telegram telegram(token="myTelegramToken")
-        Slack slack(token="mySlackToken")
-        Discord discord(token="myDiscordToken")
-        RocketChat rocketChat(token="myRocketChatToken")
-        Map subscribedUsers()
-    }
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
+
+    Telegram telegram(token="myTelegramToken")
+
+    Slack slack(token="mySlackToken")
+
+    Discord discord(token="myDiscordToken")
+
+    RocketChat rocketChat(token="myRocketChatToken")
+
+    Map subscribedUsers()
 
     @UserSentMessage // Uses all messenger components
     collectPetId(data) {
         if data.intent == "id" {
-            petId = data.entity
-            pet = petStore.get(resource="/pet/" + petId)
+            id = data.entity
+            pet = petStore.get(path="/pet/{petId}", petId=id)
 
-            if pet.success {
+            someCounter += pet.someIntegerAttribute
+
+            if pet.responseCode == 200 { // The responseCode field is provided by the transpiler
                 // If not specified otherwise, send back to user that message was received from
                 // send uses all "registered" messengers (see @UserSentMessage)
                 send(message="Thank you, I'll keep you posted about {pet.name} with id {petId}")
                 subscribedUsers.add(key=data.user, value=data.entity)
-            } else {
+            } else if pet.responseCode == 400 {
+                send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a number.")
+            } else { // code == 404
                 send(message="I'm sorry, it seems there is no pet with id {petId}.")
             }
         } else {
