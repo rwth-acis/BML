@@ -17,9 +17,12 @@ repositories {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    antlr "org.antlr:antlr4:4.11.1"
-    implementation "org.antlr:antlr4-runtime:4.11.1"
+    antlr 'org.antlr:antlr4:4.11.1'
+    implementation 'org.antlr:antlr4-runtime:4.11.1'
+    implementation 'org.antlr:symtab:1.0.8'
     implementation 'com.github.javaparser:javaparser-core:3.24.7'
+    implementation 'org.reflections:reflections:0.10.2'
+    implementation 'io.swagger.parser.v3:swagger-parser:2.1.8'
 }
 
 test {
@@ -39,19 +42,12 @@ configurations {
 generateGrammarSource {
     maxHeapSize = "64m"
     arguments += ["-listener", "-visitor", "-long-messages"]
-
-    // Keep a copy of generated sources
-    doLast {
-        println "Copying generated grammar lexer/parser files to main directory."
-        copy {
-            from "${buildDir}/generated-src/antlr/main"
-            into "generated-src/main/java/generated-parser"
-        }
-    }
+    outputDirectory = file("${project.buildDir}/generated-src/antlr/main/generatedParser")
 }
 
 clean.doLast {
-    file('generated-src').deleteDir()
+    file('generatedParser').deleteDir()
+    file('gen').deleteDir()
 }
 
 // Publish to Maven Repository
