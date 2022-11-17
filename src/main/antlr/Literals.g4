@@ -3,17 +3,20 @@ lexer grammar Literals;
 /*
  * Integer literal
  */
-IntegerLiteral : '0' | (NonZeroDigit (Digits? | Underscores Digits)) ;
+IntegerLiteral : '0'
+               | NonZeroDigit (Digits? | Underscores Digits) ;
 
 fragment Digits : Digit (DigitsAndUnderscores? Digit)? ;
 
-fragment Digit : '0' | NonZeroDigit ;
+fragment Digit : '0'
+               | NonZeroDigit ;
 
 fragment NonZeroDigit : [1-9] ;
 
 fragment DigitsAndUnderscores :	DigitOrUnderscore+ ;
 
-fragment DigitOrUnderscore : Digit | '_' ;
+fragment DigitOrUnderscore : Digit
+                           | '_' ;
 
 fragment Underscores : '_'+ ;
 
@@ -64,7 +67,7 @@ fragment HexDigit : [0-9a-fA-F] ;
 fragment OctalDigit : [0-7] ;
 
 /*
- * String literal
+ * Boolean literal
  */
 BooleanLiteral : 'true'
 	           | 'false' ;
