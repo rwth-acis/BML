@@ -5,9 +5,7 @@ import generatedParser.BMLParser;
 import org.antlr.symtab.*;
 import types.TypeRegistry;
 
-public class SymbolTableAndScopeGenerator extends BMLBaseListener {
-
-    protected Scope currentScope;
+public class SymbolTableAndScopeGenerator extends AbstractScope {
 
     @Override
     public void enterBotDeclaration(BMLParser.BotDeclarationContext ctx) {
@@ -37,15 +35,5 @@ public class SymbolTableAndScopeGenerator extends BMLBaseListener {
     @Override
     public void exitEventListenerDeclaration(BMLParser.EventListenerDeclarationContext ctx) {
         popScope();
-    }
-
-    private void pushScope(Scope s) {
-        currentScope = s;
-        System.out.println("entering: " + currentScope.getName() + ":" + s.getSymbols());
-    }
-
-    private void popScope() {
-        System.out.println("leaving: " + currentScope.getName() + ":" + currentScope.getSymbols());
-        currentScope = currentScope.getEnclosingScope();
     }
 }

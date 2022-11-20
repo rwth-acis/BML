@@ -1,53 +1,100 @@
 package walker;
 
+import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
+import org.antlr.symtab.Symbol;
+import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import types.BMLBoolean;
-import types.BMLNumeric;
-import types.BMLString;
+import types.*;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.util.Arrays;
 
-public class TypeSynthesizer extends SymbolTableAndScopeGenerator {
+public class TypeSynthesizer extends AbstractScope {
 
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
+        AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.type.getText());
 
+        // Instantiate type parameter
+        for (var param : ctx.params.elementValuePair()) {
+            var field = Arrays.stream(resolvedType.getClass().getDeclaredFields())
+                    .filter(f -> param.name.getText().equals(f.getName()))
+                    .findAny();
+
+            if (field.isEmpty()) {
+                // TODO: Proper error handling
+                throw new IllegalStateException("Unknown field %s for component of type %s".formatted(param.name.getText(), resolvedType.getName()));
+            }
+
+            var resolvedSymbol = currentScope.resolve(ctx.name.getText());
+            if (!(resolvedSymbol instanceof VariableSymbol)) {
+                // TODO: Proper error handling
+                throw new IllegalStateException("%s is not defined".formatted(param.name.getText()));
+            }
+
+            var canAccess = field.get().canAccess(resolvedType);
+            field.get().setAccessible(true);
+
+            var terminalNodeType = ((TerminalNode) param.value.literal().getChild(0)).getSymbol().getType();
+            var literalInstance = switch (terminalNodeType) {
+                case BMLParser.IntegerLiteral, BMLParser.FloatingPointLiteral -> new BigDecimal(param.value.getText());
+                case BMLParser.StringLiteral -> param.value.getText().substring(1, param.value.getText().length() - 1);
+                case BMLParser.BooleanLiteral -> Boolean.parseBoolean(param.value.getText());
+                default -> // TODO: Proper error message
+                        throw new IllegalStateException("Unexpected type: " + terminalNodeType);
+            };
+
+            try {
+                field.get().set(resolvedType, literalInstance);
+            } catch (IllegalAccessException e) {
+                // TODO
+                throw new RuntimeException(e);
+            }
+
+            field.get().setAccessible(canAccess);
+        }
+
+        // Invoke registered initializer methods
+        Arrays.stream(resolvedType.getClass().getDeclaredMethods())
+                .filter(m -> m.isAnnotationPresent(InitializerMethod.class))
+                .forEach(m -> {
+                    try {
+                        m.invoke(resolvedType);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     @Override
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
-        switch (ctx.op.getText()) {
-            case "=" -> {
-                VariableSymbol v = new VariableSymbol(ctx.name.getText());
-                // When exiting an assignment, we can assume that the right-hand side type was computed already,
-                // since it is either an expression or a function invocation
-                if (ctx.expression() != null) {
-                    v.setType(ctx.expression().type);
-                } else { // We have function invocation
-                    v.setType(ctx.functionInvocation().type);
-                }
-                currentScope.define(v);
+        // When exiting an assignment, we can assume that the right-hand side type was computed already,
+        // since it is an expression
+        if (ctx.op.getText().equals("=")) {
+            VariableSymbol v = new VariableSymbol(ctx.name.getText());
+            v.setType(ctx.expression().type);
+            currentScope.define(v);
+        } else {
+            // Make sure left-hand side is declared
+            var v = currentScope.resolve(ctx.name.getText());
+            if (!(v instanceof VariableSymbol)) {
+                // TODO: Proper error handling
+                throw new IllegalStateException("%s is not defined".formatted(ctx.name.getText()));
             }
-            default -> {
-                // Make sure left-hand side is declared
-                var v = currentScope.resolve(ctx.name.getText());
-                if (!(v instanceof VariableSymbol)) {
-                    // TODO: Proper error handling
-                    throw new IllegalStateException("%s is not defined".formatted(ctx.name.getText()));
-                }
 
-                var leftType = ((VariableSymbol) v).getType();
-                var rightType = ctx.expression() != null ? ctx.expression().type : ctx.functionInvocation().type;
-                if (!(leftType instanceof BMLNumeric)) {
-                    // TODO: Throw proper error
-                    System.err.printf("left type %s is not numeric\n", leftType);
-                    return;
-                } else if (!(rightType instanceof BMLNumeric)) {
-                    System.err.printf("right type %s is not numeric\n", rightType);
-                    return;
-                }
+            var leftType = ((VariableSymbol) v).getType();
+            var rightType = ctx.expression().type;
+            if (!(leftType instanceof BMLNumeric)) {
+                // TODO: Throw proper error
+                System.err.printf("left type %s is not numeric\n", leftType);
+                return;
+            } else if (!(rightType instanceof BMLNumeric)) {
+                System.err.printf("right type %s is not numeric\n", rightType);
+                return;
             }
         }
     }
@@ -79,7 +126,18 @@ public class TypeSynthesizer extends SymbolTableAndScopeGenerator {
             }
 
             ctx.type = ((VariableSymbol) r).getType();
-        } else { // object access
+        } else if (ctx.objectAccess() != null) {
+            var object = ctx.objectAccess().object;
+            var resolvedObjectType = currentScope.resolve(object.getText());
+            if (!(resolvedObjectType instanceof VariableSymbol)) {
+                throw new IllegalStateException("%s is not defined".formatted(object.getText()));
+            }
+
+            var fieldAccesses = ctx.objectAccess().Identifier();
+            for (int i = 0; i < fieldAccesses.size(); i++) {
+
+            }
+        } else { // Function invocation
             // TODO
         }
     }
