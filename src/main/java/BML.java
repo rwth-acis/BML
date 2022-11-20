@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import walker.SymbolTableAndScopeGenerator;
 import walker.TypeSynthesizer;
+import walker.UrlChecker;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -55,9 +56,16 @@ public class BML {
 
         ParseTreeWalker walker = new ParseTreeWalker();
 
+        UrlChecker urlChecker = new UrlChecker();
+        walker.walk(urlChecker, bmlParser.program());
+
+        bmlParser.reset();
+
         SymbolTableAndScopeGenerator st = new SymbolTableAndScopeGenerator();
         walker.walk(st, bmlParser.program());
+
         bmlParser.reset();
+
         TypeSynthesizer typeSynthesizer = new TypeSynthesizer();
         walker.walk(typeSynthesizer, bmlParser.program());
     }
