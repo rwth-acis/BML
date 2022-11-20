@@ -19,7 +19,7 @@ botHead : 'Bot' '(' elementValuePairList ')' ;
 
 elementValuePairList : elementValuePair (',' elementValuePair)* ;
 
-elementValuePair : Identifier '=' elementValue ;
+elementValuePair : name=Identifier '=' value=elementValue ;
 
 elementValue : literal ;
 
@@ -30,7 +30,7 @@ botBody : '{' (eventListenerDeclaration | component)* '}' ;
 /*
  * Components
  */
-component : type=componentType name=Identifier '(' elementValuePairList? ')' ;
+component : type=componentType name=Identifier '(' params=elementValuePairList? ')' ;
 
 componentType : Identifier ;
 
@@ -62,7 +62,7 @@ statementNoShortIf : statementWithoutTrailingSubstatement
 	               | forStatementNoShortIf ;
 
 // Assignment
-assignment : name=Identifier op=assignmentOperator (expression | functionInvocation) ;
+assignment : name=Identifier op=assignmentOperator expression ;
 
 assignmentOperator : '='
                    | '*='
@@ -71,12 +71,12 @@ assignmentOperator : '='
                    | '+='
                    | '-=' ;
 
-// Function invocation (TODO: what are the return values?)
+// Function invocation
 functionInvocation returns [Type type] : (functionName | objectFunction) '(' elementExpressionPairList? ')' ;
 
 elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
 
-elementExpressionPair : Identifier '=' expression ;
+elementExpressionPair : name=Identifier '=' expr=expression ;
 
 functionName : Identifier ;
 
@@ -119,7 +119,8 @@ expression returns [Type type] : op='(' expr=expression ')'
 
 atom returns [Type type] : literal
                          | Identifier
-                         | objectAccess ;
+                         | objectAccess
+                         | functionInvocation;
 
 // Object attribute access (type is usually complex, e.g., JSON object, table, etc.)
 objectAccess : object=Identifier ('.' Identifier)+ ;
