@@ -5,6 +5,7 @@ import org.reflections.Reflections;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 public class TypeRegistry {
@@ -18,7 +19,7 @@ public class TypeRegistry {
         for (Class<?> clazz : annotated) {
             BMLType type = clazz.getAnnotation(BMLType.class);
 
-            // Check that class has default constructor with no parameters
+            // Check: class has default constructor with no parameters
             boolean hasDefaultConstructor = Arrays.stream(clazz.getDeclaredConstructors())
                     .anyMatch(constructor -> constructor.getParameterCount() == 0);
             if (!hasDefaultConstructor) {
@@ -26,11 +27,28 @@ public class TypeRegistry {
                 throw new IllegalStateException("Class %s does not have an empty default constructor".formatted(clazz.getName()));
             }
 
-            // Check that class extends AbstractBMLType
+            // Check: class extends AbstractBMLType
             if (!AbstractBMLType.class.isAssignableFrom(clazz)) {
                 // TODO: Proper error handling
                 throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
             }
+
+            // Check: Functions with @BMLFunction annotation for required parameter types use org.antlr.symtab.Type
+            Arrays.stream(clazz.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(BMLFunction.class))
+                    .forEach(m -> {
+                        for (var parameter : m.getParameters()) {
+                            if (!parameter.isAnnotationPresent(BMLFunctionParameter.class)) {
+                                throw new IllegalStateException("Parameter %s from method %s does not have a %s annotation"
+                                        .formatted(parameter.getName(), m.getName(), BMLFunctionParameter.class));
+                            }
+
+                            if (!Type.class.isAssignableFrom(parameter.getType())) {
+                                throw new IllegalStateException("Parameter %s from method %s does not have a type that extends from %s"
+                                        .formatted(parameter.getName(), m.getName(), Type.class));
+                            }
+                        }
+                    });
 
             typeRegistry.put(type.typeString(), clazz);
         }

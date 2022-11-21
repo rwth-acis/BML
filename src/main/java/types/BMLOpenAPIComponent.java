@@ -2,6 +2,7 @@ package types;
 
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 
@@ -14,17 +15,15 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private OpenAPI openAPI;
 
-    private Map<String, ArrayList<String>> openAPITypes = new HashMap<>();
-
-    private Map<String, String> routeReturnTypes = new HashMap<>();
+    /**
+     * HTTP_METHOD + ROUTE -> OpenAPIResponse Object (pre-configured, ready for cloning)
+     */
+    private Map<String, BMLOpenAPIResponse> routeReturnTypes = new HashMap<>();
 
     /**
      * HTTP_METHOD + ROUTE -> Set(Parameters)
      */
     private Map<String, Set<BMLOpenAPIParameter>> routeParameters = new HashMap<>();
-
-//    @BMLFunction
-//    public BMLOpenAPIResponse get()
 
     @InitializerMethod
     public void retrieveOpenAPISchema() {
@@ -57,7 +56,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
         // Determine route return types
         openAPI.getPaths().forEach((route, value) -> {
-
+            value.readOperationsMap().forEach((httpMethod, operation) -> {
+                //routeParameters.put(route + httpMethod.name().toLowerCase(), )
+            });
         });
 
 //        System.out.println(((Schema) openAPI.getComponents().getSchemas().get("Pet").getProperties().get("id")).getType());
@@ -65,4 +66,13 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 //        System.out.println(schema.getType());
 //        System.out.println(schema.getItems());
     }
+
+    @BMLFunction
+    public void get(@BMLFunctionParameter(name="path") BMLString p) {}
+
+    @BMLFunction
+    public void put(@BMLFunctionParameter(name="path") BMLString p) {}
+
+    @BMLFunction
+    public void post(@BMLFunctionParameter(name="path") BMLString path) {}
 }
