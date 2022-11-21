@@ -72,15 +72,11 @@ assignmentOperator : '='
                    | '-=' ;
 
 // Function invocation
-functionInvocation returns [Type type] : (functionName | objectFunction) '(' elementExpressionPairList? ')' ;
+functionInvocation returns [Type type] : object=Identifier '.' functionName=Identifier  '(' elementExpressionPairList? ')' ;
 
 elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
 
 elementExpressionPair : name=Identifier '=' expr=expression ;
-
-functionName : Identifier ;
-
-objectFunction : Identifier '.' functionName ;
 
 // If Statement
 ifThenStatement : 'if' expression statement ;
