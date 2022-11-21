@@ -58,15 +58,14 @@ public class BML {
 
         UrlChecker urlChecker = new UrlChecker();
         walker.walk(urlChecker, bmlParser.program());
-
         bmlParser.reset();
 
         SymbolTableAndScopeGenerator st = new SymbolTableAndScopeGenerator();
         walker.walk(st, bmlParser.program());
-
         bmlParser.reset();
 
-        TypeSynthesizer typeSynthesizer = new TypeSynthesizer();
+        System.out.println(st.getCurrentScope());
+        TypeSynthesizer typeSynthesizer = new TypeSynthesizer(st.getCurrentScope());
         walker.walk(typeSynthesizer, bmlParser.program());
     }
 }

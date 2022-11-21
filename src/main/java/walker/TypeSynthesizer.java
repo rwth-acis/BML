@@ -2,25 +2,32 @@ package walker;
 
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
-import org.antlr.symtab.Symbol;
+import org.antlr.symtab.Scope;
 import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import types.*;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.math.BigDecimal;
 import java.util.Arrays;
 
-public class TypeSynthesizer extends AbstractScope {
+public class TypeSynthesizer extends BMLBaseListener {
+
+    private final Scope currentScope;
+
+    public TypeSynthesizer(Scope currentScope) {
+        this.currentScope = currentScope;
+    }
 
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
         AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.type.getText());
 
-        // Instantiate type parameter
+        // Instantiate fields of `resolvedType` with component parameters
         for (var param : ctx.params.elementValuePair()) {
+            // Check: Component instantiation parameter is defined by component type class
             var field = Arrays.stream(resolvedType.getClass().getDeclaredFields())
                     .filter(f -> param.name.getText().equals(f.getName()))
                     .findAny();
@@ -28,12 +35,6 @@ public class TypeSynthesizer extends AbstractScope {
             if (field.isEmpty()) {
                 // TODO: Proper error handling
                 throw new IllegalStateException("Unknown field %s for component of type %s".formatted(param.name.getText(), resolvedType.getName()));
-            }
-
-            var resolvedSymbol = currentScope.resolve(ctx.name.getText());
-            if (!(resolvedSymbol instanceof VariableSymbol)) {
-                // TODO: Proper error handling
-                throw new IllegalStateException("%s is not defined".formatted(param.name.getText()));
             }
 
             var canAccess = field.get().canAccess(resolvedType);
@@ -58,7 +59,7 @@ public class TypeSynthesizer extends AbstractScope {
             field.get().setAccessible(canAccess);
         }
 
-        // Invoke registered initializer methods
+        // Invoke registered initializer methods of `resolvedType`
         Arrays.stream(resolvedType.getClass().getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(InitializerMethod.class))
                 .forEach(m -> {
@@ -68,6 +69,10 @@ public class TypeSynthesizer extends AbstractScope {
                         throw new RuntimeException(e);
                     }
                 });
+
+        // Lastly, set `resolvedType` for symbol (we assume that it was created by the ST walker)
+        var v = currentScope.resolve(ctx.name.getText());
+        ((VariableSymbol) v).setType(resolvedType);
     }
 
     @Override
@@ -78,7 +83,7 @@ public class TypeSynthesizer extends AbstractScope {
             VariableSymbol v = new VariableSymbol(ctx.name.getText());
             v.setType(ctx.expression().type);
             currentScope.define(v);
-        } else {
+        } else { // Assignment operators with simultaneous operation
             // Make sure left-hand side is declared
             var v = currentScope.resolve(ctx.name.getText());
             if (!(v instanceof VariableSymbol)) {
@@ -133,12 +138,71 @@ public class TypeSynthesizer extends AbstractScope {
                 throw new IllegalStateException("%s is not defined".formatted(object.getText()));
             }
 
-            var fieldAccesses = ctx.objectAccess().Identifier();
-            for (int i = 0; i < fieldAccesses.size(); i++) {
 
-            }
         } else { // Function invocation
-            // TODO
+            var functionInvocation = ctx.functionInvocation();
+
+            var object = functionInvocation.object;
+            var resolvedObjectType = currentScope.resolve(object.getText());
+            if (!(resolvedObjectType instanceof VariableSymbol)) {
+                throw new IllegalStateException("%s is not defined".formatted(object.getText()));
+            }
+
+            // Check: function is specified by the found type
+            var methods = ((VariableSymbol) resolvedObjectType).getType().getClass().getDeclaredMethods();
+            var resolvedFunction = Arrays.stream(methods)
+                    .filter(m -> m.isAnnotationPresent(BMLFunction.class))
+                    // We do not ignore case for function names
+                    .filter(m -> m.getName().equals(functionInvocation.functionName.getText()))
+                    .findAny();
+
+            if (resolvedFunction.isEmpty()) {
+                throw new IllegalStateException(".%s() is not defined for object of type %s".formatted(object.getText(),
+                        resolvedObjectType.getName()));
+            }
+
+            // Check: required parameter(s) are present and have correct type
+            for (var requiredParameter : resolvedFunction.get().getParameters()) {
+                // Name
+                var name = requiredParameter.getAnnotation(BMLFunctionParameter.class).name();
+
+                var invocationParameter = functionInvocation.elementExpressionPairList().elementExpressionPair()
+                        .stream()
+                        // We can assume that the BMLFunctionParameter annotation is present
+                        // since it is checked by the type registry
+                        // We consider case for the parameter name
+                        .filter(p -> p.name.getText().equals(name))
+                        .findAny();
+
+                if (invocationParameter.isEmpty()) {
+                    throw new IllegalStateException("Parameter %s is required but not present for function call %s"
+                            .formatted(name, ctx.getText()));
+                }
+
+                // Type
+                Type resolvedParameterType;
+                try {
+                    // This is okay since we check in the type registry
+                    // that parameter types are of type org.antlr.symtab.Type
+                    resolvedParameterType = (Type) requiredParameter.getType().getConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                         NoSuchMethodException e) {
+                    // TODO: Proper (internal) error message
+                    throw new RuntimeException(e);
+                }
+
+                var invocationParameterType = invocationParameter.get().expression().type;
+                if (!invocationParameterType.equals(resolvedParameterType)) {
+                    throw new IllegalStateException("Parameter %s requires type %s but has %s"
+                            .formatted(name, resolvedParameterType.getName(),
+                                    invocationParameterType.getName()));
+                }
+            }
+
+            // Find (& check) specific route parameters for HTTP_METHOD + ROUTE
+
+
+            // Synthesize BMLOpenAPIResponse with OpenAPI component type, etc.
         }
     }
 

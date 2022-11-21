@@ -3,9 +3,10 @@ package walker;
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import org.antlr.symtab.*;
-import types.TypeRegistry;
 
-public class SymbolTableAndScopeGenerator extends AbstractScope {
+public class SymbolTableAndScopeGenerator extends BMLBaseListener {
+
+    private Scope currentScope;
 
     @Override
     public void enterBotDeclaration(BMLParser.BotDeclarationContext ctx) {
@@ -32,8 +33,17 @@ public class SymbolTableAndScopeGenerator extends AbstractScope {
         pushScope(f);
     }
 
-    @Override
-    public void exitEventListenerDeclaration(BMLParser.EventListenerDeclarationContext ctx) {
-        popScope();
+    protected void pushScope(Scope s) {
+        currentScope = s;
+        System.out.println("entering: " + currentScope.getName() + ":" + s.getSymbols());
+    }
+
+    protected void popScope() {
+        System.out.println("leaving: " + currentScope.getName() + ":" + currentScope.getSymbols());
+        currentScope = currentScope.getEnclosingScope();
+    }
+
+    public Scope getCurrentScope() {
+        return currentScope;
     }
 }
