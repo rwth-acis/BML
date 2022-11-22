@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Comparator;
 
 public class TypeSynthesizer extends BMLBaseListener {
 
@@ -141,24 +142,24 @@ public class TypeSynthesizer extends BMLBaseListener {
 
         } else { // Function invocation
             var functionInvocation = ctx.functionInvocation();
-
             var object = functionInvocation.object;
-            var resolvedObjectType = currentScope.resolve(object.getText());
-            if (!(resolvedObjectType instanceof VariableSymbol)) {
+            var resolvedObjectSymbol = currentScope.resolve(object.getText());
+            if (!(resolvedObjectSymbol instanceof VariableSymbol)) {
                 throw new IllegalStateException("%s is not defined".formatted(object.getText()));
             }
 
-            // Check: function is specified by the found type
-            var methods = ((VariableSymbol) resolvedObjectType).getType().getClass().getDeclaredMethods();
+            // Check: function is specified by the resolved type
+            var resolvedObjectType = ((VariableSymbol) resolvedObjectSymbol).getType();
+            var methods = resolvedObjectType.getClass().getDeclaredMethods();
             var resolvedFunction = Arrays.stream(methods)
                     .filter(m -> m.isAnnotationPresent(BMLFunction.class))
-                    // We do not ignore case for function names
+                    // We consider case for function names
                     .filter(m -> m.getName().equals(functionInvocation.functionName.getText()))
                     .findAny();
 
             if (resolvedFunction.isEmpty()) {
                 throw new IllegalStateException(".%s() is not defined for object of type %s".formatted(object.getText(),
-                        resolvedObjectType.getName()));
+                        resolvedObjectSymbol.getName()));
             }
 
             // Check: required parameter(s) are present and have correct type
@@ -199,10 +200,24 @@ public class TypeSynthesizer extends BMLBaseListener {
                 }
             }
 
-            // Find (& check) specific route parameters for HTTP_METHOD + ROUTE
+            // Invoke type-specific checks
+            Arrays.stream(methods)
+                    .filter(m -> m.isAnnotationPresent(BMLCheck.class))
+                    .sorted(Comparator.comparingInt(m -> m.getAnnotation(BMLCheck.class).index()))
+                    .forEach(m -> {
+                        try {
+                            m.invoke(resolvedObjectType, ctx.functionInvocation());
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
 
+//            Arrays.stream(methods)
+//                    .filter(m -> m.isAnnotationPresent(BML))
+//                    .findAny()
 
-            // Synthesize BMLOpenAPIResponse with OpenAPI component type, etc.
+            // Synthesize resulting type
+//            ctx.type = ;
         }
     }
 

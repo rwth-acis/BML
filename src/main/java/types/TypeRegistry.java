@@ -1,6 +1,7 @@
 package types;
 
 import org.antlr.symtab.Type;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.reflections.Reflections;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 
@@ -16,8 +17,20 @@ public class TypeRegistry {
         Reflections reflections = new Reflections("types");
         Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(BMLType.class);
 
+        Map<Integer, String> uniqueBMLTypeIndices = new HashMap<>();
+        Map<Integer, String> uniqueBMLCheckIndices = new HashMap<>();
+
         for (Class<?> clazz : annotated) {
             BMLType type = clazz.getAnnotation(BMLType.class);
+
+            // Check: class has unique index
+            var name = uniqueBMLTypeIndices.get(type.index());
+            if (name != null) {
+                // TODO
+                throw new IllegalStateException("Class %s has the same index (%d) as class %s"
+                        .formatted(clazz.getName(), type.index(), name));
+            }
+            uniqueBMLTypeIndices.put(type.index(), clazz.getName());
 
             // Check: class has default constructor with no parameters
             boolean hasDefaultConstructor = Arrays.stream(clazz.getDeclaredConstructors())
@@ -47,6 +60,29 @@ public class TypeRegistry {
                                 throw new IllegalStateException("Parameter %s from method %s does not have a type that extends from %s"
                                         .formatted(parameter.getName(), m.getName(), Type.class));
                             }
+                        }
+                    });
+
+            // Check: Functions with @BMLCheck need exactly one parameter with a type that extends ParserRuleContext
+            // Check: Functions with @BMLCheck have unique indices
+            Arrays.stream(clazz.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(BMLCheck.class))
+                    .forEach(m -> {
+                        var index = m.getAnnotation(BMLCheck.class).index();
+                        var methodName = uniqueBMLCheckIndices.get(index);
+                        if (methodName != null) {
+                            // TODO
+                            throw new IllegalStateException("Method %s has the same index (%d) as %s"
+                                    .formatted(m.getName(), index, methodName));
+                        }
+                        uniqueBMLCheckIndices.put(index, m.getName());
+
+                        if (m.getParameters().length != 1) {
+                            throw new IllegalStateException("Method %s does not have exactly one parameter"
+                                    .formatted(m.getName()));
+                        } else if (m.getParameters()[0].getType().isAssignableFrom(ParserRuleContext.class)) {
+                            throw new IllegalStateException("Parameter %s from method %s does not have a type that extends from %s"
+                                    .formatted(m.getParameters()[0].getName(), m.getName(), ParserRuleContext.class));
                         }
                     });
 
