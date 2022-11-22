@@ -33,6 +33,11 @@ public class SymbolTableAndScopeGenerator extends BMLBaseListener {
         pushScope(f);
     }
 
+    @Override
+    public void enterEventListenerHead(BMLParser.EventListenerHeadContext ctx) {
+        currentScope.define(new VariableSymbol(ctx.parameterName.getText()));
+    }
+
     protected void pushScope(Scope s) {
         currentScope = s;
         System.out.println("entering: " + currentScope.getName() + ":" + s.getSymbols());
@@ -42,6 +47,8 @@ public class SymbolTableAndScopeGenerator extends BMLBaseListener {
         System.out.println("leaving: " + currentScope.getName() + ":" + currentScope.getSymbols());
         currentScope = currentScope.getEnclosingScope();
     }
+
+    // TODO: Check whether symbols have already been defined, same goes for elementList, etc.
 
     public Scope getCurrentScope() {
         return currentScope;
