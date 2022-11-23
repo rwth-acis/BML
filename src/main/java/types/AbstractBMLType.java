@@ -1,9 +1,16 @@
 package types;
 
-
+import generatedParser.BMLParser;
 import org.antlr.symtab.Type;
+import org.antlr.v4.runtime.RuleContext;
+
+import java.lang.annotation.Inherited;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractBMLType implements Type, Cloneable {
+
+    protected Map<String, Type> supportedAccesses = new HashMap<>();
 
     @Override
     public String getName() {
@@ -13,6 +20,15 @@ public abstract class AbstractBMLType implements Type, Cloneable {
     @Override
     public int getTypeIndex() {
         return this.getClass().getAnnotation(BMLType.class).index();
+    }
+
+    public Map<String, Type> getSupportedAccesses() {
+        return supportedAccesses;
+    }
+
+    @BMLAccessResolver
+    public Type resolveAccess(RuleContext ctx) {
+        return null;
     }
 
     @Override
@@ -32,7 +48,6 @@ public abstract class AbstractBMLType implements Type, Cloneable {
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException("Class %s does not implement type cloning"
-                .formatted(this.getClass().getName()));
+        throw new CloneNotSupportedException("Class %s does not implement type cloning".formatted(this.getClass().getName()));
     }
 }

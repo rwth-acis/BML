@@ -3,10 +3,8 @@ package types;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.reflections.Reflections;
-import org.yaml.snakeyaml.constructor.ConstructorException;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
 import java.util.*;
 
 public class TypeRegistry {
@@ -46,23 +44,6 @@ public class TypeRegistry {
                 throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
             }
 
-            // Check: functions with @BMLFunction annotation for required parameter types use org.antlr.symtab.Type
-            Arrays.stream(clazz.getDeclaredMethods())
-                    .filter(m -> m.isAnnotationPresent(BMLFunction.class))
-                    .forEach(m -> {
-                        for (var parameter : m.getParameters()) {
-                            if (!parameter.isAnnotationPresent(BMLFunctionParameter.class)) {
-                                throw new IllegalStateException("Parameter %s from method %s does not have a %s annotation"
-                                        .formatted(parameter.getName(), m.getName(), BMLFunctionParameter.class));
-                            }
-
-                            if (!Type.class.isAssignableFrom(parameter.getType())) {
-                                throw new IllegalStateException("Parameter %s from method %s does not have a type that extends from %s"
-                                        .formatted(parameter.getName(), m.getName(), Type.class));
-                            }
-                        }
-                    });
-
             // Check: functions with @BMLCheck need exactly one parameter with a type that extends ParserRuleContext
             // Check: functions with @BMLCheck have unique indices
             Arrays.stream(clazz.getDeclaredMethods())
@@ -88,7 +69,7 @@ public class TypeRegistry {
 
             // Check: at most one function with @BMLSynthesizer & return type is org.antlr.symtab.Type
             var synthesizerCount = Arrays.stream(clazz.getDeclaredMethods())
-                    .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
+                    .filter(m -> m.isAnnotationPresent(BMLAccessResolver.class))
                     .count();
 
             if (synthesizerCount > 1) {
@@ -96,7 +77,7 @@ public class TypeRegistry {
                         .formatted(clazz.getName()));
             } else if (synthesizerCount == 1) {
                 var synthesizerMethod = Arrays.stream(clazz.getDeclaredMethods())
-                        .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
+                        .filter(m -> m.isAnnotationPresent(BMLAccessResolver.class))
                         .findAny();
 
                 //noinspection OptionalGetWithoutIsPresent

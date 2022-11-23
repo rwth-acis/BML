@@ -2,19 +2,14 @@ package walker;
 
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
-import org.antlr.symtab.Scope;
-import org.antlr.symtab.Type;
-import org.antlr.symtab.VariableSymbol;
+import org.antlr.symtab.*;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import types.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 
 public class TypeSynthesizer extends BMLBaseListener {
 
@@ -85,6 +80,7 @@ public class TypeSynthesizer extends BMLBaseListener {
         if (ctx.op.getText().equals("=")) {
             VariableSymbol v = new VariableSymbol(ctx.name.getText());
             v.setType(ctx.expression().type);
+            System.out.println("V: " + v.getName() + " T: " + ctx.expression().type);
             currentScope.define(v);
         } else { // Assignment operators with simultaneous operation
             // Make sure left-hand side is declared
@@ -94,6 +90,7 @@ public class TypeSynthesizer extends BMLBaseListener {
                 throw new IllegalStateException("%s is not defined".formatted(ctx.name.getText()));
             }
 
+            // Type of left-hand side should already be set
             var leftType = ((VariableSymbol) v).getType();
             var rightType = ctx.expression().type;
             if (!(leftType instanceof BMLNumeric)) {
@@ -125,116 +122,22 @@ public class TypeSynthesizer extends BMLBaseListener {
     public void exitAtom(BMLParser.AtomContext ctx) {
         if (ctx.literal() != null) {
             ctx.type = ctx.literal().type;
-        } else if (ctx.Identifier() != null) {
-            var r = currentScope.resolve(ctx.Identifier().getText());
+        } else { // Identifier
+            var name = ctx.Identifier().getText();
+            var r = currentScope.resolve(name);
             if (!(r instanceof VariableSymbol)) {
-                // TODO: Throw proper error
-                System.err.printf("%s is not defined%n", ctx.Identifier().getText());
-                return;
+                throw new IllegalStateException("`%s` is not defined".formatted(name));
             }
 
             ctx.type = ((VariableSymbol) r).getType();
-        } else if (ctx.objectAccess() != null) {
-            var object = ctx.objectAccess().object;
-            var resolvedObjectType = currentScope.resolve(object.getText());
-            if (!(resolvedObjectType instanceof VariableSymbol)) {
-                throw new IllegalStateException("%s is not defined".formatted(object.getText()));
-            }
-
-
-
-        } else { // Function invocation
-            var functionInvocation = ctx.functionInvocation();
-            var object = functionInvocation.object;
-            var resolvedObjectSymbol = currentScope.resolve(object.getText());
-            if (!(resolvedObjectSymbol instanceof VariableSymbol)) {
-                throw new IllegalStateException("%s is not defined".formatted(object.getText()));
-            }
-
-            // Check: function is specified by the resolved type
-            var resolvedObjectType = ((VariableSymbol) resolvedObjectSymbol).getType();
-            var methods = resolvedObjectType.getClass().getDeclaredMethods();
-            var resolvedFunction = Arrays.stream(methods)
-                    .filter(m -> m.isAnnotationPresent(BMLFunction.class))
-                    // We consider case for function names
-                    .filter(m -> m.getName().equals(functionInvocation.functionName.getText()))
-                    .findAny();
-
-            if (resolvedFunction.isEmpty()) {
-                throw new IllegalStateException("%s is not defined for object %s of type %s"
-                        .formatted(functionInvocation.functionName.getText(), resolvedObjectSymbol.getName(),
-                                ((VariableSymbol) resolvedObjectSymbol).getType().getName()));
-            }
-
-            // Check: parameter(s) specified by @BMLFunction are present and have correct type
-            for (var requiredParameter : resolvedFunction.get().getParameters()) {
-                // Name
-                var name = requiredParameter.getAnnotation(BMLFunctionParameter.class).name();
-
-                var invocationParameter = functionInvocation.elementExpressionPairList().elementExpressionPair()
-                        .stream()
-                        // We can assume that the BMLFunctionParameter annotation is present
-                        // since it is checked by the type registry
-                        // We consider case for the parameter name
-                        .filter(p -> p.name.getText().equals(name))
-                        .findAny();
-
-                if (invocationParameter.isEmpty()) {
-                    throw new IllegalStateException("Parameter %s is required but not present for function call %s"
-                            .formatted(name, ctx.getText()));
-                }
-
-                // Type
-                Type resolvedParameterType;
-                try {
-                    // This is okay since we check in the type registry
-                    // that parameter types are of type org.antlr.symtab.Type
-                    resolvedParameterType = (Type) requiredParameter.getType().getConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException e) {
-                    // TODO: Proper (internal) error message
-                    throw new RuntimeException(e);
-                }
-
-                var invocationParameterType = invocationParameter.get().expression().type;
-                if (!invocationParameterType.equals(resolvedParameterType)) {
-                    throw new IllegalStateException("Parameter %s requires type %s but has %s"
-                            .formatted(name, resolvedParameterType.getName(),
-                                    invocationParameterType.getName()));
-                }
-            }
-
-            // Invoke type-specific checks
-            Arrays.stream(methods)
-                    .filter(m -> m.isAnnotationPresent(BMLCheck.class))
-                    .sorted(Comparator.comparingInt(m -> m.getAnnotation(BMLCheck.class).index()))
-                    .forEach(m -> {
-                        try {
-                            m.invoke(resolvedObjectType, ctx.functionInvocation());
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-
-            // Synthesize resulting type
-            var synthesizer = Arrays.stream(methods)
-                    .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
-                    .findAny();
-
-            try {
-                // We can assume that there exists at most one synthesizer function
-                //noinspection OptionalGetWithoutIsPresent
-                ctx.type = (Type) synthesizer.get().invoke(resolvedObjectType);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
     @Override
     public void exitExpression(BMLParser.ExpressionContext ctx) {
-        var childCount = ctx.getChildCount();
-        if (childCount > 1) {
+        if (ctx.atom() != null) {
+            ctx.type = ctx.atom().type;
+        } else if (ctx.op != null) {
             switch (ctx.op.getText()) {
                 case "(" -> {
                     try {
@@ -243,6 +146,36 @@ public class TypeSynthesizer extends BMLBaseListener {
                              NoSuchMethodException e) {
                         // TODO: Proper error handling
                         throw new RuntimeException(e);
+                    }
+                }
+                case "." -> {
+                    Type prevType = ctx.expr.type;
+                    var currentCtx = ctx.Identifier() != null ? ctx.Identifier() : ctx.functionCall();
+
+                    // Check: type allows '.field/.method()' -> delegate check to class of prevType
+                    var accessResolver = Arrays.stream(prevType.getClass().getDeclaredMethods())
+                            .filter(m -> m.getName().equals("resolveAccess"))
+                            .findAny();
+
+                    Type resolvedType;
+                    try {
+                        //noinspection OptionalGetWithoutIsPresent
+                        resolvedType = (Type) accessResolver.get().invoke(prevType, currentCtx);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    if (resolvedType == null) {
+                        throw new IllegalStateException("Could not resolve `%s` for %s".formatted(currentCtx.getText(), prevType));
+                    }
+
+                    // In case of a function call, we need to unwrap the BMLFunction type to get the return type
+                    if (ctx.functionCall() != null) {
+                        // If method: check parameters -> delegate check to BMLFunction
+                        ((BMLFunction) resolvedType).checkParameters(ctx.functionCall());
+                        ctx.type = ((BMLFunction) resolvedType).getReturnType();
+                    } else {
+                        ctx.type = resolvedType;
                     }
                 }
                 case "!" -> ctx.type = new BMLBoolean();
@@ -264,11 +197,7 @@ public class TypeSynthesizer extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!leftType.equals(rightType)) {
-                        // TODO: Throw proper error
-                        //System.out.println(ctx.start.getLine());
-                        //System.out.println(ctx.start.getCharPositionInLine());
-                        System.err.printf("left type %s and right type %s are not compatible\n", leftType, rightType);
-                        return;
+                        throw new IllegalStateException("left type %s and right type %s are not compatible".formatted(leftType, rightType));
                     }
 
                     ctx.type = new BMLBoolean();
@@ -328,8 +257,14 @@ public class TypeSynthesizer extends BMLBaseListener {
                     }
                 }
             }
-        } else if (childCount == 1) { // We have an atom
-            ctx.type = ctx.atom().type;
+        } else { // Single function call
+            var name = ctx.functionCall().functionName.getText();
+            var symbol = currentScope.resolve(name);
+            if (symbol == null) {
+                throw new IllegalStateException("`%s` is not defined".formatted(name));
+            }
+
+            ctx.type = ((BMLFunction) ((TypedSymbol) symbol).getType()).getReturnType();
         }
     }
 }
