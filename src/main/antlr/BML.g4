@@ -15,111 +15,97 @@ program : botDeclaration EOF ;
 
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
-botHead : 'Bot' '(' elementValuePairList ')' ;
+botHead : BOT LPAREN elementValuePairList RPAREN ;
 
-elementValuePairList : elementValuePair (',' elementValuePair)* ;
+elementValuePairList : elementValuePair (COMMA elementValuePair)* ;
 
-elementValuePair : name=Identifier '=' value=elementValue ;
+elementValuePair : name=Identifier ASSIGN value=elementValue ;
 
 elementValue : literal ;
 
-literal returns [Type type] : StringLiteral | IntegerLiteral | FloatingPointLiteral | BooleanLiteral ;
+literal returns [Type type] : StringLiteral
+                            | IntegerLiteral
+                            | FloatingPointLiteral
+                            | BooleanLiteral ;
 
-botBody : '{' (eventListenerDeclaration | component)* '}' ;
+botBody : LBRACE (eventListenerDeclaration | component)* RBRACE ;
 
 /*
  * Components
  */
-component : type=componentType name=Identifier '(' params=elementValuePairList? ')' ;
+component : type=componentType name=Identifier LPAREN params=elementValuePairList? RPAREN ;
 
 componentType : Identifier ;
 
 /*
  * Event listener declaration
  */
-eventListenerDeclaration returns [Scope scope] : '@' type=eventListenerType head=eventListenerHead body=block ;
+eventListenerDeclaration returns [Scope scope] : AT type=eventListenerType head=eventListenerHead body=block ;
 
-eventListenerType : typeString=Identifier ('(' elementValuePairList? ')')? ;
+eventListenerType : typeString=Identifier (LPAREN elementValuePairList? RPAREN)? ;
 
-eventListenerHead : listenerName=Identifier '(' parameterName=Identifier ')' ;
+eventListenerHead : listenerName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
 /*
  * Statement blocks
  */
-block : '{' statement* '}' ;
+block : LBRACE blockStatement* RBRACE ;
 
-statement : statementWithoutTrailingSubstatement
-         | ifThenStatement 
-         | ifThenElseStatement 
-         | forEachStatement ;
-
-statementWithoutTrailingSubstatement : block
-                                     | assignment
-                                     | functionInvocation ;
-
-statementNoShortIf : statementWithoutTrailingSubstatement
-	               | ifThenElseStatementNoShortIf
-	               | forStatementNoShortIf ;
+blockStatement : assignment
+               | statement ;
 
 // Assignment
 assignment : name=Identifier op=assignmentOperator expression ;
 
-assignmentOperator : '='
-                   | '*='
-                   | '/='
-                   | '%='
-                   | '+='
-                   | '-=' ;
+assignmentOperator : ASSIGN
+                   | MUL_ASSIGN
+                   | DIV_ASSIGN
+                   | MOD_ASSIGN
+                   | ADD_ASSIGN
+                   | SUB_ASSIGN ;
 
-// If Statement
-ifThenStatement : 'if' expression statement ;
-
-ifThenElseStatement : 'if' expression statementNoShortIf 'else' statement ;
-
-ifThenElseStatementNoShortIf : 'if' expression statementNoShortIf 'else' statementNoShortIf ;
+statement : block
+          | IF expression statement (ELSE statement)?
+          | FOREACH forEachVariable IN forEachDomain statement
+          | statementExpression=expression ;
 
 // ForEach Statement
-forEachStatement : 'forEach' forEachVariable 'in' forEachDomain statement ;
+forEachVariable : Identifier
+                | (Identifier COMMA Identifier) ;
 
-forStatementNoShortIf : 'forEach' forEachVariable 'in' forEachDomain statementNoShortIf ;
+forEachDomain : Identifier
+              | domainExpression ;
 
-forEachVariable : Identifier | (Identifier ',' Identifier) ;
+domainExpression : LBRACK domainLimit COMMA domainLimit RBRACK ;
 
-forEachDomain : Identifier | domainExpression ;
-
-domainExpression : '[' domainLimit ',' domainLimit ']' ;
-
-domainLimit : Identifier | IntegerLiteral ;
+domainLimit : Identifier
+            | IntegerLiteral ;
 
 /*
  * Expressions
  */
-expression returns [Type type] : op='(' expr=expression ')'
-           | op='!' expr=expression
-           | op=('-' | '+') expr=expression
-           | left=expression op=('*' | '/' | '%') right=expression
-           | left=expression op=('+' | '-') right=expression
-           | left=expression op=('<' | '<=' | '>' | '>=') right=expression
-           | left=expression op=('==' | '!=') right=expression
-           | left=expression op='and' right=expression
-           | left=expression op='or' right=expression
-           | expression op='?' expression ':' expression
-           | atom ;
+expression returns [Type type] : op=LPAREN expr=expression RPAREN
+                               | atom
+                               | expr=expression op=DOT (Identifier | functionCall)
+                               | functionCall
+                               | op=BANG expr=expression
+                               | op=(SUB | ADD) expr=expression
+                               | left=expression op=(MUL | DIV | MOD) right=expression
+                               | left=expression op=(SUB | ADD) right=expression
+                               | left=expression op=(LT | LE | GT | GT) right=expression
+                               | left=expression op=(EQUAL | NOTEQUAL) right=expression
+                               | left=expression op=AND right=expression
+                               | left=expression op=OR right=expression
+                               | <assoc=right> expression op=QUESTION expression COLON expression ;
 
 atom returns [Type type] : literal
-                         | Identifier
-                         | objectAccess
-                         | functionInvocation ;
+                         | Identifier ;
 
-// Object attribute access (type is usually complex, e.g., JSON object, table, etc.)
-objectAccess : object=Identifier ('.' Identifier)+ ;
+functionCall : functionName=Identifier LPAREN elementExpressionPairList? RPAREN ;
 
-// Function invocation
-functionInvocation returns [Type type] : object=Identifier '.' functionName=Identifier  '(' elementExpressionPairList? ')' ;
+elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* ;
 
-elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
-
-elementExpressionPair : name=Identifier '=' expr=expression ;
+elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 
 /*
  * Lexer Rules
@@ -154,8 +140,8 @@ EQUAL : '==' ;
 LE : '<=' ;
 GE : '>=' ;
 NOTEQUAL : '!=' ;
-AND : '&&' ;
-OR : '||' ;
+AND : 'and' ;
+OR : 'or' ;
 INC : '++' ;
 DEC : '--' ;
 ADD : '+' ;
