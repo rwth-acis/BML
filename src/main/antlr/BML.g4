@@ -71,13 +71,6 @@ assignmentOperator : '='
                    | '+='
                    | '-=' ;
 
-// Function invocation
-functionInvocation returns [Type type] : object=Identifier '.' functionName=Identifier  '(' elementExpressionPairList? ')' ;
-
-elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
-
-elementExpressionPair : name=Identifier '=' expr=expression ;
-
 // If Statement
 ifThenStatement : 'if' expression statement ;
 
@@ -116,10 +109,17 @@ expression returns [Type type] : op='(' expr=expression ')'
 atom returns [Type type] : literal
                          | Identifier
                          | objectAccess
-                         | functionInvocation;
+                         | functionInvocation ;
 
 // Object attribute access (type is usually complex, e.g., JSON object, table, etc.)
 objectAccess : object=Identifier ('.' Identifier)+ ;
+
+// Function invocation
+functionInvocation returns [Type type] : object=Identifier '.' functionName=Identifier  '(' elementExpressionPairList? ')' ;
+
+elementExpressionPairList : elementExpressionPair (',' elementExpressionPair)* ;
+
+elementExpressionPair : name=Identifier '=' expr=expression ;
 
 /*
  * Lexer Rules
