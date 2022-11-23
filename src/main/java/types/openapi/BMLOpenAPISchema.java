@@ -18,4 +18,9 @@ public class BMLOpenAPISchema extends AbstractBMLType {
     public String getName() {
         return super.getName() + "<" + schemaName + ">";
     }
+
+    @Override
+    public Object clone() {
+        return new BMLOpenAPISchema(schemaName);
+    }
 }

@@ -46,7 +46,7 @@ public class TypeRegistry {
                 throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
             }
 
-            // Check: Functions with @BMLFunction annotation for required parameter types use org.antlr.symtab.Type
+            // Check: functions with @BMLFunction annotation for required parameter types use org.antlr.symtab.Type
             Arrays.stream(clazz.getDeclaredMethods())
                     .filter(m -> m.isAnnotationPresent(BMLFunction.class))
                     .forEach(m -> {
@@ -63,8 +63,8 @@ public class TypeRegistry {
                         }
                     });
 
-            // Check: Functions with @BMLCheck need exactly one parameter with a type that extends ParserRuleContext
-            // Check: Functions with @BMLCheck have unique indices
+            // Check: functions with @BMLCheck need exactly one parameter with a type that extends ParserRuleContext
+            // Check: functions with @BMLCheck have unique indices
             Arrays.stream(clazz.getDeclaredMethods())
                     .filter(m -> m.isAnnotationPresent(BMLCheck.class))
                     .forEach(m -> {
@@ -78,13 +78,33 @@ public class TypeRegistry {
                         uniqueBMLCheckIndices.put(index, m.getName());
 
                         if (m.getParameters().length != 1) {
-                            throw new IllegalStateException("Method %s does not have exactly one parameter"
-                                    .formatted(m.getName()));
+                            throw new IllegalStateException("Method %s from class %s does not have exactly one parameter"
+                                    .formatted(m.getName(), clazz.getName()));
                         } else if (m.getParameters()[0].getType().isAssignableFrom(ParserRuleContext.class)) {
-                            throw new IllegalStateException("Parameter %s from method %s does not have a type that extends from %s"
-                                    .formatted(m.getParameters()[0].getName(), m.getName(), ParserRuleContext.class));
+                            throw new IllegalStateException("Parameter %s from method %s from class %s does not have a type that extends from %s"
+                                    .formatted(m.getParameters()[0].getName(), m.getName(), clazz.getName(), ParserRuleContext.class));
                         }
                     });
+
+            // Check: at most one function with @BMLSynthesizer & return type is org.antlr.symtab.Type
+            var synthesizerCount = Arrays.stream(clazz.getDeclaredMethods())
+                    .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
+                    .count();
+
+            if (synthesizerCount > 1) {
+                throw new IllegalStateException("Class %s has more than one @BMLSynthesizer annotated function"
+                        .formatted(clazz.getName()));
+            } else if (synthesizerCount == 1) {
+                var synthesizerMethod = Arrays.stream(clazz.getDeclaredMethods())
+                        .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
+                        .findAny();
+
+                //noinspection OptionalGetWithoutIsPresent
+                if (!Type.class.equals(synthesizerMethod.get().getReturnType())) {
+                    throw new IllegalStateException("Method %s in class %s needs return type org.antlr.symtab.Type"
+                            .formatted(synthesizerMethod.get().getName(), clazz.getName()));
+                }
+            }
 
             typeRegistry.put(type.typeString(), clazz);
         }

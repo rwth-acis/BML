@@ -3,7 +3,7 @@ package types;
 
 import org.antlr.symtab.Type;
 
-public abstract class AbstractBMLType implements Type {
+public abstract class AbstractBMLType implements Type, Cloneable {
 
     @Override
     public String getName() {
@@ -28,5 +28,11 @@ public abstract class AbstractBMLType implements Type {
         AbstractBMLType that = (AbstractBMLType) o;
 
         return this.getTypeIndex() == that.getTypeIndex();
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException("Class %s does not implement type cloning"
+                .formatted(this.getClass().getName()));
     }
 }

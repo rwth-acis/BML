@@ -11,9 +11,7 @@ import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.Type;
 import types.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @BMLType(index = 4, typeString = "OpenAPI")
 public class BMLOpenAPIComponent extends AbstractBMLType {
@@ -25,16 +23,19 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     /**
      * HTTP_METHOD + ROUTE -> OpenAPIResponse Object (pre-configured, ready for cloning)
      */
-    private final Map<String, BMLOpenAPIResponse> routeReturnTypes = new HashMap<>();
+    private final Map<String, Type> routeReturnTypes = new HashMap<>();
 
     /**
-     * HTTP_METHOD + ROUTE -> Set(Parameters)
+     * HTTP_METHOD + ROUTE -> Set(Required parameters)
      */
     private final Map<String, Set<BMLOpenAPIRequestParameter>> routeRequiredParameters = new HashMap<>();
 
+    /**
+     * HTTP_METHOD + ROUTE -> Set(Optional parameters)
+     */
     private final Map<String, Set<BMLOpenAPIRequestParameter>> routeOptionalParameters = new HashMap<>();
 
-    private final Queue<Object> bmlCheckData = new ArrayDeque<>();
+    private final Queue<Object> openAPIComponentData = new ArrayDeque<>();
 
     @InitializerMethod
     public void retrieveOpenAPISchema() {
@@ -45,7 +46,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, parseOptions);
         OpenAPI openAPI = result.getOpenAPI();
 
-        // Check for errors
+        // Check for OpenAPI Parser errors
         if (result.getMessages() != null && result.getMessages().size() > 0) {
             StringBuilder s = new StringBuilder();
             s.append("Encountered error messages for url '%s':\n".formatted(url));
@@ -61,30 +62,25 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             throw new IllegalStateException("Could not connect to url '%s'".formatted(url));
         }
 
-        // Set valid OpenAPI component types
+        // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
 
-        // Set valid OpenAPI routes
-
-
         // Determine route return types & parameters
-        openAPI.getPaths().forEach((route, value) -> {
-            value.readOperationsMap().forEach((httpMethod, operation) -> {
-                // Route return types
-                var responseType = computeRouteReturnTypes(operation);
-                routeReturnTypes.put(httpMethod.name().toLowerCase() + route, responseType);
+        openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
+            // Route return types
+            var responseType = computeRouteReturnTypes(operation);
+            routeReturnTypes.put(httpMethod.name().toLowerCase() + route, responseType);
 
-                // Required route parameters & request bodies
-                var parameterSet = computeRouteParameters(operation, true);
-                routeRequiredParameters.put(httpMethod.name().toLowerCase() + route, parameterSet);
+            // Required route parameters & request bodies
+            var parameterSet = computeRouteParameters(operation, true);
+            routeRequiredParameters.put(httpMethod.name().toLowerCase() + route, parameterSet);
 
-                parameterSet = computeRouteParameters(operation, false);
-                routeOptionalParameters.put(httpMethod.name().toLowerCase() + route, parameterSet);
-            });
-        });
+            parameterSet = computeRouteParameters(operation, false);
+            routeOptionalParameters.put(httpMethod.name().toLowerCase() + route, parameterSet);
+        }));
     }
 
-    private BMLOpenAPIResponse computeRouteReturnTypes(Operation operation) {
+    private Type computeRouteReturnTypes(Operation operation) {
         if (operation.getResponses() == null) {
             // TODO
         }
@@ -100,8 +96,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 } else {
                     var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
                             "Operation", operation.getOperationId());
-                    var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPITypeToResolve);
-                    return new BMLOpenAPIResponse(resolvedBMLType);
+                    return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPITypeToResolve);
                 }
             }
         }
@@ -155,7 +150,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         return parameterSet;
     }
 
-
     @BMLCheck(index = 1)
     public void routeIsValid(BMLParser.FunctionInvocationContext ctx) {
         var parameterList = ctx.elementExpressionPairList().elementExpressionPair();
@@ -173,14 +167,14 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         }
 
         // Pass data to next check
-        bmlCheckData.add(path);
+        openAPIComponentData.add(path);
     }
 
     @BMLCheck(index = 2)
     public void checkRequiredParameters(BMLParser.FunctionInvocationContext ctx) {
         // We can assume that the route exists, we need to make sure that the HTTP method for the route exists
         var parameterListMutable = new ArrayList<>(ctx.elementExpressionPairList().elementExpressionPair());
-        var path = (String) bmlCheckData.peek();
+        var path = (String) openAPIComponentData.peek();
         var requiredParameters = routeRequiredParameters.get(ctx.functionName.getText() + path);
 
         // Check: HTTP method exists for specified route
@@ -220,16 +214,16 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var remainingParameters = parameterListMutable.stream()
                 .filter(p -> !p.name.getText().equals("path"))
                 .toList();
-        bmlCheckData.add(remainingParameters);
+        openAPIComponentData.add(remainingParameters);
 
         // Synthesize BMLOpenAPIResponse with OpenAPI component type, etc.
     }
 
     @BMLCheck(index = 3)
     public void checkOptionalParameters(BMLParser.FunctionInvocationContext ctx) {
-        var path = (String) bmlCheckData.remove();
+        var path = (String) openAPIComponentData.remove();
         @SuppressWarnings("unchecked")
-        var remainingParameterList = (List<BMLParser.ElementExpressionPairContext>) bmlCheckData.remove();
+        var remainingParameterList = (List<BMLParser.ElementExpressionPairContext>) openAPIComponentData.remove();
         // We can assume that key is present, since it was checked in `checkRequiredParameters`
         var optionalParameters = routeOptionalParameters.get(ctx.functionName.getText() + path);
 
@@ -255,9 +249,24 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                                 invocationParameterType.getName()));
             }
         }
+
+        openAPIComponentData.add(ctx.functionName.getText() + path);
     }
 
-    
+    @BMLSynthesizer
+    public Type synthesizerOpenAPIReponseType() {
+        var key = (String) openAPIComponentData.remove();
+
+        Type newTypeInstance;
+        try {
+            // We can assume that the key is present because of the @BMLCheck functions
+            newTypeInstance = (Type) ((AbstractBMLType) routeReturnTypes.get(key)).clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return newTypeInstance;
+    }
 
     @BMLFunction
     public void get(@BMLFunctionParameter(name = "path") BMLString p) {

@@ -9,10 +9,12 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import types.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Optional;
 
 public class TypeSynthesizer extends BMLBaseListener {
 
@@ -140,6 +142,7 @@ public class TypeSynthesizer extends BMLBaseListener {
             }
 
 
+
         } else { // Function invocation
             var functionInvocation = ctx.functionInvocation();
             var object = functionInvocation.object;
@@ -158,11 +161,12 @@ public class TypeSynthesizer extends BMLBaseListener {
                     .findAny();
 
             if (resolvedFunction.isEmpty()) {
-                throw new IllegalStateException(".%s() is not defined for object of type %s".formatted(object.getText(),
-                        resolvedObjectSymbol.getName()));
+                throw new IllegalStateException("%s is not defined for object %s of type %s"
+                        .formatted(functionInvocation.functionName.getText(), resolvedObjectSymbol.getName(),
+                                ((VariableSymbol) resolvedObjectSymbol).getType().getName()));
             }
 
-            // Check: required parameter(s) are present and have correct type
+            // Check: parameter(s) specified by @BMLFunction are present and have correct type
             for (var requiredParameter : resolvedFunction.get().getParameters()) {
                 // Name
                 var name = requiredParameter.getAnnotation(BMLFunctionParameter.class).name();
@@ -212,12 +216,18 @@ public class TypeSynthesizer extends BMLBaseListener {
                         }
                     });
 
-//            Arrays.stream(methods)
-//                    .filter(m -> m.isAnnotationPresent(BML))
-//                    .findAny()
-
             // Synthesize resulting type
-//            ctx.type = ;
+            var synthesizer = Arrays.stream(methods)
+                    .filter(m -> m.isAnnotationPresent(BMLSynthesizer.class))
+                    .findAny();
+
+            try {
+                // We can assume that there exists at most one synthesizer function
+                //noinspection OptionalGetWithoutIsPresent
+                ctx.type = (Type) synthesizer.get().invoke(resolvedObjectType);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
