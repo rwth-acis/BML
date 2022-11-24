@@ -1,4 +1,4 @@
-grammar DialogAutomaton;
+grammar DialogueAutomaton;
 
 import BML;
 

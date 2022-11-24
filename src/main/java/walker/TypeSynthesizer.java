@@ -22,7 +22,7 @@ public class TypeSynthesizer extends BMLBaseListener {
 
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
-        AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.type.getText());
+        AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.typeString.getText());
 
         // Instantiate fields of `resolvedType` with component parameters
         for (var param : ctx.params.elementValuePair()) {
@@ -39,7 +39,7 @@ public class TypeSynthesizer extends BMLBaseListener {
             var canAccess = field.get().canAccess(resolvedType);
             field.get().setAccessible(true);
 
-            var terminalNodeType = ((TerminalNode) param.value.literal().getChild(0)).getSymbol().getType();
+            var terminalNodeType = ((TerminalNode) param.value.getChild(0)).getSymbol().getType();
             var literalInstance = switch (terminalNodeType) {
                 case BMLParser.IntegerLiteral, BMLParser.FloatingPointLiteral -> new BigDecimal(param.value.getText());
                 case BMLParser.StringLiteral -> param.value.getText().substring(1, param.value.getText().length() - 1);

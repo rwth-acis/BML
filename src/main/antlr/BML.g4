@@ -1,6 +1,6 @@
 grammar BML;
 
-import Literals, DialogAutomaton;
+import Tokens, Literals, DialogueAutomaton;
 
 @header {
     package generatedParser;
@@ -8,9 +8,6 @@ import Literals, DialogAutomaton;
     import org.antlr.symtab.*;
 }
 
-/*
- * Parser Rules
- */
 program : botDeclaration EOF ;
 
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
@@ -19,9 +16,7 @@ botHead : BOT LPAREN elementValuePairList RPAREN ;
 
 elementValuePairList : elementValuePair (COMMA elementValuePair)* ;
 
-elementValuePair : name=Identifier ASSIGN value=elementValue ;
-
-elementValue : literal ;
+elementValuePair : name=Identifier ASSIGN value=literal ;
 
 literal returns [Type type] : StringLiteral
                             | IntegerLiteral
@@ -33,9 +28,7 @@ botBody : LBRACE (eventListenerDeclaration | component)* RBRACE ;
 /*
  * Components
  */
-component : type=componentType name=Identifier LPAREN params=elementValuePairList? RPAREN ;
-
-componentType : Identifier ;
+component : typeString=Identifier name=Identifier LPAREN params=elementValuePairList? RPAREN ;
 
 /*
  * Event listener declaration
@@ -107,60 +100,3 @@ functionCall : functionName=Identifier LPAREN elementExpressionPairList? RPAREN 
 elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* ;
 
 elementExpressionPair : name=Identifier ASSIGN expr=expression ;
-
-/*
- * Lexer Rules
- */
-// Keywords
-BOT : 'Bot' ;
-IF : 'if' ;
-ELSE : 'else' ;
-FOREACH : 'forEach' ;
-IN : 'in' ;
-
-// Separators
-LPAREN : '(' ;
-RPAREN : ')' ;
-LBRACE : '{' ;
-RBRACE : '}' ;
-LBRACK : '[' ;
-RBRACK : ']' ;
-DOT : '.' ;
-COMMA : ',' ;
-AT : '@' ;
-
-// Operators
-ASSIGN : '=' ;
-GT : '>' ;
-LT : '<' ;
-BANG : '!' ;
-QUESTION : '?' ;
-COLON : ':' ;
-ARROW : '->' ;
-EQUAL : '==' ;
-LE : '<=' ;
-GE : '>=' ;
-NOTEQUAL : '!=' ;
-AND : 'and' ;
-OR : 'or' ;
-INC : '++' ;
-DEC : '--' ;
-ADD : '+' ;
-SUB : '-' ;
-MUL : '*' ;
-DIV : '/' ;
-MOD : '%' ;
-ADD_ASSIGN : '+=' ;
-SUB_ASSIGN : '-=' ;
-MUL_ASSIGN : '*=' ;
-DIV_ASSIGN : '/=' ;
-MOD_ASSIGN : '%=' ;
-
-// IGNORED
-COMMENT : '/*' .*? '*/' -> skip ;
-LINE_COMMENT : '//' ~[\r\n]* -> skip ;
-WHITESPACE : (' ' | '\t')+ -> skip ;
-NEWLINE : ('\r'? '\n' | '\r')+ -> skip ;
-SEMICOLON : ';' -> skip ;
-
-Identifier : [a-zA-Z]+ ;
