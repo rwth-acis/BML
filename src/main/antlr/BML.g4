@@ -1,6 +1,6 @@
 grammar BML;
 
-import Literals;
+import Literals, DialogAutomaton;
 
 @header {
     package generatedParser;
