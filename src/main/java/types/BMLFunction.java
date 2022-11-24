@@ -1,6 +1,7 @@
 package types;
 
 import generatedParser.BMLParser;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 
@@ -90,6 +91,11 @@ public class BMLFunction extends AbstractBMLType {
     @Override
     public int getTypeIndex() {
         return -1; // TODO
+    }
+
+    @Override
+    public Type resolveAccess(ParseTree ctx) {
+        return ((AbstractBMLType) returnType).resolveAccess(ctx);
     }
 
     public Type getReturnType() {

@@ -1,10 +1,8 @@
 package types;
 
-import generatedParser.BMLParser;
 import org.antlr.symtab.Type;
-import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.lang.annotation.Inherited;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,9 +25,7 @@ public abstract class AbstractBMLType implements Type, Cloneable {
     }
 
     @BMLAccessResolver
-    public Type resolveAccess(RuleContext ctx) {
-        return null;
-    }
+    public abstract Type resolveAccess(ParseTree ctx);
 
     @Override
     public String toString() {

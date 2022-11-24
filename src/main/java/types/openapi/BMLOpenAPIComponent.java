@@ -9,7 +9,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
-import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import types.*;
 
 import java.util.*;
@@ -18,6 +18,8 @@ import java.util.*;
 public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private String url;
+
+    private OpenAPI openAPI;
 
     private Set<String> routes;
 
@@ -28,7 +30,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         Objects.requireNonNull(url);
 
         SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, null);
-        OpenAPI openAPI = result.getOpenAPI();
+        openAPI = result.getOpenAPI();
 
         // Check for OpenAPI Parser errors
         if (result.getMessages() != null && result.getMessages().size() > 0) {
@@ -50,8 +52,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Determine route return types & arguments
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
             AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(operation);
-
-            // TODO: returnType.getSupportedAccesses().put()
 
             var requiredParameter = computeRouteArguments(operation, true);
             var optionalParameter = computeRouteArguments(operation, false);
@@ -78,7 +78,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 } else {
                     var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
                             "Operation", operation.getOperationId());
-                    return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPITypeToResolve);
+                    return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
                 }
             }
         }
@@ -95,7 +95,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         }
 
         var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(schema, "Parameter", parameterName);
-        var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPITypeToResolve);
+        var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
 
         var parameterSymbol = new ParameterSymbol(parameterName);
         parameterSymbol.setType(resolvedBMLType);
@@ -135,7 +135,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     }
 
     @Override
-    public Type resolveAccess(RuleContext ctx) {
+    public Type resolveAccess(ParseTree ctx) {
         var functionCtx = (BMLParser.FunctionCallContext) ctx;
         var httpMethod = functionCtx.functionName.getText();
 

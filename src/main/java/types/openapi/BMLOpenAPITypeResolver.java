@@ -1,5 +1,6 @@
 package types.openapi;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;
 import types.BMLBoolean;
@@ -7,20 +8,47 @@ import types.BMLList;
 import types.BMLNumeric;
 import types.BMLString;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BMLOpenAPITypeResolver {
 
-    public static Type resolveOpenAPITypeToBMLType(String type) {
+    private static final Map<String, Map<String, Type>> componentSupportedFields = new HashMap<>();
+
+    private static void computeComponentFields(OpenAPI openAPI, String componentName) {
+        var componentSchema = openAPI.getComponents().getSchemas().get(componentName);
+
+        Map<String, Type> supportedSchemaAccesses = new HashMap<>();
+        (((Schema<?>) componentSchema).getProperties()).forEach((fieldName, propertySchema) -> {
+            var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(propertySchema,
+                    "Property", fieldName);
+            Type resolvedType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
+            supportedSchemaAccesses.put(fieldName, resolvedType);
+        });
+        componentSupportedFields.put(componentName, supportedSchemaAccesses);
+    }
+
+    public static Type resolveOpenAPITypeToBMLType(OpenAPI openAPI, String type) {
         if (type.startsWith("array")) {
             var arrayItemType = type.substring("array".length() + 1);
-            return new BMLList(resolveOpenAPITypeToBMLType(arrayItemType));
+            return new BMLList(resolveOpenAPITypeToBMLType(openAPI, arrayItemType));
         } else {
-            return switch (type) {
-                case "string" -> new BMLString();
-                case "integer", "number" -> new BMLNumeric();
-                case "boolean" -> new BMLBoolean();
-                case "object" -> null;
-                default -> new BMLOpenAPISchema(type); // Note: We assume type to be a valid schema
-            };
+            Type resolvedType;
+            switch (type) {
+                case "string" -> resolvedType = new BMLString();
+                case "integer", "number" -> resolvedType = new BMLNumeric();
+                case "boolean" -> resolvedType = new BMLBoolean();
+                case "object" -> resolvedType = null; // TODO
+                default -> {
+                    var supportedFields = componentSupportedFields.get(type);
+                    if (supportedFields == null) {
+                        computeComponentFields(openAPI, type);
+                    }
+                    resolvedType = new BMLOpenAPISchema(type, componentSupportedFields.get(type));
+                }
+            }
+
+            return resolvedType;
         }
     }
 
@@ -66,6 +94,6 @@ public class BMLOpenAPITypeResolver {
             }
         }
 
-        return type.toLowerCase() + arrayType.toLowerCase();
+        return type + arrayType;
     }
 }
