@@ -1,0 +1,67 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI pizzaScarf(url="https://pizzascarf.com/api/v3/reviews.json")
+
+    Rasa rasa(url="rasa.com/rasaToken:8000")
+
+    Telegram telegram(token="myTelegramToken")
+
+    Slack slack(token="mySlackToken")
+
+    Discord discord(token="myDiscordToken")
+
+    RocketChat rocketChat(token="myRocketChatToken")
+
+    Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
+        default notUnderstood = (intent="_", action="I’m sorry, I didn't understand that, come again please.")
+
+        greetings = ["Hi there, fellow human!", "Hi, nice to meet you!", "Hello, a pleasure to meet you!"]
+        initial greet = (intent="hello, greet", action=greetings)
+
+        initial options = (intent="intent", action="I'm a simple rating bot, I can submit ratings for you.")
+
+        sink bye = (intent="bye", action="Until next time!")
+
+        response = {text = "Please provide me with you receipt ID. You can find it lorem ipsum ...", file = example.jpg}
+        initial addReview = (intent="review", response)
+
+        state giveRating = (action="How many stars would you like to give?")
+
+        addReview -> {
+            (intent="receiptId", action=verifyReceiptId) -> giveRating,
+            (intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> (action=jumpToState(addReview))
+        }
+
+        giveRating -> {
+            (intent="stars", action=postReview),
+            (intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
+        } -> (action="Would you like to make another review?") -> {
+            (intent="yes", action=jumpToState(addReview)),
+            (intent="no", action="Okay, thank you. We're looking forward to your next visit!")
+        }
+
+        @Action
+        postReview(data) {
+            response = pizzaScarf.post(path="/addReview/", body={stars = data.entity, auth = authKey.file})
+
+            if response.code == 200 {
+                send("Your review was successfully processed!")
+            } else {
+                send("I'm sorry, it seems like there is a problem on our side. Please try again later.")
+            }
+        }
+
+        @Action
+        verifyReceiptId(data) {
+            response = pizzaScarf.get(path="/checkReceiptId/", id=data.entity)
+            if response.code != 200 {
+                send("I'm sorry, but you did not provide a valid receipt id.")
+            }
+        }
+    }
+
+    @Compose(@UserSentMessage, @UserStartedChat)
+    messageHandler(data) {
+        pizzaScarfReview.step(data);
+    }
+}
