@@ -23,4 +23,8 @@ public class BMLList extends AbstractBMLType {
     public Type resolveAccess(ParseTree ctx) {
         return ((AbstractBMLType) itemType).resolveAccess(ctx);
     }
+
+    public Type getItemType() {
+        return itemType;
+    }
 }

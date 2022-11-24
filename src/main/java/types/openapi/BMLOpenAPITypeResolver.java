@@ -11,6 +11,9 @@ import types.BMLString;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Source of truth: <a href="https://swagger.io/docs/specification/data-models/data-types/">Swagger data types</a>
+ */
 public class BMLOpenAPITypeResolver {
 
     private static final Map<String, Map<String, Type>> componentSupportedFields = new HashMap<>();
@@ -32,13 +35,22 @@ public class BMLOpenAPITypeResolver {
         if (type.startsWith("array")) {
             var arrayItemType = type.substring("array".length() + 1);
             return new BMLList(resolveOpenAPITypeToBMLType(openAPI, arrayItemType));
+        } else if (type.startsWith("object")) {
+            // TODO:
+            // Nested objects
+
+            // 1. Is it an inline component?
+
+            // 2. No additionalProperties or additionalProperties=true or additionalProperties={} -> dictionary
+
+            return null;
         } else {
             Type resolvedType;
             switch (type) {
                 case "string" -> resolvedType = new BMLString();
-                case "integer", "number" -> resolvedType = new BMLNumeric();
+                case "integer" -> resolvedType = new BMLNumeric(false);
+                case "number" -> resolvedType = new BMLNumeric(true);
                 case "boolean" -> resolvedType = new BMLBoolean();
-                case "object" -> resolvedType = null; // TODO
                 default -> {
                     var supportedFields = componentSupportedFields.get(type);
                     if (supportedFields == null) {
@@ -54,6 +66,7 @@ public class BMLOpenAPITypeResolver {
 
     public static String extractOpenAPITypeFromSchema(Schema<?> schema, String object, String objectName) {
         // Resolve type
+        // TODO: Handle AnyType and OneOf (i.e., mixed types)
         String type;
         if (schema.getType() == null) {
             if (schema.get$ref() == null) {

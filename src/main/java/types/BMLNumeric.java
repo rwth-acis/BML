@@ -10,11 +10,13 @@ public class BMLNumeric extends AbstractBMLType {
 
     private BigDecimal value;
 
+    private boolean isFloatingPoint;
+
 
     public BMLNumeric() {}
 
-    public BMLNumeric(String value) {
-        this.value = new BigDecimal(value);
+    public BMLNumeric(boolean isFloatingPoint) {
+        this.isFloatingPoint = isFloatingPoint;
     }
 
     public BigDecimal getValue() {
@@ -24,5 +26,9 @@ public class BMLNumeric extends AbstractBMLType {
     @Override
     public Type resolveAccess(ParseTree ctx) {
         return null;
+    }
+
+    public boolean isFloatingPoint() {
+        return isFloatingPoint;
     }
 }

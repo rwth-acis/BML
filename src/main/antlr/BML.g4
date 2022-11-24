@@ -87,6 +87,7 @@ domainLimit : Identifier
 expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | atom
                                | expr=expression op=DOT (Identifier | functionCall)
+                               | expr=expression op=LBRACE expression RBRACE
                                | functionCall
                                | op=BANG expr=expression
                                | op=(SUB | ADD) expr=expression

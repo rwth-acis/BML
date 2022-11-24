@@ -10,6 +10,8 @@ import java.util.Map;
 @BMLType(index = 7, typeString = "OpenAPISchema")
 public class BMLOpenAPISchema extends AbstractBMLType {
 
+    // TODO: Track required attributes/properties/fields
+
     private String schemaName;
 
     public BMLOpenAPISchema() {}

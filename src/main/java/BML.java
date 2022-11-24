@@ -18,10 +18,11 @@ import java.util.Objects;
 
 public class BML {
     public static void main(String[] args) {
+        var fileName = "example.bml";
+//        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
         var inputString = "";
         try {
-            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource("example.bml"));
-//            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource("OpenAPIPetStoreWithTelegramExample.bml"));
+            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource(fileName));
             inputString = Files.readString(Paths.get(inputResource.toURI()));
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
