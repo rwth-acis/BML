@@ -12,20 +12,33 @@ Bot(host="localhost", port=8080) {
 
     RocketChat rocketChat(token="myRocketChatToken")
 
-    /* General State Syntax: <StateType> ID = (intent="<intent>", action=<Action>/<String>/<List<String>/<ResponseObject>/<jumpToState(<State>)>)
+    /* General State Syntax:
+     * <StateType> ID = (intent="<intent>", action=<Action>/<String>/<List<String>/<ResponseObject>/<jumpToState(<State>)>)
      *
      * States can be fall-through when they have no intents. I.e., their reaching is not "guarded" by an intent.
      * Likewise, states do not need actions.
      *
-     * Dialogues have a main state (similar to an idle state) that they go back to, when a "conversation path" ends
+     * Dialogues have a main state (similar to an idle state) that they go back to when a "conversation path" ends
+     *
      * Junctions:
      *    someStartName -> A -> {B, C} -> D // -> mainState (this is done implicitly)
      *    Equivalent: A -> B; A -> C; B -> D; C -> D
      *
-     * Junctions that need disambiguation, e.g., B -> {D, E} AND C -> {D, E}
+     * Junctions that need disambiguation:
      *    someStartName -> A -> {B, C} -> {D, E}
+     *    Possible disambiguation: B -> {D, E} AND C -> {D, E}
+     *
+     * jumpToState:
+     * The idea of the `jumpToState` builtin function is to provide means to skip intent guards.
+     * This can be helpful if we want to repeat a state, e.g.:
+     * state A = (intent="foo", action=bar)
+     * A -> {B, C -> (action=jumpToState(A))}
+     * Here we can go back from C to A without having to have "foo" as a guard
      */
     Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
+        /*
+         * States
+         */
         // Should simplify making conversation appear "more vivid" (answer chosen randomly from this list)
         greetings = ["Hi there, fellow human!",
                      "Hi, nice to meet you!",
