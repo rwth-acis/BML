@@ -22,12 +22,12 @@ Bot(host="localhost", port=8080) {
 
             someCounter += pet.someIntegerAttribute
 
-            if pet.responseCode == 200 { // The responseCode field is provided by the transpiler
+            if pet.code == 200 { // The responseCode field is provided by the transpiler
                 // If not specified otherwise, send back to user that message was received from
                 // send uses all "registered" messengers (see @UserSentMessage)
                 send(message="Thank you, I'll keep you posted about {pet.name} with id {petId}")
                 subscribedUsers.add(key=data.user, value=data.entity)
-            } else if pet.responseCode == 400 {
+            } else if pet.code == 400 {
                 send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a number.")
             } else { // code == 404
                 send(message="I'm sorry, it seems there is no pet with id {petId}.")
