@@ -1,6 +1,5 @@
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
-import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -8,17 +7,15 @@ import walker.SymbolTableAndScopeGenerator;
 import walker.TypeSynthesizer;
 import walker.UrlChecker;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class BML {
     public static void main(String[] args) {
-        var fileName = "example.bml";
+        var fileName = "Example.bml";
 //        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
         var inputString = "";
         try {
