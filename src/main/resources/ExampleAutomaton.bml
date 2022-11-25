@@ -57,7 +57,7 @@ Bot(host="localhost", port=8080) {
         sink bye = (intent="bye", action="Until next time!")
 
         response = {
-            text = "Please provide me with you receipt ID. You can find it lorem ipsum ...",
+            text = "Please provide your receipt ID. You can find it lorem ipsum ...",
             file = example.jpg
         }
         initial addReview = (intent="review", response)
@@ -87,7 +87,7 @@ Bot(host="localhost", port=8080) {
         postReview(data) {
             // Build request body
             review = {
-                stars = data.entity,
+                stars = number(data.entity),
                 auth = authKey.file
             }
             

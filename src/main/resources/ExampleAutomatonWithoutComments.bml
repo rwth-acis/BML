@@ -22,7 +22,7 @@ Bot(host="localhost", port=8080) {
 
         sink bye = (intent="bye", action="Until next time!")
 
-        response = {text = "Please provide me with you receipt ID. You can find it lorem ipsum ...", file = example.jpg}
+        response = {text = "Please provide your receipt ID. You can find it lorem ipsum ...", file = example.jpg}
         initial addReview = (intent="review", response)
 
         state giveRating = (action="How many stars would you like to give?")
@@ -42,7 +42,7 @@ Bot(host="localhost", port=8080) {
 
         @Action
         postReview(data) {
-            response = pizzaScarf.post(path="/addReview/", body={stars = data.entity, auth = authKey.file})
+            response = pizzaScarf.post(path="/addReview/", body={stars = number(data.entity), auth = authKey.file})
 
             if response.code == 200 {
                 send("Your review was successfully processed!")
