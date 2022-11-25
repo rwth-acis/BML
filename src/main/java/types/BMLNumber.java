@@ -6,16 +6,15 @@ import org.antlr.symtab.Type;
 import java.math.BigDecimal;
 
 @BMLType(index = 3, typeString = "Number")
-public class BMLNumeric extends AbstractBMLType {
+public class BMLNumber extends AbstractBMLType {
 
     private BigDecimal value;
 
     private boolean isFloatingPoint;
 
+    public BMLNumber() {}
 
-    public BMLNumeric() {}
-
-    public BMLNumeric(boolean isFloatingPoint) {
+    public BMLNumber(boolean isFloatingPoint) {
         this.isFloatingPoint = isFloatingPoint;
     }
 
@@ -30,5 +29,10 @@ public class BMLNumeric extends AbstractBMLType {
 
     public boolean isFloatingPoint() {
         return isFloatingPoint;
+    }
+
+    @Override
+    public String toString() {
+        return "%s %s".formatted(isFloatingPoint ? "Decimal" : "Integer", super.toString());
     }
 }

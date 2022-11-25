@@ -1,11 +1,15 @@
 package types;
 
+import errors.ParserException;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.reflections.Reflections;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+
+import static errors.ParserError.UNKNOWN_TYPE;
 
 public class TypeRegistry {
 
@@ -91,11 +95,11 @@ public class TypeRegistry {
         }
     }
 
-    public static Object resolveType(String typeString) {
+    public static Object resolveType(Token token) {
+        var typeString = token.getText();
         Class<?> type = typeRegistry.get(typeString);
         if (type == null) {
-            // TODO: Type Error
-            throw new TypeNotPresentException("Unknown type%s".formatted(typeString), null);
+            throw new ParserException(UNKNOWN_TYPE.format(typeString), token);
         }
 
         Object typeInstance;

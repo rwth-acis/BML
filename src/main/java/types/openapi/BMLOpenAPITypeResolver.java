@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;
 import types.BMLBoolean;
 import types.BMLList;
-import types.BMLNumeric;
+import types.BMLNumber;
 import types.BMLString;
 
 import java.util.HashMap;
@@ -48,8 +48,8 @@ public class BMLOpenAPITypeResolver {
             Type resolvedType;
             switch (type) {
                 case "string" -> resolvedType = new BMLString();
-                case "integer" -> resolvedType = new BMLNumeric(false);
-                case "number" -> resolvedType = new BMLNumeric(true);
+                case "integer" -> resolvedType = new BMLNumber(false);
+                case "number" -> resolvedType = new BMLNumber(true);
                 case "boolean" -> resolvedType = new BMLBoolean();
                 default -> {
                     var supportedFields = componentSupportedFields.get(type);

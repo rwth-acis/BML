@@ -1,5 +1,6 @@
 package types;
 
+import errors.ParserException;
 import generatedParser.BMLParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.ParameterSymbol;
@@ -8,18 +9,20 @@ import org.antlr.symtab.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import static errors.ParserError.*;
+
 public class BMLFunction extends AbstractBMLType {
 
     private final Type returnType;
 
-    private final List<ParameterSymbol> optionalParameters;
-
     private final List<ParameterSymbol> requiredParameters;
 
-    public BMLFunction(Type returnType, List<ParameterSymbol> optionalParameters, List<ParameterSymbol> requiredParameters) {
+    private final List<ParameterSymbol> optionalParameters;
+
+    public BMLFunction(Type returnType, List<ParameterSymbol> requiredParameters, List<ParameterSymbol> optionalParameters) {
         this.returnType = returnType;
-        this.optionalParameters = optionalParameters;
         this.requiredParameters = requiredParameters;
+        this.optionalParameters = optionalParameters;
     }
 
     public void checkParameters(BMLParser.FunctionCallContext ctx) {
@@ -34,17 +37,16 @@ public class BMLFunction extends AbstractBMLType {
                     .findAny();
 
             if (invocationParameter.isEmpty()) {
-                throw new IllegalStateException("Parameter %s is required but not present for function call %s"
-                        .formatted(name, ctx.getText()));
+                throw new ParserException("Parameter %s is required but not present for function call %s"
+                        .formatted(name, ctx.getText()), ctx);
             }
 
             // Type
             var requiredParameterType = requiredParameter.getType();
             var invocationParameterType = invocationParameter.get().expression().type;
             if (!requiredParameterType.equals(invocationParameterType)) {
-                throw new IllegalStateException("Parameter %s requires type %s but found type %s"
-                        .formatted(name, requiredParameterType.getName(),
-                                invocationParameterType.getName()));
+                throw new ParserException(EXPECTED_BUT_FOUND.format(requiredParameterType, invocationParameterType),
+                        invocationParameter.get());
             }
 
             parameterListMutable.remove(invocationParameter.get());
@@ -68,17 +70,15 @@ public class BMLFunction extends AbstractBMLType {
                     .findAny();
 
             if (optionalParameter.isEmpty()) {
-                // TODO
-                throw new IllegalStateException("`%s` is not defined".formatted(name));
+                throw new ParserException(NOT_DEFINED.format(name), parameterPair.name);
             }
 
             // We can assume that parameter is present, so we expect the correct type
             var optionalParameterType = optionalParameter.get().getType();
             var invocationParameterType = parameterPair.expression().type;
             if (!optionalParameterType.equals(invocationParameterType)) {
-                throw new IllegalStateException("`%s` requires type %s but found type %s"
-                        .formatted(name, optionalParameterType.getName(),
-                                invocationParameterType.getName()));
+                throw new ParserException(EXPECTED_BUT_FOUND.format(optionalParameterType, invocationParameterType),
+                        parameterPair.expression());
             }
         }
     }

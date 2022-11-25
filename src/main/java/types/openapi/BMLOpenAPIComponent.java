@@ -25,7 +25,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private final Set<String> httpMethods = new HashSet<>();
 
-    @InitializerMethod
+    @BMLInitializerMethod
     public void retrieveOpenAPISchema() {
         Objects.requireNonNull(url);
 
@@ -83,13 +83,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             }
         }
 
-        //throw new IllegalStateException("Could not compute response type of operation %s".formatted(operation.getOperationId()));
         return null; // TODO: We need a void type
     }
 
     private void computeArgumentTypes(List<ParameterSymbol> arguments, Schema<?> schema, String parameterName) {
         if (schema == null) {
-            // TODO
             throw new IllegalStateException("Couldn't find schema for parameter %s"
                     .formatted(parameterName));
         }

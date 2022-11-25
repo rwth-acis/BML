@@ -43,16 +43,20 @@ public class BML {
 
         ParseTreeWalker walker = new ParseTreeWalker();
 
-        UrlChecker urlChecker = new UrlChecker();
-        walker.walk(urlChecker, bmlParser.program());
-        bmlParser.reset();
+        try {
+            UrlChecker urlChecker = new UrlChecker();
+            walker.walk(urlChecker, bmlParser.program());
+            bmlParser.reset();
 
-        SymbolTableAndScopeGenerator st = new SymbolTableAndScopeGenerator();
-        walker.walk(st, bmlParser.program());
-        bmlParser.reset();
+            SymbolTableAndScopeGenerator st = new SymbolTableAndScopeGenerator();
+            walker.walk(st, bmlParser.program());
+            bmlParser.reset();
 
-        System.out.println(st.getCurrentScope());
-        TypeSynthesizer typeSynthesizer = new TypeSynthesizer(st.getCurrentScope());
-        walker.walk(typeSynthesizer, bmlParser.program());
+            System.out.println(st.getCurrentScope());
+            TypeSynthesizer typeSynthesizer = new TypeSynthesizer(st.getCurrentScope());
+            walker.walk(typeSynthesizer, bmlParser.program());
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e.getMessage());
+        }
     }
 }

@@ -1,16 +1,19 @@
 package walker;
 
-import errors.TypeErrorException;
+import errors.ParserException;
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import org.antlr.symtab.*;
-import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import types.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.*;
+
+import static errors.ParserError.*;
 
 public class TypeSynthesizer extends BMLBaseListener {
 
@@ -22,7 +25,7 @@ public class TypeSynthesizer extends BMLBaseListener {
 
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
-        AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.typeString.getText());
+        AbstractBMLType resolvedType = (AbstractBMLType) TypeRegistry.resolveType(ctx.typeString);
 
         // Instantiate fields of `resolvedType` with component parameters
         for (var param : ctx.params.elementValuePair()) {
@@ -32,8 +35,7 @@ public class TypeSynthesizer extends BMLBaseListener {
                     .findAny();
 
             if (field.isEmpty()) {
-                // TODO: Proper error handling
-                throw new IllegalStateException("Unknown field %s for component of type %s".formatted(param.name.getText(), resolvedType.getName()));
+                throw new ParserException(NOT_DEFINED_FOR.format(param.name.getText(), resolvedType.getName()), param.name);
             }
 
             var canAccess = field.get().canAccess(resolvedType);
@@ -44,8 +46,8 @@ public class TypeSynthesizer extends BMLBaseListener {
                 case BMLParser.IntegerLiteral, BMLParser.FloatingPointLiteral -> new BigDecimal(param.value.getText());
                 case BMLParser.StringLiteral -> param.value.getText().substring(1, param.value.getText().length() - 1);
                 case BMLParser.BooleanLiteral -> Boolean.parseBoolean(param.value.getText());
-                default -> // TODO: Proper error message
-                        throw new IllegalStateException("Unexpected type: " + terminalNodeType);
+                default -> throw new ParserException(UNKNOWN_TYPE.format(terminalNodeType),
+                        ((TerminalNode) param.value.getChild(0)).getSymbol());
             };
 
             try {
@@ -60,12 +62,12 @@ public class TypeSynthesizer extends BMLBaseListener {
 
         // Invoke registered initializer methods of `resolvedType`
         Arrays.stream(resolvedType.getClass().getDeclaredMethods())
-                .filter(m -> m.isAnnotationPresent(InitializerMethod.class))
+                .filter(m -> m.isAnnotationPresent(BMLInitializerMethod.class))
                 .forEach(m -> {
                     try {
                         m.invoke(resolvedType);
                     } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
+                        throw new ParserException(ExceptionUtils.getRootCause(e).getMessage(), ctx);
                     }
                 });
 
@@ -86,20 +88,16 @@ public class TypeSynthesizer extends BMLBaseListener {
             // Make sure left-hand side is declared
             var v = currentScope.resolve(ctx.name.getText());
             if (!(v instanceof VariableSymbol)) {
-                // TODO: Proper error handling
-                throw new IllegalStateException("%s is not defined".formatted(ctx.name.getText()));
+                throw new ParserException(NOT_DEFINED.format(ctx.name.getText()), ctx.name);
             }
 
             // Type of left-hand side should already be set
             var leftType = ((VariableSymbol) v).getType();
             var rightType = ctx.expression().type;
-            if (!(leftType instanceof BMLNumeric)) {
-                // TODO: Throw proper error
-                System.err.printf("left type %s is not numeric\n", leftType);
-                return;
-            } else if (!(rightType instanceof BMLNumeric)) {
-                System.err.printf("right type %s is not numeric\n", rightType);
-                return;
+            if (!(leftType instanceof BMLNumber)) {
+                throw new ParserException(EXPECTED_BUT_FOUND.format("Number", leftType), ctx.name);
+            } else if (!(rightType instanceof BMLNumber)) {
+                throw new ParserException(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.name);
             }
         }
     }
@@ -108,13 +106,12 @@ public class TypeSynthesizer extends BMLBaseListener {
     public void exitLiteral(BMLParser.LiteralContext ctx) {
         var terminalNodeType = ((TerminalNode) ctx.getChild(0)).getSymbol().getType();
         ctx.type = switch (terminalNodeType) {
-            case BMLParser.IntegerLiteral -> new BMLNumeric(false);
-            case BMLParser.FloatingPointLiteral -> new BMLNumeric(true);
+            case BMLParser.IntegerLiteral -> new BMLNumber(false);
+            case BMLParser.FloatingPointLiteral -> new BMLNumber(true);
             case BMLParser.StringLiteral -> new BMLString();
             case BMLParser.BooleanLiteral -> new BMLBoolean();
             default -> {
-                // TODO: Proper error message
-                throw new IllegalStateException("Unexpected type: " + terminalNodeType);
+                throw new ParserException("Unknown type %s".formatted(terminalNodeType), (Token) ctx.getChild(0));
             }
         };
     }
@@ -127,7 +124,7 @@ public class TypeSynthesizer extends BMLBaseListener {
             var name = ctx.Identifier().getText();
             var r = currentScope.resolve(name);
             if (!(r instanceof VariableSymbol)) {
-                throw new IllegalStateException("`%s` is not defined".formatted(name));
+                throw new ParserException(NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
             }
 
             ctx.type = ((VariableSymbol) r).getType();
@@ -145,7 +142,6 @@ public class TypeSynthesizer extends BMLBaseListener {
                         ctx.type = ctx.expr.type.getClass().getDeclaredConstructor().newInstance();
                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                              NoSuchMethodException e) {
-                        // TODO: Proper error handling
                         throw new RuntimeException(e);
                     }
                 }
@@ -169,7 +165,13 @@ public class TypeSynthesizer extends BMLBaseListener {
                     }
 
                     if (resolvedType == null) {
-                        throw new IllegalStateException("Could not resolve `%s` for %s".formatted(currentCtx.getText(), prevType));
+                        if (ctx.Identifier() != null) {
+                            throw new ParserException("Could not resolve `%s` for %s".formatted(currentCtx.getText(), prevType),
+                                    ctx.Identifier().getSymbol());
+                        } else {
+                            throw new ParserException("Could not resolve `%s` for %s".formatted(currentCtx.getText(), prevType),
+                                    ctx.functionCall());
+                        }
                     }
 
                     // In case of a function call, we need to unwrap the BMLFunction type to get the return type
@@ -188,11 +190,11 @@ public class TypeSynthesizer extends BMLBaseListener {
                     var secondExpressionType = secondExpression.type;
 
                     if (!(firstExpressionType instanceof BMLList)) {
-                        throw new TypeErrorException("Expected %s for `%s` but found %s", firstExpression);
-                    } else if (!(secondExpressionType instanceof BMLNumeric)) {
-                        throw new TypeErrorException("%s is not numeric", secondExpression);
-                    } else if (!((BMLNumeric) secondExpressionType).isFloatingPoint()) {
-                        throw new TypeErrorException("%s is not integral", secondExpression);
+                        throw new ParserException(EXPECTED_BUT_FOUND.format("List", firstExpressionType), firstExpression);
+                    } else if (!(secondExpressionType instanceof BMLNumber)) {
+                        throw new ParserException(EXPECTED_BUT_FOUND.format("Number", secondExpressionType), secondExpression);
+                    } else if (!((BMLNumber) secondExpressionType).isFloatingPoint()) {
+                        throw new ParserException(EXPECTED_BUT_FOUND.format(new BMLNumber(false), secondExpressionType), secondExpression);
                     }
 
                     // Safe cast because we checked that first expression is a list
@@ -202,13 +204,10 @@ public class TypeSynthesizer extends BMLBaseListener {
                 case "<", "<=", ">", ">=" -> {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
-                    if (!(leftType instanceof BMLNumeric)) {
-                        // TODO: Throw proper error
-                        System.err.printf("left type %s is not numeric\n", leftType);
-                        return;
-                    } else if (!(rightType instanceof BMLNumeric)) {
-                        System.err.printf("right type %s is not numeric\n", rightType);
-                        return;
+                    if (!(leftType instanceof BMLNumber)) {
+                        throw new ParserException(EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
+                    } else if (!(rightType instanceof BMLNumber)) {
+                        throw new ParserException(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
                     }
 
                     ctx.type = new BMLBoolean();
@@ -217,35 +216,28 @@ public class TypeSynthesizer extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!leftType.equals(rightType)) {
-                        throw new TypeErrorException("%s %s %s is not compatible"
-                                .formatted(leftType, ctx.op.getText(), rightType), ctx.getStart().getLine(),
-                                new Interval(ctx.getStart().getCharPositionInLine(), ctx.getStop().getCharPositionInLine()));
+                        throw new ParserException(INCOMPATIBLE.format(leftType, ctx.op.getText(), rightType), ctx);
                     }
 
                     ctx.type = new BMLBoolean();
                 }
                 case "+", "-", "*", "/", "%" -> {
-                    Type leftType;
                     if (ctx.left == null) {
-                        if (!(ctx.expr.type instanceof BMLNumeric)) {
-                            // TODO: Throw proper error
-                            System.err.printf("%s is not numeric\n", ctx.expr.type);
-                            return;
+                        var expressionType = ctx.expr.type;
+                        if (!(expressionType instanceof BMLNumber)) {
+                            throw new ParserException(EXPECTED_BUT_FOUND.format("Number", expressionType), ctx.expr);
                         }
-                        ctx.type = new BMLNumeric(((BMLNumeric) ctx.expr.type).isFloatingPoint());
+                        ctx.type = new BMLNumber(((BMLNumber) expressionType).isFloatingPoint());
                     } else {
-                        leftType = ctx.left.type;
+                        var leftType = ctx.left.type;
                         var rightType = ctx.right.type;
-                        if (!(leftType instanceof BMLNumeric)) {
-                            throw new TypeErrorException("%s is not numeric".formatted(ctx.left.getText()),
-                                    ctx.left.getStart().getLine(),
-                                    new Interval(ctx.left.getStart().getCharPositionInLine(), ctx.left.getStop().getCharPositionInLine()));
-                        } else if (!(rightType instanceof BMLNumeric)) {
-                            throw new TypeErrorException("%s is not numeric".formatted(ctx.right.getText()),
-                                    ctx.right.getStart().getLine(),
-                                    new Interval(ctx.right.getStart().getCharPositionInLine(), ctx.right.getStop().getCharPositionInLine()));
+                        if (!(leftType instanceof BMLNumber)) {
+                            throw new ParserException(EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
+                        } else if (!(rightType instanceof BMLNumber)) {
+                            throw new ParserException(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
                         }
-                        ctx.type = new BMLNumeric(((BMLNumeric) leftType).isFloatingPoint() || ((BMLNumeric) rightType).isFloatingPoint());
+
+                        ctx.type = new BMLNumber(((BMLNumber) leftType).isFloatingPoint() || ((BMLNumber) rightType).isFloatingPoint());
                     }
                 }
                 case "and", "or" -> {
@@ -286,7 +278,7 @@ public class TypeSynthesizer extends BMLBaseListener {
             var name = ctx.functionCall().functionName.getText();
             var symbol = currentScope.resolve(name);
             if (symbol == null) {
-                throw new IllegalStateException("`%s` is not defined".formatted(name));
+                throw new ParserException(NOT_DEFINED.format(name), ctx.functionCall().functionName);
             }
 
             ctx.type = ((BMLFunction) ((TypedSymbol) symbol).getType()).getReturnType();
