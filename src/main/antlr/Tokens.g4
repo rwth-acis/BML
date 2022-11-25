@@ -46,10 +46,11 @@ DIV_ASSIGN : '/=' ;
 MOD_ASSIGN : '%=' ;
 
 // IGNORED
-COMMENT : '/*' .*? '*/' -> skip ;
-LINE_COMMENT : '//' ~[\r\n]* -> skip ;
-WHITESPACE : (' ' | '\t')+ -> skip ;
-NEWLINE : ('\r'? '\n' | '\r')+ -> skip ;
-SEMICOLON : ';' -> skip ;
+COMMENT : '/*' .*? '*/' -> channel(HIDDEN) ;
+LINE_COMMENT : '//' ~[\r\n]* -> channel(HIDDEN) ;
+WHITESPACE : (' ' | '\t')+ -> channel(HIDDEN) ;
+NEWLINE : ('\r'? '\n' | '\r')+ -> channel(HIDDEN) ;
+SEMICOLON : ';' -> channel(HIDDEN) ;
 
+// Identifier needs to come last
 Identifier : [a-zA-Z]+ ;
