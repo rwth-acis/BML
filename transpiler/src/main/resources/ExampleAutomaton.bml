@@ -106,18 +106,11 @@ Bot(host="localhost", port=8080) {
         ]
 
         giveRating -> [
-            state(intent="stars", action=postReview) -> repeat,
+            state(intent="stars", action=postReview) -> [
+                state(intent="yes", action=jumpToState(addReview)),
+                state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
+            ],
             state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
-        ]
-
-        repeat -> [
-            state(intent="yes", action=jumpToState(addReview)),
-            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
-        ]
-
-        repeat -> [
-            state(intent="yes", action=jumpToState(addReview)),
-            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
         ]
 
         /*
