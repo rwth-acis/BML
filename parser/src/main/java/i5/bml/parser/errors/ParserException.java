@@ -1,9 +1,8 @@
-package errors;
+package i5.bml.parser.errors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 public class ParserException extends RuntimeException {
 

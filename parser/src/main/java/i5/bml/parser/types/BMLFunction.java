@@ -1,6 +1,6 @@
-package types;
+package i5.bml.parser.types;
 
-import errors.ParserException;
+import i5.bml.parser.errors.ParserException;
 import generatedParser.BMLParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.ParameterSymbol;
@@ -9,7 +9,7 @@ import org.antlr.symtab.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import static errors.ParserError.*;
+import static i5.bml.parser.errors.ParserError.*;
 
 public class BMLFunction extends AbstractBMLType {
 

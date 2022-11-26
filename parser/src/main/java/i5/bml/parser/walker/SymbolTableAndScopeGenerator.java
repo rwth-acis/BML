@@ -1,4 +1,4 @@
-package walker;
+package i5.bml.parser.walker;
 
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;

@@ -1,19 +1,19 @@
-package walker;
+package i5.bml.parser.walker;
 
-import errors.ParserException;
+import i5.bml.parser.errors.ParserException;
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import types.*;
+import i5.bml.parser.types.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static errors.ParserError.*;
+import static i5.bml.parser.errors.ParserError.*;
 
 public class TypeSynthesizer extends BMLBaseListener {
 
@@ -71,7 +71,7 @@ public class TypeSynthesizer extends BMLBaseListener {
                     }
                 });
 
-        // Lastly, set `resolvedType` for symbol (we assume that it was created by the ST walker)
+        // Lastly, set `resolvedType` for symbol (we assume that it was created by the ST i5.bml.parser.walker)
         var v = currentScope.resolve(ctx.name.getText());
         ((VariableSymbol) v).setType(resolvedType);
     }

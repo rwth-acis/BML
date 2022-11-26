@@ -1,30 +1,17 @@
+package i5.bml.parser;
+
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import walker.SymbolTableAndScopeGenerator;
-import walker.TypeSynthesizer;
-import walker.UrlChecker;
+import i5.bml.parser.walker.SymbolTableAndScopeGenerator;
+import i5.bml.parser.walker.TypeSynthesizer;
+import i5.bml.parser.walker.UrlChecker;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Objects;
+public class Parser {
 
-public class BML {
-    public static void main(String[] args) {
-        var fileName = "Example.bml";
-//        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
-        var inputString = "";
-        try {
-            var inputResource = Objects.requireNonNull(BML.class.getClassLoader().getResource(fileName));
-            inputString = Files.readString(Paths.get(inputResource.toURI()));
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-
+    public static void parse(String inputString) {
         BMLLexer bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
         CommonTokenStream tokens = new CommonTokenStream(bmlLexer);
         BMLParser bmlParser = new BMLParser(tokens);

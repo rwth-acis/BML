@@ -3,7 +3,7 @@ plugins {
     id 'antlr'
 }
 
-group 'i5.acis.bml'
+group 'i5.bml'
 version '0.1-SNAPSHOT'
 
 repositories {
@@ -13,7 +13,9 @@ repositories {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+
     antlr 'org.antlr:antlr4:4.11.1'
+
     implementation 'org.antlr:antlr4-runtime:4.11.1'
     implementation 'org.antlr:symtab:1.0.8'
     implementation 'org.reflections:reflections:0.10.2'

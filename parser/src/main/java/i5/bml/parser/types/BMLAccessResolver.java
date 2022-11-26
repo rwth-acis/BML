@@ -1,4 +1,4 @@
-package types;
+package i5.bml.parser.types;
 
 import java.lang.annotation.*;
 

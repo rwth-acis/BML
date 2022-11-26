@@ -1,9 +1,9 @@
-package types.openapi;
+package i5.bml.parser.types.openapi;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.Type;
-import types.AbstractBMLType;
-import types.BMLType;
+import i5.bml.parser.types.AbstractBMLType;
+import i5.bml.parser.types.BMLType;
 
 import java.util.Map;
 

@@ -1,6 +1,6 @@
-package walker;
+package i5.bml.parser.walker;
 
-import errors.ParserException;
+import i5.bml.parser.errors.ParserException;
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import org.antlr.v4.runtime.ParserRuleContext;

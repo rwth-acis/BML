@@ -1,4 +1,4 @@
-package errors;
+package i5.bml.parser.errors;
 
 public enum ParserError {
 

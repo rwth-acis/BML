@@ -1,6 +1,6 @@
-package types;
+package i5.bml.parser.types;
 
-import errors.ParserException;
+import i5.bml.parser.errors.ParserException;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -9,7 +9,7 @@ import org.reflections.Reflections;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import static errors.ParserError.UNKNOWN_TYPE;
+import static i5.bml.parser.errors.ParserError.UNKNOWN_TYPE;
 
 public class TypeRegistry {
 

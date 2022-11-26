@@ -1,4 +1,4 @@
-package types.openapi;
+package i5.bml.parser.types.openapi;
 
 import generatedParser.BMLParser;
 import io.swagger.parser.OpenAPIParser;
@@ -10,7 +10,7 @@ import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
-import types.*;
+import i5.bml.parser.types.*;
 
 import java.util.*;
 
@@ -32,7 +32,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, null);
         openAPI = result.getOpenAPI();
 
-        // Check for OpenAPI Parser errors
+        // Check for OpenAPI i5.bml.parser.Parser i5.bml.parser.errors
         if (result.getMessages() != null && result.getMessages().size() > 0) {
             StringBuilder s = new StringBuilder();
             s.append("Encountered error messages for url '%s':\n".formatted(url));
@@ -49,7 +49,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
 
-        // Determine route return types & arguments
+        // Determine route return i5.bml.parser.types & arguments
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
             AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(operation);
 
@@ -119,7 +119,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             // TODO: ATM we only support application/json
             var mediaType = operation.getRequestBody().getContent().get("application/json");
             if (mediaType == null) {
-                // TODO: for now we ignore other media types than application/json
+                // TODO: for now we ignore other media i5.bml.parser.types than application/json
                 System.err.printf("Operation `%s` has no application/json media type\n", operation.getOperationId());
             } else {
                 var r = operation.getRequestBody().getRequired();

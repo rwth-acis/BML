@@ -1,18 +1,18 @@
-package types.openapi;
+package i5.bml.parser.types.openapi;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;
-import types.BMLBoolean;
-import types.BMLList;
-import types.BMLNumber;
-import types.BMLString;
+import i5.bml.parser.types.BMLBoolean;
+import i5.bml.parser.types.BMLList;
+import i5.bml.parser.types.BMLNumber;
+import i5.bml.parser.types.BMLString;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Source of truth: <a href="https://swagger.io/docs/specification/data-models/data-types/">Swagger data types</a>
+ * Source of truth: <a href="https://swagger.io/docs/specification/data-models/data-types/">Swagger data i5.bml.parser.types</a>
  */
 public class BMLOpenAPITypeResolver {
 
@@ -66,7 +66,7 @@ public class BMLOpenAPITypeResolver {
 
     public static String extractOpenAPITypeFromSchema(Schema<?> schema, String object, String objectName) {
         // Resolve type
-        // TODO: Handle AnyType and OneOf (i.e., mixed types)
+        // TODO: Handle AnyType and OneOf (i.e., mixed i5.bml.parser.types)
         String type;
         if (schema.getType() == null) {
             if (schema.get$ref() == null) {

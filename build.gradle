@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group 'i5.acis'
+group 'i5'
 version '0.1-SNAPSHOT'
 
 // Publish to Maven Repository
