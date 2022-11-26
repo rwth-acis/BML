@@ -13,27 +13,56 @@ Bot(host="localhost", port=8080) {
     RocketChat rocketChat(token="myRocketChatToken")
 
     /* General State Syntax:
-     * <StateType> ID = (intent="<intent>", action=<Action>/<String>/<List<String>/<ResponseObject>/<jumpToState(<State>)>)
+     * <StateType> ID = (intent="<intent>", action=<Action>/<String>/<List<String>/<Map<Name, Value>>/<jumpToState(<State>)>)
+     * - <Action>: Simply executes the function with specified name (needs @Action annotation)
+     * - <String>: Automatically sends the string to the user from `data`
+     * - <List<String>>: Randomly picks an entry and sends it to the user from `data`
+     * - <Map<<Name>, <Value>>>: Simply a Map that associates keys with objects (useful for building complex messenger response)
+     * - <jumpToState(<State>)>: The idea of the `jumpToState` builtin function is to provide means to skip intent guards.
+     *                           This can be helpful if we want to repeat a state, e.g.:
+     *                           state A = (intent="foo", action=bar)
+     *                           A -> [B, C -> (action=jumpToState(A))]
+     *                           Here we can go back from C to A without having to have "foo" as a guard
      *
-     * States can be fall-through when they have no intents. I.e., their reaching is not "guarded" by an intent.
+     * States can be fall-through when they have no intents. I.e., they are not "guarded" by an intent.
      * Likewise, states do not need actions.
      *
      * Dialogues have a main state (similar to an idle state) that they go back to when a "conversation path" ends
      *
      * Junctions:
-     *    someStartName -> A -> {B, C} -> D // -> mainState (this is done implicitly)
+     *    someStartName -> A -> [B, C] -> D // -> mainState (this is done implicitly)
      *    Equivalent: A -> B; A -> C; B -> D; C -> D
      *
      * Junctions that need disambiguation:
-     *    someStartName -> A -> {B, C} -> {D, E}
-     *    Possible disambiguation: B -> {D, E} AND C -> {D, E}
+     *    someStartName -> A -> [B, C] -> [D, E]
+     *    Possible disambiguation: B -> [D, E] AND C -> [D, E]
      *
-     * jumpToState:
-     * The idea of the `jumpToState` builtin function is to provide means to skip intent guards.
-     * This can be helpful if we want to repeat a state, e.g.:
-     * state A = (intent="foo", action=bar)
-     * A -> {B, C -> (action=jumpToState(A))}
-     * Here we can go back from C to A without having to have "foo" as a guard
+     * Nested Junctions:
+     *    A -> [B, [C, D]] -> E
+     *    Equivalent form:
+     *    A -> [B, C, D] -> E
+     *    Equivalent paths:
+     *    A -> B -> E
+     *    A -> C -> E
+     *    A -> D -> E
+     *
+     * More nested Junctions:
+     *    A -> [B, [C, D]]
+     *    Equivalent form:
+     *    A -> [B, C, D]
+     *    Equivalent paths:
+     *    A -> B
+     *    A -> C
+     *    A -> D
+     *
+     * Yet more nested Junctions:
+     *    A -> [B, [C, D] -> E]
+     *    Equivalent form:
+     *    A -> [B, C -> E, D -> E]
+     *    Equivalent paths:
+     *    A -> B
+     *    A -> C -> E
+     *    A -> D -> E
      */
     Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
         /*
@@ -79,6 +108,11 @@ Bot(host="localhost", port=8080) {
         giveRating -> [
             state(intent="stars", action=postReview) -> repeat,
             state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
+        ]
+
+        repeat -> [
+            state(intent="yes", action=jumpToState(addReview)),
+            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
         ]
 
         repeat -> [
