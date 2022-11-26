@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+}
+
+group 'i5.acis.bml'
+version '0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+    implementation 'com.github.javaparser:javaparser-core:3.24.8'
+}
+
+test {
+    useJUnitPlatform()
+}

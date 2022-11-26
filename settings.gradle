@@ -1,2 +1,5 @@
-rootProject.name = 'bml-transpiler'
+rootProject.name = 'bml'
+include 'parser'
+include 'lang-server'
+include 'transpiler'
 

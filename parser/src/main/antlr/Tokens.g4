@@ -2,6 +2,7 @@ lexer grammar Tokens;
 
 // Keywords
 BOT : 'Bot' ;
+DIALOGUE : 'Dialogue' ;
 IF : 'if' ;
 ELSE : 'else' ;
 FOREACH : 'forEach' ;

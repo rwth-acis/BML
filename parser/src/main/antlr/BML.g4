@@ -12,7 +12,7 @@ program : botDeclaration EOF ;
 
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
-botHead : BOT LPAREN elementValuePairList RPAREN ;
+botHead : BOT name=Identifier? LPAREN elementValuePairList RPAREN ;
 
 elementValuePairList : elementValuePair (COMMA elementValuePair)* ;
 
@@ -23,7 +23,7 @@ literal returns [Type type] : StringLiteral
                             | FloatingPointLiteral
                             | BooleanLiteral ;
 
-botBody : LBRACE (eventListenerDeclaration | component)* RBRACE ;
+botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 
 /*
  * Components
@@ -31,13 +31,13 @@ botBody : LBRACE (eventListenerDeclaration | component)* RBRACE ;
 component : typeString=Identifier name=Identifier LPAREN params=elementValuePairList? RPAREN ;
 
 /*
- * Event listener declaration
+ * Function Definition (Event Listener or Action)
  */
-eventListenerDeclaration returns [Scope scope] : AT type=eventListenerType head=eventListenerHead body=block ;
+functionDefinition returns [Scope scope] : AT annotation head=functionHead body=block ;
 
-eventListenerType : typeString=Identifier (LPAREN elementValuePairList? RPAREN)? ;
+annotation : typeString=Identifier (LPAREN elementValuePairList? RPAREN)? ;
 
-eventListenerHead : listenerName=Identifier LPAREN parameterName=Identifier RPAREN ;
+functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
 /*
  * Statement blocks

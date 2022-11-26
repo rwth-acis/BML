@@ -26,15 +26,15 @@ public class SymbolTableAndScopeGenerator extends BMLBaseListener {
     }
 
     @Override
-    public void enterEventListenerDeclaration(BMLParser.EventListenerDeclarationContext ctx) {
-        FunctionSymbol f = new FunctionSymbol(ctx.head.listenerName.getText());
+    public void enterFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
+        FunctionSymbol f = new FunctionSymbol(ctx.head.functionName.getText());
         f.setEnclosingScope(currentScope);
         ctx.scope = f;
         pushScope(f);
     }
 
     @Override
-    public void enterEventListenerHead(BMLParser.EventListenerHeadContext ctx) {
+    public void enterFunctionHead(BMLParser.FunctionHeadContext ctx) {
         currentScope.define(new VariableSymbol(ctx.parameterName.getText()));
     }
 
