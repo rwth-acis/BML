@@ -37,7 +37,7 @@ Bot(host="localhost", port=8080) {
      */
     Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
         /*
-         * States
+         * State Definitions
          */
         // Should simplify making conversation appear "more vivid" (answer chosen randomly from this list)
         greetings = ["Hi there, fellow human!",
@@ -55,7 +55,9 @@ Bot(host="localhost", port=8080) {
 
         // Every state, except the state itself points to this
         bye = sink(intent="bye", action="Until next time!")
+        stop = sink(intent="stop", action="Until next time!")
 
+        // response has type `Map`
         response = {
             text = "Please provide your receipt ID. You can find it lorem ipsum ...",
             file = example.jpg
@@ -64,28 +66,32 @@ Bot(host="localhost", port=8080) {
 
         giveRating = state(action="How many stars would you like to give?")
 
+        repeat = state(action="Would you like to make another review?")
+
         /*
          * Transitions
          */
-        addReview -> {
-            (intent="receiptId", action=verifyReceiptId) -> giveRating,
-            (intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> (action=jumpToState(addReview))
-        }
+        addReview -> [
+            state(intent="receiptId", action=verifyReceiptId) -> giveRating,
+            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpToState(addReview))
+        ]
 
-        giveRating -> {
-            (intent="stars", action=postReview),
-            (intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
-        } -> (action="Would you like to make another review?") -> {
-            (intent="yes", action=jumpToState(addReview)),
-            (intent="no", action="Okay, thank you. We're looking forward to your next visit!")
-        }
+        giveRating -> [
+            state(intent="stars", action=postReview) -> repeat,
+            state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
+        ]
+
+        repeat -> [
+            state(intent="yes", action=jumpToState(addReview)),
+            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
+        ]
 
         /*
          * Actions
          */
         @Action
         postReview(data) {
-            // Build request body (type is `Map` indicated by { ... })
+            // Build request body (type is `Map` indicated by { key = value, ... })
             review = {
                 stars = number(data.entity),
                 auth = authKey.file
@@ -110,7 +116,7 @@ Bot(host="localhost", port=8080) {
         }
     }
 
-    @Compose(@UserSentMessage, @UserStartedChat) // A composition calls the handler for either event
+    @Compose(UserSentMessage, UserStartedChat) // A composition calls the handler for either event
     messageHandler(data) {
         /*
          * The idea behind the step function is to "advance"/step the automaton according to the input `data`.
