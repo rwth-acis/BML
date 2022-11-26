@@ -1,0 +1,15 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    Number availablePetCounter(value=0)
+
+    @Routine(rate="1h")
+    updateAvailablePetCounter(data) {
+        id = 1
+        pet = petStore.get(path="/pet/{petId}", petId=id)
+        if pet.status == "available" {
+            availablePetCounter += 1
+        }
+    }
+}

@@ -1,0 +1,162 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI pizzaScarf(url="https://pizzascarf.com/api/v3/reviews.json")
+
+    Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
+
+    Telegram telegram(token="myTelegramToken")
+
+    Slack slack(token="mySlackToken")
+
+    Discord discord(token="myDiscordToken")
+
+    RocketChat rocketChat(token="myRocketChatToken")
+
+    /* General State Syntax:
+     * <StateType> ID = (intent="<intent>", action=<Action>/<String>/<List<String>/<Map<Name, Value>>/<jumpToState(<State>)>)
+     * - <Action>: Simply executes the function with specified name (needs @Action annotation)
+     * - <String>: Automatically sends the string to the user from `data`
+     * - <List<String>>: Randomly picks an entry and sends it to the user from `data`
+     * - <Map<<Name>, <Value>>>: Simply a Map that associates keys with objects (useful for building complex messenger response)
+     * - <jumpToState(<State>)>: The idea of the `jumpToState` builtin function is to provide means to skip intent guards.
+     *                           This can be helpful if we want to repeat a state, e.g.:
+     *                           state A = (intent="foo", action=bar)
+     *                           A -> [B, C -> (action=jumpToState(A))]
+     *                           Here we can go back from C to A without having to have "foo" as a guard
+     *
+     * States can be fall-through when they have no intents. I.e., they are not "guarded" by an intent.
+     * Likewise, states do not need actions.
+     *
+     * Dialogues have a main state (similar to an idle state) that they go back to when a "conversation path" ends
+     *
+     * Junctions:
+     *    someStartName -> A -> [B, C] -> D // -> mainState (this is done implicitly)
+     *    Equivalent: A -> B; A -> C; B -> D; C -> D
+     *
+     * Junctions that need disambiguation:
+     *    someStartName -> A -> [B, C] -> [D, E]
+     *    Possible disambiguation: B -> [D, E] AND C -> [D, E]
+     *
+     * Nested Junctions:
+     *    A -> [B, [C, D]] -> E
+     *    Equivalent form:
+     *    A -> [B, C, D] -> E
+     *    Equivalent paths:
+     *    A -> B -> E
+     *    A -> C -> E
+     *    A -> D -> E
+     *
+     * More nested Junctions:
+     *    A -> [B, [C, D]]
+     *    Equivalent form:
+     *    A -> [B, C, D]
+     *    Equivalent paths:
+     *    A -> B
+     *    A -> C
+     *    A -> D
+     *
+     * Yet more nested Junctions:
+     *    A -> [B, [C, D] -> E]
+     *    Equivalent form:
+     *    A -> [B, C -> E, D -> E]
+     *    Equivalent paths:
+     *    A -> B
+     *    A -> C -> E
+     *    A -> D -> E
+     */
+    Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
+        /*
+         * State Definitions
+         */
+        // Should simplify making conversation appear "more vivid" (answer chosen randomly from this list)
+        greetings = ["Hi there, fellow human!",
+                     "Hi, nice to meet you!",
+                     "Hello, a pleasure to meet you!"]
+
+        // "_" intent matches if nothing else matched
+        // Takes us back to "main state"
+        notUnderstood = default(intent="_", action="I’m sorry, I didn't understand that, come again please.")
+
+        // We can list several intents
+        // initial states are matched from the "main state"
+        greet = initial(intent="hello, greet", action=greetings)
+        options = initial(intent="functions, options", action="I'm a simple rating bot, I can submit ratings for you.")
+
+        // Every state, except the state itself points to this
+        bye = sink(intent="bye", action="Until next time!")
+        stop = sink(intent="stop", action="Until next time!")
+
+        // response has type `Map`
+        response = {
+            text = "Please provide your receipt ID. You can find it lorem ipsum ...",
+            file = example.jpg
+        }
+        addReview = initial(intent="review", response)
+
+        giveRating = state(action="How many stars would you like to give?")
+
+        repeat = state(action="Would you like to make another review?")
+
+        /*
+         * Transitions
+         */
+        addReview -> [
+            state(intent="receiptId", action=verifyReceiptId) -> giveRating,
+            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpToState(addReview))
+        ]
+
+        giveRating -> [
+            state(intent="stars", action=postReview) -> repeat,
+            state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
+        ]
+
+        repeat -> [
+            state(intent="yes", action=jumpToState(addReview)),
+            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
+        ]
+
+        repeat -> [
+            state(intent="yes", action=jumpToState(addReview)),
+            state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
+        ]
+
+        /*
+         * Actions
+         */
+        @Action
+        postReview(data) {
+            // Build request body (type is `Map` indicated by { key = value, ... })
+            review = {
+                stars = number(data.entity),
+                auth = authKey.file
+            }
+            
+            response = pizzaScarf.post(path="/addReview/", body=review)
+
+            // Both "paths" go back to the main state
+            if response.code == 200 {
+                send("Your review was successfully processed!") // Automatically addresses user from `data`
+            } else {
+                send("I'm sorry, it seems like there is a problem on our side. Please try again later.")
+            }
+        }
+
+        @Action
+        verifyReceiptId(data) {
+            response = pizzaScarf.get(path="/checkReceiptId/", id=data.entity)
+            if response.code != 200 {
+                send("I'm sorry, you didn't provide a valid receipt id.")
+            }
+        }
+    }
+
+    @Compose(UserSentMessage, UserStartedChat) // A composition calls the handler for either event
+    messageHandler(data) {
+        /*
+         * The idea behind the step function is to "advance"/step the automaton according to the input `data`.
+         * The automaton will make a transition according to the current state its in and the given input.
+         * Hence, the pizzaScarfReview Dialogue component needs to keep track of the current state.
+         */
+        pizzaScarfReview.step(data);
+    }
+}
