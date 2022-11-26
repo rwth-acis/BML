@@ -46,23 +46,23 @@ Bot(host="localhost", port=8080) {
 
         // "_" intent matches if nothing else matched
         // Takes us back to "main state"
-        default notUnderstood = (intent="_", action="I’m sorry, I didn't understand that, come again please.")
+        notUnderstood = default(intent="_", action="I’m sorry, I didn't understand that, come again please.")
 
         // We can list several intents
         // initial states are matched from the "main state"
-        initial greet = (intent="hello, greet", action=greetings)
-        initial options = (intent="intent", action="I'm a simple rating bot, I can submit ratings for you.")
+        greet = initial(intent="hello, greet", action=greetings)
+        options = initial(intent="functions, options", action="I'm a simple rating bot, I can submit ratings for you.")
 
         // Every state, except the state itself points to this
-        sink bye = (intent="bye", action="Until next time!")
+        bye = sink(intent="bye", action="Until next time!")
 
         response = {
             text = "Please provide your receipt ID. You can find it lorem ipsum ...",
             file = example.jpg
         }
-        initial addReview = (intent="review", response)
+        addReview = initial(intent="review", response)
 
-        state giveRating = (action="How many stars would you like to give?")
+        giveRating = state(action="How many stars would you like to give?")
 
         /*
          * Transitions
@@ -85,7 +85,7 @@ Bot(host="localhost", port=8080) {
          */
         @Action
         postReview(data) {
-            // Build request body
+            // Build request body (type is `Map` indicated by { ... })
             review = {
                 stars = number(data.entity),
                 auth = authKey.file
@@ -105,7 +105,7 @@ Bot(host="localhost", port=8080) {
         verifyReceiptId(data) {
             response = pizzaScarf.get(path="/checkReceiptId/", id=data.entity)
             if response.code != 200 {
-                send("I'm sorry, but you did not provide a valid receipt id.")
+                send("I'm sorry, you didn't provide a valid receipt id.")
             }
         }
     }
