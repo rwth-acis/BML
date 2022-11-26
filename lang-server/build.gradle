@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group 'i5.acis.bml'
+group 'i5.bml'
 version '0.1-SNAPSHOT'
 
 repositories {
