@@ -9,7 +9,8 @@ Bot(host="localhost", port=8080) {
         id = 1
         pet = petStore.get(path="/pet/{petId}", petId=id)
         if pet.status == "available" {
-            availablePetCounter += 1
+            availablePetCounter = 1 == 2 ? "asdf" : 1
+            a = availablePetCounter + 2
         }
     }
 }
