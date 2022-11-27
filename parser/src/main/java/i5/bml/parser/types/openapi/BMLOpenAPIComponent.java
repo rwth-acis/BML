@@ -1,6 +1,9 @@
 package i5.bml.parser.types.openapi;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.errors.ParserError;
+import i5.bml.parser.utils.Measurements;
+import i5.bml.parser.walker.DiagnosticsCollector;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -12,11 +15,13 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 import i5.bml.parser.types.*;
 
+import javax.lang.model.type.ErrorType;
 import java.util.*;
 
-@BMLType(index = 4, typeString = "OpenAPI")
+@BMLType(name = "OpenAPI", isComplex = true)
 public class BMLOpenAPIComponent extends AbstractBMLType {
 
+    @BMLComponentParameter(name = "url", expectedBMLType = "String", isRequired = true)
     private String url;
 
     private OpenAPI openAPI;
@@ -25,11 +30,25 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private final Set<String> httpMethods = new HashSet<>();
 
-    @BMLInitializerMethod
-    public void retrieveOpenAPISchema() {
+    @Override
+    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        var expr = ctx.elementExpressionPair(0).expr;
+        var atom = expr.atom();
+        if (atom == null || atom.literal() == null) {
+            diagnosticsCollector.addDiagnostic(ParserError.EXPECTED_BUT_FOUND.format("String", expr.type), expr);
+        } else {
+            url = atom.getText().substring(1, atom.getText().length() - 1);
+        }
+    }
+
+    @Override
+    public void initializeType() {
         Objects.requireNonNull(url);
 
+        var start = System.nanoTime();
         SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, null);
+        var end = System.nanoTime();
+        Measurements.add("Fetch OpenAPI Spec", (end - start));
         openAPI = result.getOpenAPI();
 
         // Check for OpenAPI i5.bml.parser.Parser i5.bml.parser.errors
@@ -49,22 +68,30 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
 
-        // Determine route return i5.bml.parser.types & arguments
+        // Determine route return types & arguments
+        start = System.nanoTime();
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
             AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(operation);
 
-            var requiredParameter = computeRouteArguments(operation, true);
-            var optionalParameter = computeRouteArguments(operation, false);
+            var requiredParameters = computeRouteArguments(operation, true);
+            var optionalParameters = computeRouteArguments(operation, false);
 
-            var function = new BMLFunction(returnType, requiredParameter, optionalParameter);
+            var p = new ParameterSymbol("path");
+            p.setType(TypeRegistry.resolvePrimitiveType("String"));
+            requiredParameters.add(p);
+
+            var function = new BMLFunction(returnType, requiredParameters, optionalParameters);
             supportedAccesses.put(httpMethod.name().toLowerCase() + route, function);
             httpMethods.add(httpMethod.name().toLowerCase());
         }));
+        end = System.nanoTime();
+        Measurements.add("Parsing OpenAPI Spec", end - start);
     }
 
     private Type computeRouteReturnTypes(Operation operation) {
         if (operation.getResponses() == null) {
-            // TODO
+            System.err.printf("Operation `%s` has no response definition\n", operation.getOperationId());
+            return null;
         }
 
         for (Map.Entry<String, ApiResponse> entry : operation.getResponses().entrySet()) {
@@ -134,6 +161,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     @Override
     public Type resolveAccess(ParseTree ctx) {
+        var start = System.nanoTime();
         var functionCtx = (BMLParser.FunctionCallContext) ctx;
         var httpMethod = functionCtx.functionName.getText();
 
@@ -173,6 +201,27 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             throw new IllegalStateException("Route %s does not support HTTP method %s".formatted(path, httpMethod));
         }
 
+        var end = System.nanoTime();
+        Measurements.add("Resolve & check call `%s`".formatted(functionCtx.functionName.getText()), end - start);
         return functionType;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    @Override
+    public String toString() {
+        return "%s{url='%s'}".formatted(getName(), url);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BMLOpenAPIComponent that = (BMLOpenAPIComponent) o;
+
+        return this.getName().equals(that.getName()) && url.equals(that.getUrl());
     }
 }

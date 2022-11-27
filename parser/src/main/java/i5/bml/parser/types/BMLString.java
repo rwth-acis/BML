@@ -1,13 +1,5 @@
 package i5.bml.parser.types;
 
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.symtab.Type;
-
-@BMLType(index = 5, typeString = "String")
+@BMLType(name = "String", isComplex = false)
 public class BMLString extends AbstractBMLType {
-
-    @Override
-    public Type resolveAccess(ParseTree ctx) {
-        return null;
-    }
 }

@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface BMLType {
-    String typeString();
+    String name();
 
-    int index();
+    boolean isComplex();
 }

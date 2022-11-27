@@ -6,8 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface BMLCheck {
+@Target(ElementType.FIELD)
+public @interface BMLComponentParameter {
 
-    int index();
+    String name();
+
+    String expectedBMLType();
+
+    boolean isRequired();
 }

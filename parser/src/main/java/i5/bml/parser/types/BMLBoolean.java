@@ -1,13 +1,5 @@
 package i5.bml.parser.types;
 
-import org.antlr.symtab.Type;
-import org.antlr.v4.runtime.tree.ParseTree;
-
-@BMLType(index = 2, typeString = "Boolean")
+@BMLType(name = "Boolean", isComplex = false)
 public class BMLBoolean extends AbstractBMLType {
-
-    @Override
-    public Type resolveAccess(ParseTree ctx) {
-        return null;
-    }
 }

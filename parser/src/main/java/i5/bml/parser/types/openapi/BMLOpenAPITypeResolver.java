@@ -1,34 +1,26 @@
 package i5.bml.parser.types.openapi;
 
+import i5.bml.parser.types.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;
-import i5.bml.parser.types.BMLBoolean;
-import i5.bml.parser.types.BMLList;
-import i5.bml.parser.types.BMLNumber;
-import i5.bml.parser.types.BMLString;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Source of truth: <a href="https://swagger.io/docs/specification/data-models/data-types/">Swagger data i5.bml.parser.types</a>
+ * Source of truth: <a href="https://swagger.io/docs/specification/data-models/data-types/">Swagger data Types</a>
  */
 public class BMLOpenAPITypeResolver {
 
-    private static final Map<String, Map<String, Type>> componentSupportedFields = new HashMap<>();
-
-    private static void computeComponentFields(OpenAPI openAPI, String componentName) {
+    private static void computeComponentFields(OpenAPI openAPI, String componentName, Map<String, Type> supportedFields) {
         var componentSchema = openAPI.getComponents().getSchemas().get(componentName);
-
-        Map<String, Type> supportedSchemaAccesses = new HashMap<>();
         (((Schema<?>) componentSchema).getProperties()).forEach((fieldName, propertySchema) -> {
             var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(propertySchema,
                     "Property", fieldName);
             Type resolvedType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
-            supportedSchemaAccesses.put(fieldName, resolvedType);
+            supportedFields.put(fieldName, resolvedType);
         });
-        componentSupportedFields.put(componentName, supportedSchemaAccesses);
     }
 
     public static Type resolveOpenAPITypeToBMLType(OpenAPI openAPI, String type) {
@@ -47,16 +39,21 @@ public class BMLOpenAPITypeResolver {
         } else {
             Type resolvedType;
             switch (type) {
-                case "string" -> resolvedType = new BMLString();
-                case "integer" -> resolvedType = new BMLNumber(false);
-                case "number" -> resolvedType = new BMLNumber(true);
-                case "boolean" -> resolvedType = new BMLBoolean();
+                case "string", "boolean" -> resolvedType = TypeRegistry.resolvePrimitiveType(type);
+                case "integer" -> resolvedType = TypeRegistry.resolvePrimitiveType("Number");
+                case "number" -> resolvedType = TypeRegistry.resolvePrimitiveType("Float Number");
                 default -> {
-                    var supportedFields = componentSupportedFields.get(type);
-                    if (supportedFields == null) {
-                        computeComponentFields(openAPI, type);
+                    var resolvedOpenAPIType = TypeRegistry.resolvePrimitiveType(type);
+                    if (resolvedOpenAPIType == null) {
+                        Map<String, Type> supportedFields = new HashMap<>();
+                        computeComponentFields(openAPI, type, supportedFields);
+
+                        // Add to type registry
+                        resolvedType = new BMLOpenAPISchema(type, supportedFields);
+                        TypeRegistry.registerType(type, resolvedType);
+                    } else {
+                        resolvedType = resolvedOpenAPIType;
                     }
-                    resolvedType = new BMLOpenAPISchema(type, componentSupportedFields.get(type));
                 }
             }
 

@@ -1,30 +1,24 @@
 package i5.bml.parser.types;
 
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.symtab.Type;
+import org.antlr.symtab.ParameterSymbol;
 
 import java.math.BigDecimal;
 
-@BMLType(index = 3, typeString = "Number")
+@BMLType(name = "Number", isComplex = false)
 public class BMLNumber extends AbstractBMLType {
 
     private BigDecimal value;
 
     private boolean isFloatingPoint;
 
-    public BMLNumber() {}
+    public BMLNumber() {
+        var p = new ParameterSymbol("value");
+        p.setType(TypeRegistry.resolvePrimitiveType("Number"));
+        requiredParameters.add(p);
+    }
 
     public BMLNumber(boolean isFloatingPoint) {
         this.isFloatingPoint = isFloatingPoint;
-    }
-
-    public BigDecimal getValue() {
-        return value;
-    }
-
-    @Override
-    public Type resolveAccess(ParseTree ctx) {
-        return null;
     }
 
     public boolean isFloatingPoint() {

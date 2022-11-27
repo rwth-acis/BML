@@ -1,31 +1,119 @@
 package i5.bml.parser.types;
 
+import generatedParser.BMLParser;
+import i5.bml.parser.errors.ParserException;
+import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public abstract class AbstractBMLType implements Type, Cloneable {
+import static i5.bml.parser.errors.ParserError.*;
+import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
+
+public abstract class AbstractBMLType implements Type {
 
     protected Map<String, Type> supportedAccesses = new HashMap<>();
 
+    protected List<ParameterSymbol> requiredParameters = new ArrayList<>();
+
+    protected List<ParameterSymbol> optionalParameters = new ArrayList<>();
+
+    public void collectParameters() {
+        var annotatedFields = Arrays.stream(this.getClass().getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
+                .toList();
+
+        annotatedFields.stream()
+                .map(f -> f.getAnnotation(BMLComponentParameter.class))
+                .filter(BMLComponentParameter::isRequired)
+                .forEach(p -> {
+                    var parameterSymbol = new ParameterSymbol(p.name());
+                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    requiredParameters.add(parameterSymbol);
+                });
+
+        annotatedFields.stream()
+                .map(f -> f.getAnnotation(BMLComponentParameter.class))
+                .filter(p -> !p.isRequired())
+                .forEach(p -> {
+                    var parameterSymbol = new ParameterSymbol(p.name());
+                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    optionalParameters.add(parameterSymbol);
+                });
+    }
+
+    public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        var parameterListMutable = new HashSet<>(ctx.elementExpressionPair());
+
+        for (var requiredParameter : requiredParameters) {
+            var name = requiredParameter.getName();
+
+            var invocationParameter = parameterListMutable.stream()
+                    .filter(p -> p.name.getText().equals(name))
+                    .findAny();
+
+            if (invocationParameter.isEmpty()) {
+                diagnosticsCollector.addDiagnostic(MISSING_PARAM.format(name), ctx);
+            } else {
+                var requiredParameterType = requiredParameter.getType();
+                var invocationParameterType = invocationParameter.get().expression().type;
+                if (!requiredParameterType.equals(invocationParameterType)) {
+                    diagnosticsCollector.addDiagnostic(EXPECTED_BUT_FOUND.format(requiredParameterType, invocationParameterType),
+                            invocationParameter.get());
+                }
+
+                parameterListMutable.remove(invocationParameter.get());
+            }
+        }
+
+        checkOptionalParameters(diagnosticsCollector, parameterListMutable);
+    }
+
+    private void checkOptionalParameters(DiagnosticsCollector diagnosticsCollector, Set<BMLParser.ElementExpressionPairContext> remainingParameters) {
+        for (var parameterPair : remainingParameters) {
+            // Name
+            var name = parameterPair.name.getText();
+            var optionalParameter = optionalParameters.stream()
+                    .filter(p -> p.getName().equals(name))
+                    .findAny();
+
+            if (optionalParameter.isEmpty()) {
+                diagnosticsCollector.addDiagnostic(NOT_DEFINED.format(name), parameterPair.name);
+            } else {
+                // We can assume that parameter is present, so we expect the correct type
+                var optionalParameterType = optionalParameter.get().getType();
+                var invocationParameterType = parameterPair.expression().type;
+                if (!optionalParameterType.equals(invocationParameterType)) {
+                    diagnosticsCollector.addDiagnostic(EXPECTED_BUT_FOUND.format(optionalParameterType, invocationParameterType),
+                            parameterPair.expression());
+                }
+            }
+        }
+    }
+
+    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+    }
+
+    public void initializeType() {
+    }
+
+    public Type resolveAccess(ParseTree ctx) {
+        return null;
+    }
+
     @Override
     public String getName() {
-        return this.getClass().getAnnotation(BMLType.class).typeString();
+        return this.getClass().getAnnotation(BMLType.class).name();
     }
 
     @Override
     public int getTypeIndex() {
-        return this.getClass().getAnnotation(BMLType.class).index();
+        return -1;
     }
-
-    public Map<String, Type> getSupportedAccesses() {
-        return supportedAccesses;
-    }
-
-    @BMLAccessResolver
-    public abstract Type resolveAccess(ParseTree ctx);
 
     @Override
     public String toString() {
@@ -39,11 +127,6 @@ public abstract class AbstractBMLType implements Type, Cloneable {
 
         AbstractBMLType that = (AbstractBMLType) o;
 
-        return this.getTypeIndex() == that.getTypeIndex();
-    }
-
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException("Class %s does not implement type cloning".formatted(this.getClass().getName()));
+        return this.getName().equals(that.getName());
     }
 }

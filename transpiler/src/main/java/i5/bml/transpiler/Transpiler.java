@@ -12,6 +12,7 @@ public class Transpiler {
     public static void main(String[] args) {
         var fileName = "Example.bml";
 //        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
+//        var fileName = "ExampleAutomaton.bml";
         var inputString = "";
         try {
             var inputResource = Objects.requireNonNull(Transpiler.class.getClassLoader().getResource(fileName));
@@ -20,6 +21,6 @@ public class Transpiler {
             throw new RuntimeException(e);
         }
 
-        Parser.parse(inputString);
+        Parser.parse(fileName, inputString);
     }
 }

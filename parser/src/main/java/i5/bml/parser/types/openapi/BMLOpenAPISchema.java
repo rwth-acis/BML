@@ -7,7 +7,7 @@ import i5.bml.parser.types.BMLType;
 
 import java.util.Map;
 
-@BMLType(index = 7, typeString = "OpenAPISchema")
+@BMLType(name = "OpenAPISchema", isComplex = true)
 public class BMLOpenAPISchema extends AbstractBMLType {
 
     // TODO: Track required attributes/properties/fields
