@@ -12,11 +12,11 @@ program : botDeclaration EOF ;
 
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
-botHead : BOT name=Identifier? LPAREN elementValuePairList RPAREN ;
+botHead : BOT name=Identifier? LPAREN elementExpressionPairList RPAREN ;
 
-elementValuePairList : elementValuePair (COMMA elementValuePair)* ;
+elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* ;
 
-elementValuePair : name=Identifier ASSIGN value=literal ;
+elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 
 literal returns [Type type] : StringLiteral
                             | IntegerLiteral
@@ -28,21 +28,21 @@ botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 /*
  * Components
  */
-component : typeString=Identifier name=Identifier LPAREN params=elementValuePairList? RPAREN ;
+component : typeName=Identifier name=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
 /*
  * Function Definition (Event Listener or Action)
  */
 functionDefinition returns [Scope scope] : AT annotation head=functionHead body=block ;
 
-annotation : typeString=Identifier (LPAREN elementValuePairList? RPAREN)? ;
+annotation : typeName=Identifier (LPAREN elementExpressionPairList? RPAREN)? ;
 
 functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
 /*
  * Statement blocks
  */
-block : LBRACE blockStatement* RBRACE ;
+block returns [Scope scope] : LBRACE blockStatement* RBRACE ;
 
 blockStatement : assignment
                | statement ;
@@ -82,6 +82,7 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | expr=expression op=DOT (Identifier | functionCall)
                                | expr=expression op=LBRACE expression RBRACE
                                | functionCall
+                               | initializer
                                | op=BANG expr=expression
                                | op=(SUB | ADD) expr=expression
                                | left=expression op=(MUL | DIV | MOD) right=expression
@@ -97,6 +98,9 @@ atom returns [Type type] : literal
 
 functionCall : functionName=Identifier LPAREN elementExpressionPairList? RPAREN ;
 
-elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* ;
+initializer : mapInitializer
+            | listInitializer ;
 
-elementExpressionPair : name=Identifier ASSIGN expr=expression ;
+mapInitializer : LBRACE elementExpressionPairList? RBRACE ;
+
+listInitializer : LBRACK (expression (COMMA expression)*)? RBRACK ;
