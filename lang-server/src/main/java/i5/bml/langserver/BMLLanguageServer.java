@@ -52,6 +52,7 @@ public class BMLLanguageServer implements LanguageServer {
         capabilities.setHoverProvider(Boolean.TRUE);
         capabilities.setReferencesProvider(Boolean.TRUE);
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        capabilities.setDiagnosticProvider(new DiagnosticRegistrationOptions());
         capabilities.setDocumentSymbolProvider(Boolean.TRUE);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
