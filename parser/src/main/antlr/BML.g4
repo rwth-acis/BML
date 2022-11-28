@@ -58,9 +58,8 @@ assignmentOperator : ASSIGN
                    | SUB_ASSIGN ;
 
 statement : block
-          | IF expression statement (ELSE statement)?
-          | FOREACH forEachVariable IN forEachDomain statement
-          | statementExpression=expression ;
+          | IF expression (statement | expression) (ELSE (statement | expression))?
+          | FOREACH forEachVariable IN forEachDomain (statement | expression) ;
 
 // ForEach Statement
 forEachVariable : Identifier
@@ -80,7 +79,7 @@ domainLimit : Identifier
 expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | atom
                                | expr=expression op=DOT (Identifier | functionCall)
-                               | expr=expression op=LBRACE expression RBRACE
+                               | expr=expression op=LBRACK expression RBRACK
                                | functionCall
                                | initializer
                                | op=BANG expr=expression
