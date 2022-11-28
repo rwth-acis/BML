@@ -21,6 +21,8 @@ public class Transpiler {
             throw new RuntimeException(e);
         }
 
-        Parser.parse(fileName, inputString);
+        var stringBuilder = new StringBuilder();
+        var diagnostics = Parser.parse(inputString, stringBuilder);
+        System.out.println(stringBuilder);
     }
 }
