@@ -1,20 +1,16 @@
 package i5.bml.parser.types;
 
-import org.antlr.symtab.ParameterSymbol;
-
 import java.math.BigDecimal;
 
 @BMLType(name = "Number", isComplex = false)
 public class BMLNumber extends AbstractBMLType {
 
+    @BMLComponentParameter(name = "value", expectedBMLType = "Number", isRequired = false)
     private BigDecimal value;
 
     private boolean isFloatingPoint;
 
     public BMLNumber() {
-        var p = new ParameterSymbol("value");
-        p.setType(TypeRegistry.resolvePrimitiveType("Number"));
-        requiredParameters.add(p);
     }
 
     public BMLNumber(boolean isFloatingPoint) {
@@ -27,6 +23,6 @@ public class BMLNumber extends AbstractBMLType {
 
     @Override
     public String toString() {
-        return "%s %s".formatted(isFloatingPoint ? "Decimal" : "Integer", super.toString());
+        return "%s%s".formatted(isFloatingPoint ? "Float " : "", super.toString());
     }
 }

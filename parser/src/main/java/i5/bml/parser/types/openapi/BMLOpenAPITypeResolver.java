@@ -39,11 +39,11 @@ public class BMLOpenAPITypeResolver {
         } else {
             Type resolvedType;
             switch (type) {
-                case "string", "boolean" -> resolvedType = TypeRegistry.resolvePrimitiveType(type);
-                case "integer" -> resolvedType = TypeRegistry.resolvePrimitiveType("Number");
-                case "number" -> resolvedType = TypeRegistry.resolvePrimitiveType("Float Number");
+                case "string", "boolean" -> resolvedType = TypeRegistry.resolveType(type);
+                case "integer" -> resolvedType = TypeRegistry.resolveType("Number");
+                case "number" -> resolvedType = TypeRegistry.resolveType("Float Number");
                 default -> {
-                    var resolvedOpenAPIType = TypeRegistry.resolvePrimitiveType(type);
+                    var resolvedOpenAPIType = TypeRegistry.resolveType(type);
                     if (resolvedOpenAPIType == null) {
                         Map<String, Type> supportedFields = new HashMap<>();
                         computeComponentFields(openAPI, type, supportedFields);

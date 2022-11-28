@@ -51,9 +51,12 @@ public class TypeRegistry {
                 typeRegistry.put(type.name().toLowerCase(), primitiveTypeInstance);
             }
         }
+
+        // Explicitly add "Float Number" as Type
+        typeRegistry.put("float number", new BMLNumber(true));
     }
 
-    public static Type resolveType(String typeName) {
+    public static Type resolveBuiltinType(String typeName) {
         typeName = typeName.toLowerCase();
 
         if (!isTypeBuiltin(typeName)) {
@@ -63,11 +66,11 @@ public class TypeRegistry {
         if (isTypeComplex(typeName)) {
             return resolveComplexType(typeName);
         } else {
-            return resolvePrimitiveType(typeName);
+            return resolveType(typeName);
         }
     }
 
-    public static Type resolvePrimitiveType(String typeName) {
+    public static Type resolveType(String typeName) {
         return typeRegistry.get(typeName.toLowerCase());
     }
 

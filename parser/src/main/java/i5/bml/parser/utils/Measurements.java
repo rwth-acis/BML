@@ -51,4 +51,18 @@ public class Measurements {
         MEASUREMENTS.clear();
         totalTime = 0;
     }
+
+    public static void print(StringBuilder stringBuilder) {
+        stringBuilder.append("--------------- MEASUREMENTS ---------------");
+        for (var p : MEASUREMENTS.values()) {
+            stringBuilder.append(p.getLeft());
+        }
+        stringBuilder.append("---------------");
+        var p = calculateUnit(totalTime);
+        stringBuilder.append("TOTAL: %s %s\n".formatted(p.getLeft(), p.getRight()));
+        stringBuilder.append("--------------- MEASUREMENTS ---------------");
+
+        MEASUREMENTS.clear();
+        totalTime = 0;
+    }
 }

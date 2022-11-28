@@ -1,15 +1,12 @@
 package i5.bml.parser.types;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.errors.ParserException;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static i5.bml.parser.errors.ParserError.*;
 import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
@@ -32,7 +29,7 @@ public abstract class AbstractBMLType implements Type {
                 .filter(BMLComponentParameter::isRequired)
                 .forEach(p -> {
                     var parameterSymbol = new ParameterSymbol(p.name());
-                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    parameterSymbol.setType(TypeRegistry.resolveBuiltinType(p.expectedBMLType()));
                     requiredParameters.add(parameterSymbol);
                 });
 
@@ -41,7 +38,7 @@ public abstract class AbstractBMLType implements Type {
                 .filter(p -> !p.isRequired())
                 .forEach(p -> {
                     var parameterSymbol = new ParameterSymbol(p.name());
-                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    parameterSymbol.setType(TypeRegistry.resolveBuiltinType(p.expectedBMLType()));
                     optionalParameters.add(parameterSymbol);
                 });
     }

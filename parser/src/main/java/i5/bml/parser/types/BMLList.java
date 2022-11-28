@@ -27,4 +27,9 @@ public class BMLList extends AbstractBMLType {
     public Type getItemType() {
         return itemType;
     }
+
+    @Override
+    public String toString() {
+        return "%s{itemType=%s}".formatted(getName(), itemType);
+    }
 }

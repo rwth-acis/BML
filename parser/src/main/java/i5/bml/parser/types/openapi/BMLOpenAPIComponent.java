@@ -15,7 +15,6 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 import i5.bml.parser.types.*;
 
-import javax.lang.model.type.ErrorType;
 import java.util.*;
 
 @BMLType(name = "OpenAPI", isComplex = true)
@@ -77,7 +76,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             var optionalParameters = computeRouteArguments(operation, false);
 
             var p = new ParameterSymbol("path");
-            p.setType(TypeRegistry.resolvePrimitiveType("String"));
+            p.setType(TypeRegistry.resolveType("String"));
             requiredParameters.add(p);
 
             var function = new BMLFunction(returnType, requiredParameters, optionalParameters);
