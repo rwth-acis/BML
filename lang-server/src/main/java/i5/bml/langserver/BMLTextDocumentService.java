@@ -1,11 +1,12 @@
 package i5.bml.langserver;
 
+import i5.bml.parser.Parser;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class BMLTextDocumentService implements TextDocumentService {
@@ -18,7 +19,33 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
-        return TextDocumentService.super.completion(position);
+        // Provide completion item.
+        return CompletableFuture.supplyAsync(() -> {
+            List<CompletionItem> completionItems = new ArrayList<>();
+            try {
+                // Sample Completion item for sayHello
+                CompletionItem completionItem = new CompletionItem();
+                // Define the text to be inserted in to the file if the completion item is selected.
+                completionItem.setInsertText("Bot(host=\"\", port=\"\") {\n    \n}");
+                // Set the label that shows when the completion drop down appears in the Editor.
+                completionItem.setLabel("Bot()");
+                // Set the completion kind. This is a snippet.
+                // That means it replace character which trigger the completion and
+                // replace it with what defined in inserted text.
+                completionItem.setKind(CompletionItemKind.Snippet);
+                // This will set the details for the snippet code which will help user to
+                // understand what this completion item is.
+                completionItem.setDetail("Create Bot body");
+
+                // Add the sample completion item to the list.
+                completionItems.add(completionItem);
+            } catch (Exception e) {
+                //TODO: Handle the exception.
+            }
+
+            // Return the list of completion items.
+            return Either.forLeft(completionItems);
+        });
     }
 
     @Override
@@ -233,12 +260,37 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
-
+        List<Diagnostic> diagnostics = null;
+        try {
+            diagnostics = Parser.parse(params.getTextDocument().getText(), new StringBuilder());
+        } catch (Exception e) {
+            bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
+        }
+        if (diagnostics != null) {
+            for (Diagnostic diagnostic : diagnostics) {
+                diagnostic.getRange().getStart().setLine(diagnostic.getRange().getStart().getLine() - 1);
+                diagnostic.getRange().getEnd().setLine(diagnostic.getRange().getEnd().getLine() - 1);
+            }
+            bmlLanguageServer.getClient().publishDiagnostics(new PublishDiagnosticsParams(params.getTextDocument().getUri(), diagnostics));
+        }
     }
 
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
+        List<Diagnostic> diagnostics = null;
+        try {
+            diagnostics = Parser.parse(params.getContentChanges().get(0).getText(), new StringBuilder());
+        } catch (Exception e) {
+            bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
+        }
 
+        if (diagnostics != null) {
+            for (Diagnostic diagnostic : diagnostics) {
+                diagnostic.getRange().getStart().setLine(diagnostic.getRange().getStart().getLine() - 1);
+                diagnostic.getRange().getEnd().setLine(diagnostic.getRange().getEnd().getLine() - 1);
+            }
+            bmlLanguageServer.getClient().publishDiagnostics(new PublishDiagnosticsParams(params.getTextDocument().getUri(), diagnostics));
+        }
     }
 
     @Override

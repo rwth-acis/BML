@@ -5,7 +5,7 @@ import org.eclipse.lsp4j.services.*;
 
 import java.util.concurrent.CompletableFuture;
 
-public class BMLLanguageServer implements LanguageServer {
+public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
 
     private final TextDocumentService textDocumentService;
 
@@ -46,14 +46,10 @@ public class BMLLanguageServer implements LanguageServer {
 
         // Set capabilities of the LS and inform client about them
         var capabilities = initializeResult.getCapabilities();
-        capabilities.setCodeActionProvider(Boolean.TRUE);
-        capabilities.setCompletionProvider(new CompletionOptions());
-        capabilities.setDefinitionProvider(Boolean.TRUE);
-        capabilities.setHoverProvider(Boolean.TRUE);
-        capabilities.setReferencesProvider(Boolean.TRUE);
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        capabilities.setCompletionProvider(new CompletionOptions());
+        capabilities.setCodeActionProvider(false);
         capabilities.setDiagnosticProvider(new DiagnosticRegistrationOptions());
-        capabilities.setDocumentSymbolProvider(Boolean.TRUE);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 
@@ -78,7 +74,12 @@ public class BMLLanguageServer implements LanguageServer {
         return workspaceService;
     }
 
-    public void setClient(LanguageClient client) {
+    @Override
+    public void connect(LanguageClient client) {
         this.client = client;
+    }
+
+    public LanguageClient getClient() {
+        return client;
     }
 }
