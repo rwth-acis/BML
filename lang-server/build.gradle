@@ -18,6 +18,8 @@ dependencies {
 }
 
 jar {
+    dependsOn(":parser:jar")
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {

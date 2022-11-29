@@ -90,6 +90,7 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(DocumentHighlightParams params) {
+        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Document Highlight Request: " + params.toString()));
         return TextDocumentService.super.documentHighlight(params);
     }
 
@@ -262,7 +263,7 @@ public class BMLTextDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         List<Diagnostic> diagnostics = null;
         try {
-            diagnostics = Parser.parse(params.getTextDocument().getText(), new StringBuilder());
+            diagnostics = Parser.parseAndCollectDiagnostics(params.getTextDocument().getText(), new StringBuilder());
         } catch (Exception e) {
             bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
         }
@@ -279,7 +280,7 @@ public class BMLTextDocumentService implements TextDocumentService {
     public void didChange(DidChangeTextDocumentParams params) {
         List<Diagnostic> diagnostics = null;
         try {
-            diagnostics = Parser.parse(params.getContentChanges().get(0).getText(), new StringBuilder());
+            diagnostics = Parser.parseAndCollectDiagnostics(params.getContentChanges().get(0).getText(), new StringBuilder());
         } catch (Exception e) {
             bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
         }
