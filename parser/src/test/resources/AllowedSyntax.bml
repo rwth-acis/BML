@@ -1,0 +1,34 @@
+Bot(host="localhost", port=8080) {
+
+    /*
+     * IF STATEMENTS
+     */
+    @Routine(rate="1h")
+    nestedIfWithoutBrackets(data) { // ALLOWED
+        a = 2
+        if 1 == 2
+            if "" == "test"
+                a += 1
+    }
+
+    @Routine(rate="1h")
+    nestedIfWithAnElseWithoutBrackets(data) { // ALLOWED
+        a = 2
+        if 1 == 2
+            if "" == "test"
+                a += 1
+            else
+                a += 2
+    }
+
+    @Routine(rate="1h")
+    badlyNestedIfWithoutBrackets(data) { // ALLOWED
+        a = 2
+        if 1 == 2
+            a += 2
+            if "" == "test" // This will NOT be counted to the first if
+                a += 1
+            else
+                a += 2
+    }
+}

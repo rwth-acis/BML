@@ -1,0 +1,15 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    badlyNestedIfWithoutBracketsAndLooseElse(data) { // NOT ALLOWED
+        a = 2
+        if 1 == 2
+            a += 2
+            if "" == "test" // This will NOT be counted to the first if
+                a += 1
+            else
+                a += 2
+        else // else without if
+            a += 3
+    }
+}

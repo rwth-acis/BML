@@ -1,0 +1,7 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    componentInsideOfFunction(data) { // NOT ALLOWED -> Components have to be defined outside of functions
+        OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+    }
+}

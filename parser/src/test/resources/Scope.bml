@@ -1,0 +1,35 @@
+Bot(host="localhost", port=8080) {
+
+    Number b()
+
+    @Routine(rate="1h")
+    alreadyDefinedInLocalScope(data) {
+        a = 1
+        a = "test"
+    }
+
+    @Routine(rate="1h")
+    alreadyDefinedInGlobalScope(data) {
+        b = 1
+    }
+
+    @Routine(rate="1h")
+    notYetDefinedInAnyScope(data) {
+        a = "test"
+    }
+
+    @Routine(rate="1h")
+    notDefinedInAnyScope(data) {
+        a = d + 1
+    }
+
+    @Routine(rate="1h")
+    DefinedInGlobalScope(data) {
+        a = b + 1
+    }
+
+    @Routine(rate="1h")
+    alreadyDefinedInLocalScope(data) {
+        data = 1
+    }
+}

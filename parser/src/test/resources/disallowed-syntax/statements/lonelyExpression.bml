@@ -1,0 +1,7 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    lonelyExpression(data) { // NOT ALLOWED
+        1 + 2
+    }
+}

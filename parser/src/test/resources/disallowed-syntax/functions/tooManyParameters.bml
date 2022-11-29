@@ -1,0 +1,7 @@
+Bot(host="localhost", port=8080) {
+
+     @Routine(rate="1h")
+     tooManyParameters(data, data2) { // NOT ALLOWED -> We allow exactly one parameter
+
+     }
+}

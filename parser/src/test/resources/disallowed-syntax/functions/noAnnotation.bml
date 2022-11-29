@@ -1,0 +1,6 @@
+Bot(host="localhost", port=8080) {
+
+    noAnnotation(data) { // NOT ALLOWED -> We require annotations
+
+    }
+}
