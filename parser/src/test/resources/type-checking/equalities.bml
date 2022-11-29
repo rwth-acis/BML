@@ -1,0 +1,16 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    wrongTypeEqual(data) {
+        a = 1
+        b = [1, 2, 3]
+        c = a == b
+    }
+
+    @Routine(rate="1h")
+    correctTypeEqual(data) {
+        a = 1
+        b = [1, 2, 3]
+        c = 1 == b[0]
+    }
+}

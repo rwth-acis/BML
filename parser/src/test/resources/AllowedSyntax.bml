@@ -31,4 +31,12 @@ Bot(host="localhost", port=8080) {
             else
                 a += 2
     }
+
+    /*
+     * FOREACH STATEMENTS
+     */
+    @Routine(rate="1h")
+    simpleForeach(data) { // ALLOWED
+
+    }
 }

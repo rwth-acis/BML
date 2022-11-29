@@ -1,30 +1,6 @@
 Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
-    wrongTypeInOperationAssignment(data) {
-        a = 1
-        a += "test"
-    }
-
-    @Routine(rate="1h")
-    wrongTypeInOperationAssignment(data) {
-        a = 1
-        a += [1, 2, 3]
-    }
-
-    @Routine(rate="1h")
-    wrongTypeInOperationAssignment(data) {
-        a = 1
-        a += [1, 2, 3]
-    }
-
-    @Routine(rate="1h")
-    wrongTypeBooleanNegation(data) {
-        a = 1
-        b = !a
-    }
-
-    @Routine(rate="1h")
     wrongTypeOnLeftOfRelation(data) {
         a = 0
         b = true

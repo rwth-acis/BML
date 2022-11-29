@@ -1,0 +1,15 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    wrongTypeNegation(data) {
+        a = 1
+        b = !a
+    }
+
+    @Routine(rate="1h")
+    wrongTypeAnd(data) {
+        a = 1
+        b = false
+        c = 1 and b
+    }
+}
