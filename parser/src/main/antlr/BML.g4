@@ -42,7 +42,7 @@ functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 /*
  * Statement blocks
  */
-block returns [Scope scope] : LBRACE blockStatement* RBRACE ;
+block : LBRACE blockStatement* RBRACE ;
 
 blockStatement : assignment
                | statement ;
@@ -57,9 +57,9 @@ assignmentOperator : ASSIGN
                    | ADD_ASSIGN
                    | SUB_ASSIGN ;
 
-statement : block
-          | IF expression (statement | expression) (ELSE (statement | expression))?
-          | FOREACH (Identifier (COMMA Identifier)?) IN expression (statement | expression) ;
+statement returns [Scope scope] : block
+                                | stmt=IF expression blockStatement (ELSE blockStatement)?
+                                | stmt=FOREACH (Identifier (comma=COMMA Identifier)?) IN expression blockStatement ;
 
 /*
  * Expressions
