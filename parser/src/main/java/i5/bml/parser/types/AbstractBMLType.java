@@ -4,6 +4,7 @@ import generatedParser.BMLParser;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.*;
@@ -95,10 +96,10 @@ public abstract class AbstractBMLType implements Type {
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
     }
 
-    public void initializeType() {
+    public void initializeType(DiagnosticsCollector diagnosticsCollector, ParserRuleContext ctx) {
     }
 
-    public Type resolveAccess(ParseTree ctx) {
+    public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
         return null;
     }
 

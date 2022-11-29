@@ -14,11 +14,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -35,15 +32,23 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     public void addDiagnostic(String message, ParserRuleContext ctx) {
+        addDiagnostic(message, ctx, DiagnosticSeverity.Error);
+    }
+
+    public void addDiagnostic(String message, ParserRuleContext ctx, DiagnosticSeverity severity) {
         Position start;
         Position end;
         start = new Position(ctx.start.getLine(), ctx.start.getCharPositionInLine());
         end = new Position(ctx.stop.getLine(), ctx.start.getCharPositionInLine() + ctx.getText().length());
         var range = new Range(start, end);
-        collectedDiagnostics.add(new Diagnostic(range, message, DiagnosticSeverity.Error, "bml"));
+        collectedDiagnostics.add(new Diagnostic(range, message, severity, "bml"));
     }
 
     public void addDiagnostic(String message, Token token) {
+        addDiagnostic(message, token, DiagnosticSeverity.Error);
+    }
+
+    public void addDiagnostic(String message, Token token, DiagnosticSeverity severity) {
         var start = new Position(token.getLine(), token.getCharPositionInLine() + 1);
         var end = new Position(token.getLine(), token.getCharPositionInLine() + token.getText().length());
         var range = new Range(start, end);
@@ -163,7 +168,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         var registeredType = (AbstractBMLType) TypeRegistry.resolveType(resolvedType.toString());
         if (registeredType == null) {
             // 3. Invoke initializer (e.g., fetch OpenAPI schemas from provided url parameter)
-            resolvedType.initializeType();
+            resolvedType.initializeType(this, ctx);
 
             // 4. If complex type -> register
             if (TypeRegistry.isTypeComplex(typeName)) {
@@ -250,7 +255,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 case "." -> {
                     AbstractBMLType prevType = (AbstractBMLType) ctx.expr.type;
                     var currentCtx = ctx.Identifier() != null ? ctx.Identifier() : ctx.functionCall();
-                    AbstractBMLType resolvedType = (AbstractBMLType) prevType.resolveAccess(currentCtx);
+                    AbstractBMLType resolvedType = (AbstractBMLType) prevType.resolveAccess(this, currentCtx);
 
                     if (resolvedType == null) {
                         if (ctx.Identifier() != null) {
@@ -264,9 +269,13 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     } else {
                         // In case of a function call, we need to unwrap the BMLFunction type to get the return type
                         if (ctx.functionCall() != null) {
-                            // If method: check parameters -> delegate check to BMLFunction
-                            resolvedType.checkParameters(this, ctx.functionCall().elementExpressionPairList());
-                            ctx.type = ((BMLFunction) resolvedType).getReturnType();
+                            if (resolvedType instanceof BMLFunction) {
+                                // If method: check parameters -> delegate check to BMLFunction
+                                resolvedType.checkParameters(this, ctx.functionCall().elementExpressionPairList());
+                                ctx.type = ((BMLFunction) resolvedType).getReturnType();
+                            } else {
+                                ctx.type = TypeRegistry.resolveType("Object");
+                            }
                         } else {
                             ctx.type = resolvedType;
                         }

@@ -53,14 +53,14 @@ public class Measurements {
     }
 
     public static void print(StringBuilder stringBuilder) {
-        stringBuilder.append("--------------- MEASUREMENTS ---------------");
+        stringBuilder.append("--------------- MEASUREMENTS ---------------\n");
         for (var p : MEASUREMENTS.values()) {
-            stringBuilder.append(p.getLeft());
+            stringBuilder.append(p.getLeft()).append("\n");
         }
-        stringBuilder.append("---------------");
+        stringBuilder.append("---------------\n");
         var p = calculateUnit(totalTime);
         stringBuilder.append("TOTAL: %s %s\n".formatted(p.getLeft(), p.getRight()));
-        stringBuilder.append("--------------- MEASUREMENTS ---------------");
+        stringBuilder.append("--------------- MEASUREMENTS ---------------\n");
 
         MEASUREMENTS.clear();
         totalTime = 0;

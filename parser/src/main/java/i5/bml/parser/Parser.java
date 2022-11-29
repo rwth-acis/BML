@@ -16,6 +16,8 @@ import java.util.List;
 
 public class Parser {
 
+    private static DiagnosticsCollector diagnosticsCollector;
+
     public static List<Diagnostic> parse(String inputString, StringBuilder report) {
         var start = System.nanoTime();
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
@@ -35,7 +37,7 @@ public class Parser {
 //
 //        bmlParser.reset();
 
-        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector("");
+        diagnosticsCollector = new DiagnosticsCollector("");
         start = System.nanoTime();
         new ParseTreeWalker().walk(diagnosticsCollector, bmlParser.program());
         end = System.nanoTime();
@@ -43,5 +45,9 @@ public class Parser {
         Measurements.print(report);
 
         return diagnosticsCollector.getCollectedDiagnostics();
+    }
+
+    public static DiagnosticsCollector getDiagnosticsCollector() {
+        return diagnosticsCollector;
     }
 }

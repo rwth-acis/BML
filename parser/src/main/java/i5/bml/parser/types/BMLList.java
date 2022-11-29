@@ -1,5 +1,6 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.Type;
 
@@ -20,8 +21,8 @@ public class BMLList extends AbstractBMLType {
     }
 
     @Override
-    public Type resolveAccess(ParseTree ctx) {
-        return ((AbstractBMLType) itemType).resolveAccess(ctx);
+    public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
+        return ((AbstractBMLType) itemType).resolveAccess(diagnosticsCollector, ctx);
     }
 
     public Type getItemType() {
