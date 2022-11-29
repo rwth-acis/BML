@@ -59,19 +59,7 @@ assignmentOperator : ASSIGN
 
 statement : block
           | IF expression (statement | expression) (ELSE (statement | expression))?
-          | FOREACH forEachVariable IN forEachDomain (statement | expression) ;
-
-// ForEach Statement
-forEachVariable : Identifier
-                | (Identifier COMMA Identifier) ;
-
-forEachDomain : Identifier
-              | domainExpression ;
-
-domainExpression : LBRACK domainLimit COMMA domainLimit RBRACK ;
-
-domainLimit : Identifier
-            | IntegerLiteral ;
+          | FOREACH (Identifier (COMMA Identifier)?) IN expression (statement | expression) ;
 
 /*
  * Expressions
