@@ -4,15 +4,13 @@ import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
+import i5.bml.parser.types.openapi.Diagnostics;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,39 +19,9 @@ import static i5.bml.parser.errors.ParserError.*;
 
 public class DiagnosticsCollector extends BMLBaseListener {
 
-    private final String fileName;
-
     private final List<Diagnostic> collectedDiagnostics = new ArrayList<>();
 
     private Scope currentScope;
-
-    public DiagnosticsCollector(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public void addDiagnostic(String message, ParserRuleContext ctx) {
-        addDiagnostic(message, ctx, DiagnosticSeverity.Error);
-    }
-
-    public void addDiagnostic(String message, ParserRuleContext ctx, DiagnosticSeverity severity) {
-        Position start;
-        Position end;
-        start = new Position(ctx.start.getLine(), ctx.start.getCharPositionInLine());
-        end = new Position(ctx.stop.getLine(), ctx.start.getCharPositionInLine() + ctx.getText().length());
-        var range = new Range(start, end);
-        collectedDiagnostics.add(new Diagnostic(range, message, severity, "bml"));
-    }
-
-    public void addDiagnostic(String message, Token token) {
-        addDiagnostic(message, token, DiagnosticSeverity.Error);
-    }
-
-    public void addDiagnostic(String message, Token token, DiagnosticSeverity severity) {
-        var start = new Position(token.getLine(), token.getCharPositionInLine() + 1);
-        var end = new Position(token.getLine(), token.getCharPositionInLine() + token.getText().length());
-        var range = new Range(start, end);
-        collectedDiagnostics.add(new Diagnostic(range, message, DiagnosticSeverity.Error, "bml"));
-    }
 
     public List<Diagnostic> getCollectedDiagnostics() {
         return collectedDiagnostics;
@@ -127,7 +95,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
         // Check: name is already defined in scope
         if (currentScope.resolve(name) != null) {
-            addDiagnostic(ALREADY_DEFINED.format(name), token);
+            Diagnostics.addDiagnostic(collectedDiagnostics, ALREADY_DEFINED.format(name), token);
         } else {
             currentScope.define(new VariableSymbol(name));
         }
@@ -143,7 +111,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
         // 0. Check whether type is "allowed"
         if (!TypeRegistry.isTypeBuiltin(typeName)) {
-            addDiagnostic(UNKNOWN_TYPE.format(typeName), ctx.typeName);
+            Diagnostics.addDiagnostic(collectedDiagnostics, UNKNOWN_TYPE.format(typeName), ctx.typeName);
             return;
         }
 
@@ -168,17 +136,25 @@ public class DiagnosticsCollector extends BMLBaseListener {
         var registeredType = (AbstractBMLType) TypeRegistry.resolveType(resolvedType.toString());
         if (registeredType == null) {
             // 3. Invoke initializer (e.g., fetch OpenAPI schemas from provided url parameter)
-            resolvedType.initializeType(this, ctx);
-
-            // 4. If complex type -> register
-            if (TypeRegistry.isTypeComplex(typeName)) {
-                TypeRegistry.registerType(resolvedType.toString(), resolvedType);
-            }
+            // NOTE: We do not pass a diagnosticsCollector to this method since we want the type
+            // itself to store its type initialization specific diagnostics. The reason is that
+            // this branch is only visited when we encounter a new type (e.g., OpenAPI + new URL)
+            resolvedType.initializeType(ctx);
+            TypeRegistry.registerType(resolvedType.toString(), resolvedType);
         } else {
             resolvedType = registeredType;
         }
 
-        // 5. Lastly, we set the type of the corresponding symbol
+        // 5. Add collected diagnostics (either from initialization or cached)
+        // See comment above, this is important for the type caching functionality
+        // Whenever we have already initialized type but encountered errors, we want
+        // to have them saved such that we do not have to retrieve them again
+        var cachedDiagnostics = resolvedType.getCachedDiagnostics();
+        for (var diagnostic : cachedDiagnostics) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, diagnostic, ctx);
+        }
+
+        // 6. Lastly, we set the type of the corresponding symbol
         var v = currentScope.resolve(componentName);
         ((VariableSymbol) v).setType(resolvedType);
     }
@@ -191,7 +167,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var name = ctx.name.getText();
             // Check: name is already defined in scope
             if (currentScope.resolve(name) != null) {
-                addDiagnostic(ALREADY_DEFINED.format(name), ctx.name);
+                Diagnostics.addDiagnostic(collectedDiagnostics, ALREADY_DEFINED.format(name), ctx.name);
             } else {
                 VariableSymbol v = new VariableSymbol(name);
                 v.setType(ctx.expression().type);
@@ -201,13 +177,13 @@ public class DiagnosticsCollector extends BMLBaseListener {
             // Make sure left-hand side is defined
             var v = currentScope.resolve(ctx.name.getText());
             if (!(v instanceof VariableSymbol)) {
-                addDiagnostic(NOT_DEFINED.format(ctx.name.getText()), ctx.name);
+                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(ctx.name.getText()), ctx.name);
             }
 
             // Type of left-hand side should already be set
             var rightType = ctx.expression().type;
             if (!(rightType instanceof BMLNumber)) {
-                addDiagnostic(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.name);
+                Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", rightType), ctx.name);
             }
         }
     }
@@ -220,12 +196,9 @@ public class DiagnosticsCollector extends BMLBaseListener {
             case BMLParser.FloatingPointLiteral -> TypeRegistry.resolveType("Float Number");
             case BMLParser.StringLiteral -> TypeRegistry.resolveType("String");
             case BMLParser.BooleanLiteral -> TypeRegistry.resolveType("Boolean");
-            default -> null;
+            // This can never happen
+            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
         };
-
-        if (ctx.type == null) {
-            addDiagnostic(UNKNOWN_TYPE.format(terminalNodeType), (Token) ctx.getChild(0));
-        }
     }
 
     @Override
@@ -236,7 +209,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var name = ctx.Identifier().getText();
             var r = currentScope.resolve(name);
             if (!(r instanceof VariableSymbol)) {
-                addDiagnostic(NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
+                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
                 // We don't know the type, so we go with Object
                 ctx.type = TypeRegistry.resolveType("Object");
             } else {
@@ -259,9 +232,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
                     if (resolvedType == null) {
                         if (ctx.Identifier() != null) {
-                            addDiagnostic(CANT_RESOLVE_IN.format(currentCtx.getText(), prevType), ctx.Identifier().getSymbol());
+                            Diagnostics.addDiagnostic(collectedDiagnostics,
+                                    CANT_RESOLVE_IN.format(currentCtx.getText(), prevType), ctx.Identifier().getSymbol());
                         } else {
-                            addDiagnostic(CANT_RESOLVE_IN.format(currentCtx.getText(), prevType),
+                            Diagnostics.addDiagnostic(collectedDiagnostics,
+                                    CANT_RESOLVE_IN.format(currentCtx.getText(), prevType),
                                     ctx.functionCall());
                         }
 
@@ -288,13 +263,13 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var secondExpressionType = secondExpression.type;
 
                     if (!(firstExpressionType instanceof BMLList)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("List", firstExpressionType), firstExpression);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List", firstExpressionType), firstExpression);
                         ctx.type = TypeRegistry.resolveType("Object");
                     } else if (!(secondExpressionType instanceof BMLNumber)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("Number", secondExpressionType), secondExpression);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", secondExpressionType), secondExpression);
                         ctx.type = TypeRegistry.resolveType("Object");
                     } else if (((BMLNumber) secondExpressionType).isFloatingPoint()) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format(new BMLNumber(false), secondExpressionType), secondExpression);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(new BMLNumber(false), secondExpressionType), secondExpression);
                         ctx.type = TypeRegistry.resolveType("Object");
                     } else {
                         // Safe cast because we checked that first expression is a list
@@ -304,7 +279,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 case "!" -> {
                     var exprType = ctx.expr.type;
                     if (!(exprType instanceof BMLBoolean)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("boolean", exprType), ctx.left);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", exprType), ctx.left);
                         ctx.type = TypeRegistry.resolveType("Boolean");
                     } else {
                         ctx.type = exprType;
@@ -314,9 +289,9 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!(leftType instanceof BMLNumber)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
                     } else if (!(rightType instanceof BMLNumber)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
                     }
 
                     ctx.type = TypeRegistry.resolveType("Boolean");
@@ -325,7 +300,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!leftType.equals(rightType)) {
-                        addDiagnostic(INCOMPATIBLE.format(leftType, ctx.op.getText(), rightType), ctx);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(leftType, ctx.op.getText(), rightType), ctx);
                     }
 
                     ctx.type = TypeRegistry.resolveType("Boolean");
@@ -334,7 +309,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     if (ctx.left == null) {
                         var expressionType = ctx.expr.type;
                         if (!(expressionType instanceof BMLNumber)) {
-                            addDiagnostic(EXPECTED_BUT_FOUND.format("Number", expressionType), ctx.expr);
+                            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", expressionType), ctx.expr);
                             ctx.type = TypeRegistry.resolveType("Number");
                         } else {
                             ctx.type = expressionType;
@@ -343,10 +318,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
                         var leftType = ctx.left.type;
                         var rightType = ctx.right.type;
                         if (!(leftType instanceof BMLNumber)) {
-                            addDiagnostic(EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
+                            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
                             ctx.type = TypeRegistry.resolveType("Number");
                         } else if (!(rightType instanceof BMLNumber)) {
-                            addDiagnostic(EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
+                            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
                             ctx.type = TypeRegistry.resolveType("Number");
                         } else {
                             var isLeftOrRightFloat = ((BMLNumber) leftType).isFloatingPoint() || ((BMLNumber) rightType).isFloatingPoint();
@@ -358,10 +333,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!(leftType instanceof BMLBoolean)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("boolean", leftType), ctx.left);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", leftType), ctx.left);
                         ctx.type = TypeRegistry.resolveType("Boolean");
                     } else if (!(rightType instanceof BMLBoolean)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("boolean", rightType), ctx.right);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", rightType), ctx.right);
                         ctx.type = TypeRegistry.resolveType("Boolean");
                     } else {
                         ctx.type = leftType;
@@ -372,10 +347,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var firstType = ctx.expression().get(1).type;
                     var secondType = ctx.expression().get(2).type;
                     if (!(condType instanceof BMLBoolean)) {
-                        addDiagnostic(EXPECTED_BUT_FOUND.format("boolean", condType), ctx.expression().get(0));
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", condType), ctx.expression().get(0));
                         ctx.type = TypeRegistry.resolveType("Object");
                     } else if (!firstType.equals(secondType)) {
-                        addDiagnostic(INCOMPATIBLE.format(condType + " ? " + firstType, ":", secondType), ctx);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(condType + " ? " + firstType, ":", secondType), ctx);
                         ctx.type = TypeRegistry.resolveType("Object");
                     } else {
                         ctx.type = firstType;
@@ -386,7 +361,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var name = ctx.functionCall().functionName.getText();
             var symbol = currentScope.resolve(name);
             if (symbol == null) {
-                addDiagnostic(NOT_DEFINED.format(name), ctx.functionCall().functionName);
+                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionCall().functionName);
                 ctx.type = TypeRegistry.resolveType("Object");
             } else {
                 ctx.type = ((BMLFunction) ((TypedSymbol) symbol).getType()).getReturnType();
@@ -413,7 +388,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var firstItemType = expressions.get(0).type;
                     for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
                         if (!firstItemType.equals(expressions.get(i).type)) {
-                            addDiagnostic("List initialization requires homogeneous types", ctx.initializer());
+                            Diagnostics.addDiagnostic(collectedDiagnostics, "List initialization requires homogeneous types", ctx.initializer());
                             ctx.type = TypeRegistry.resolveType("Object");
                             break;
                         }
@@ -451,7 +426,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"},
                     UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_ALL_SCHEMES);
             if (!urlValidator.isValid(url)) {
-                addDiagnostic("Url '%s' is not valid".formatted(url), ctx);
+                Diagnostics.addDiagnostic(collectedDiagnostics, "Url '%s' is not valid".formatted(url), ctx);
             }
         }
     }

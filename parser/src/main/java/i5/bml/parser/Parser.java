@@ -4,21 +4,18 @@ import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
 
-import javax.swing.*;
-import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
 
     private static DiagnosticsCollector diagnosticsCollector;
 
-    public static List<Diagnostic> parse(String inputString, StringBuilder report) {
+    public static List<Diagnostic> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
         var start = System.nanoTime();
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
         var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
@@ -37,7 +34,7 @@ public class Parser {
 //
 //        bmlParser.reset();
 
-        diagnosticsCollector = new DiagnosticsCollector("");
+        diagnosticsCollector = new DiagnosticsCollector();
         start = System.nanoTime();
         new ParseTreeWalker().walk(diagnosticsCollector, bmlParser.program());
         end = System.nanoTime();
@@ -45,6 +42,17 @@ public class Parser {
         Measurements.print(report);
 
         return diagnosticsCollector.getCollectedDiagnostics();
+    }
+
+    public static BMLParser parse(String inputString, StringBuilder report) {
+        var start = System.nanoTime();
+        var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
+        var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
+        var end = System.nanoTime();
+        Measurements.add("Parsing (%s Bytes)".formatted(inputString.getBytes().length), (end - start));
+        Measurements.print(report);
+
+        return bmlParser;
     }
 
     public static DiagnosticsCollector getDiagnosticsCollector() {

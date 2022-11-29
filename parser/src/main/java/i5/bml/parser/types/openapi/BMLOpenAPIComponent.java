@@ -1,23 +1,25 @@
 package i5.bml.parser.types.openapi;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.types.*;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import i5.bml.parser.types.*;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -38,14 +40,15 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var expr = ctx.elementExpressionPair(0).expr;
         var atom = expr.atom();
         if (atom == null || atom.literal() == null) {
-            diagnosticsCollector.addDiagnostic(EXPECTED_BUT_FOUND.format("String", expr.type), expr);
+            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                    EXPECTED_BUT_FOUND.format("String", expr.type), expr);
         } else {
             url = atom.getText().substring(1, atom.getText().length() - 1);
         }
     }
 
     @Override
-    public void initializeType(DiagnosticsCollector diagnosticsCollector, ParserRuleContext ctx) {
+    public void initializeType(ParserRuleContext ctx) {
         Objects.requireNonNull(url);
 
         var start = System.nanoTime();
@@ -53,14 +56,18 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var end = System.nanoTime();
         Measurements.add("Fetch OpenAPI Spec", (end - start));
 
-        // Check for OpenAPI parser errors
-        if (result.getMessages() != null && result.getMessages().size() > 0) {
-            diagnosticsCollector.addDiagnostic("Could not connect to url `%s`\nPossible reason(s):\n%s"
-                    .formatted(url, String.join("\n", result.getMessages())), ctx);
+        openAPI = result.getOpenAPI();
+
+        if (openAPI == null) {
+            super.addDiagnostic("Could not connect to url `%s`".formatted(url), DiagnosticSeverity.Error);
             return;
         }
-
-        openAPI = result.getOpenAPI();
+        // Check for OpenAPI parser errors
+        else if ((result.getMessages() != null && result.getMessages().size() > 0)) {
+            super.addDiagnostic("Could not connect to url `%s`\nPossible reason(s):\n%s"
+                    .formatted(url, String.join("\n", result.getMessages())), DiagnosticSeverity.Error);
+            return;
+        }
 
         // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
@@ -68,10 +75,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Determine route return types & arguments
         start = System.nanoTime();
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
-            AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(operation, diagnosticsCollector, ctx);
+            AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(route, httpMethod.name(), operation);
 
-            var requiredParameters = computeRouteArguments(operation, true, diagnosticsCollector, ctx);
-            var optionalParameters = computeRouteArguments(operation, false, diagnosticsCollector, ctx);
+            var routeParameters = computeRouteArguments(route, httpMethod.name(), operation);
+            var requiredParameters = routeParameters.getLeft();
+            var optionalParameters = routeParameters.getRight();
 
             var p = new ParameterSymbol("path");
             p.setType(TypeRegistry.resolveType("String"));
@@ -85,38 +93,30 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         Measurements.add("Parsing OpenAPI Spec", end - start);
     }
 
-    private Type computeRouteReturnTypes(Operation operation, DiagnosticsCollector diagnosticsCollector, ParserRuleContext ctx) {
-        if (operation.getResponses() == null) {
-            var msg = "Operation `%s` has no response definition".formatted(operation.getOperationId());
-            diagnosticsCollector.addDiagnostic(msg, ctx, DiagnosticSeverity.Error);
-            return null;
-        }
-
-        for (Map.Entry<String, ApiResponse> entry : operation.getResponses().entrySet()) {
-            String code = entry.getKey();
-            ApiResponse response = entry.getValue();
+    private Type computeRouteReturnTypes(String route, String httpMethod, Operation operation) {
+        final Type[] returnType = new Type[]{null};
+        operation.getResponses().forEach((responseCode, response) -> {
             if (response.getContent() != null) {
                 // TODO: ATM we only support application/json
                 var mediaType = response.getContent().get("application/json");
                 if (mediaType == null) {
-                    var msg = "Operation `%s` has no application/json media type for response code `%s`\n".formatted(operation.getOperationId(), code);
-                    diagnosticsCollector.addDiagnostic(msg, ctx, DiagnosticSeverity.Warning);
+                    var msg = "`%s %s` has no application/json media type for response code `%s`\n";
+                    super.addDiagnostic(msg.formatted(httpMethod.toUpperCase(), route, responseCode), DiagnosticSeverity.Warning);
                 } else {
                     var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
                             "Operation", operation.getOperationId());
-                    return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
+                    returnType[0] = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
                 }
             }
-        }
+        });
 
-        return null; // TODO: We need a void type
+        return returnType[0];
     }
 
-    private void computeArgumentTypes(List<ParameterSymbol> arguments, Schema<?> schema, String parameterName,
-                                      DiagnosticsCollector diagnosticsCollector, ParserRuleContext ctx) {
+    private void computeArgumentTypes(List<ParameterSymbol> arguments, Schema<?> schema, String parameterName) {
         if (schema == null) {
             var msg = "Couldn't find schema for parameter `%s`".formatted(parameterName);
-            diagnosticsCollector.addDiagnostic(msg, ctx, DiagnosticSeverity.Warning);
+            super.addDiagnostic(msg, DiagnosticSeverity.Warning);
             return;
         }
 
@@ -128,38 +128,44 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         arguments.add(parameterSymbol);
     }
 
-    private List<ParameterSymbol> computeRouteArguments(Operation operation, boolean collectRequired,
-                                                        DiagnosticsCollector diagnosticsCollector, ParserRuleContext ctx) {
-        var arguments = new ArrayList<ParameterSymbol>();
+    private Pair<ArrayList<ParameterSymbol>, ArrayList<ParameterSymbol>> computeRouteArguments(String route,
+                                                                                               String httpMethod,
+                                                                                               Operation operation) {
+        var requiredArguments = new ArrayList<ParameterSymbol>();
+        var optionalArguments = new ArrayList<ParameterSymbol>();
+
+        // Parameters
         if (operation.getParameters() != null && operation.getParameters().size() > 0) {
+            // Required parameters
             operation.getParameters().stream()
-                    .filter(p -> p.getRequired() == collectRequired)
-                    .forEach(p -> computeArgumentTypes(arguments, p.getSchema(), p.getName(), diagnosticsCollector, ctx));
+                    .filter(Parameter::getRequired)
+                    .forEach(p -> computeArgumentTypes(requiredArguments, p.getSchema(), p.getName()));
+
+            // Optional parameters
+            operation.getParameters().stream()
+                    .filter(p -> !p.getRequired())
+                    .forEach(p -> computeArgumentTypes(optionalArguments, p.getSchema(), p.getName()));
         }
 
-        // We can have both parameters and a request body
+        // Request body
         if (operation.getRequestBody() != null) {
-            if (operation.getRequestBody().getContent() == null) {
-                var msg = "Could not find content for request body of operation %s".formatted(operation.getOperationId());
-                diagnosticsCollector.addDiagnostic(msg, ctx, DiagnosticSeverity.Error);
-                return arguments;
-            }
-
             // TODO: ATM we only support application/json
             var mediaType = operation.getRequestBody().getContent().get("application/json");
             if (mediaType == null) {
-                // TODO: for now we ignore other media types than application/json
-                var msg = "Operation `%s` has no application/json media type".formatted(operation.getOperationId());
-                diagnosticsCollector.addDiagnostic(msg, ctx, DiagnosticSeverity.Warning);
+                var msg = "`%s %s` has no application/json media type";
+                super.addDiagnostic(msg.formatted(httpMethod.toUpperCase(), route),
+                        DiagnosticSeverity.Warning);
             } else {
-                var r = operation.getRequestBody().getRequired();
-                if ((r == null && !collectRequired) || (r != null && r == collectRequired)) {
-                    computeArgumentTypes(arguments, mediaType.getSchema(), "body", diagnosticsCollector, ctx);
+                var required = operation.getRequestBody().getRequired();
+                if (required == null || Boolean.FALSE.equals(required)) {
+                    computeArgumentTypes(optionalArguments, mediaType.getSchema(), "body");
+                } else {
+                    computeArgumentTypes(requiredArguments, mediaType.getSchema(), "body");
                 }
             }
         }
 
-        return arguments;
+        return new ImmutablePair<>(requiredArguments, optionalArguments);
     }
 
     @Override
@@ -167,10 +173,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var start = System.nanoTime();
         var functionCallCtx = (BMLParser.FunctionCallContext) ctx;
         var httpMethod = functionCallCtx.functionName.getText();
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         // Check: http method is valid
         if (!httpMethods.contains(httpMethod)) {
-            diagnosticsCollector.addDiagnostic(NOT_DEFINED.format(httpMethod), functionCallCtx.functionName);
+            Diagnostics.addDiagnostic(diagnostics, NOT_DEFINED.format(httpMethod), functionCallCtx.functionName);
             return TypeRegistry.resolveType("Object");
         }
 
@@ -180,14 +187,14 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 .findAny();
 
         if (pathParameter.isEmpty()) {
-            diagnosticsCollector.addDiagnostic(MISSING_PARAM.format("path"), functionCallCtx);
+            Diagnostics.addDiagnostic(diagnostics, MISSING_PARAM.format("path"), functionCallCtx);
             return TypeRegistry.resolveType("Object");
         }
 
         // Check: path parameter has correct type
         var pathParameterType = pathParameter.get().expression().type;
         if (!pathParameterType.equals(TypeRegistry.resolveType("String"))) {
-            diagnosticsCollector.addDiagnostic(EXPECTED_BUT_FOUND.format("String", pathParameterType),
+            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format("String", pathParameterType),
                     pathParameter.get().expression());
             return TypeRegistry.resolveType("Object");
         }
@@ -197,7 +204,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         path = path.substring(1, path.length() - 1);
 
         if (!routes.contains(path)) {
-            diagnosticsCollector.addDiagnostic("Path `%s` is not defined for API:\n`%s`"
+            Diagnostics.addDiagnostic(diagnostics, "Path `%s` is not defined for API:\n`%s`"
                     .formatted(path, url), pathParameter.get().expression());
             return TypeRegistry.resolveType("Object");
         }
@@ -206,7 +213,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var functionType = supportedAccesses.get(httpMethod + path);
 
         if (functionType == null) {
-            diagnosticsCollector.addDiagnostic("Path `%s` does not support HTTP method `%s` for API:\n`%s`"
+            Diagnostics.addDiagnostic(diagnostics, "Path `%s` does not support HTTP method `%s` for API:\n`%s`"
                             .formatted(path, httpMethod, url), pathParameter.get().expression());
             return TypeRegistry.resolveType("Object");
         }
