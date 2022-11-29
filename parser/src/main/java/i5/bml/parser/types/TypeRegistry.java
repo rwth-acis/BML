@@ -15,45 +15,7 @@ public class TypeRegistry {
     private static final Map<String, Class<?>> complexTypeBlueprints = new HashMap<>();
 
     static {
-        for (BuiltinTypes value : BuiltinTypes.values()) {
-            builtinTypes.add(value.name().toLowerCase());
-        }
-
-        Reflections reflections = new Reflections("i5.bml.parser.types");
-        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(BMLType.class);
-
-        for (Class<?> clazz : annotated) {
-            BMLType type = clazz.getAnnotation(BMLType.class);
-
-            // Check: class extends AbstractBMLType
-            if (!AbstractBMLType.class.isAssignableFrom(clazz)) {
-                throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
-            }
-
-            // Check: class has default constructor with no parameters
-            boolean hasDefaultConstructor = Arrays.stream(clazz.getDeclaredConstructors())
-                    .anyMatch(constructor -> constructor.getParameterCount() == 0);
-            if (!hasDefaultConstructor) {
-                throw new IllegalStateException("Class %s does not have an empty default constructor".formatted(clazz.getName()));
-            }
-
-            if (type.isComplex()) {
-                complexTypeBlueprints.put(type.name().toLowerCase(), clazz);
-            } else {
-                Type primitiveTypeInstance;
-                try {
-                    primitiveTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-
-                typeRegistry.put(type.name().toLowerCase(), primitiveTypeInstance);
-            }
-        }
-
-        // Explicitly add "Float Number" as Type
-        typeRegistry.put("float number", new BMLNumber(true));
+        init();
     }
 
     public static Type resolveBuiltinType(String typeName) {
@@ -100,5 +62,53 @@ public class TypeRegistry {
 
     public static boolean isTypeComplex(String typeName) {
         return complexTypeBlueprints.containsKey(typeName.toLowerCase());
+    }
+
+    public static void init() {
+        for (BuiltinTypes value : BuiltinTypes.values()) {
+            builtinTypes.add(value.name().toLowerCase());
+        }
+
+        Reflections reflections = new Reflections("i5.bml.parser.types");
+        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(BMLType.class);
+
+        for (Class<?> clazz : annotated) {
+            BMLType type = clazz.getAnnotation(BMLType.class);
+
+            // Check: class extends AbstractBMLType
+            if (!AbstractBMLType.class.isAssignableFrom(clazz)) {
+                throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
+            }
+
+            // Check: class has default constructor with no parameters
+            boolean hasDefaultConstructor = Arrays.stream(clazz.getDeclaredConstructors())
+                    .anyMatch(constructor -> constructor.getParameterCount() == 0);
+            if (!hasDefaultConstructor) {
+                throw new IllegalStateException("Class %s does not have an empty default constructor".formatted(clazz.getName()));
+            }
+
+            if (type.isComplex()) {
+                complexTypeBlueprints.put(type.name().toLowerCase(), clazz);
+            } else {
+                Type primitiveTypeInstance;
+                try {
+                    primitiveTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                         NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+
+                typeRegistry.put(type.name().toLowerCase(), primitiveTypeInstance);
+            }
+        }
+
+        // Explicitly add "Float Number" as Type
+        typeRegistry.put("float number", new BMLNumber(true));
+    }
+
+    public static void clear() {
+        typeRegistry.clear();
+        builtinTypes.clear();
+        complexTypeBlueprints.clear();
     }
 }

@@ -1,6 +1,7 @@
 package i5.bml.parser.types.openapi;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.types.*;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
-import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;

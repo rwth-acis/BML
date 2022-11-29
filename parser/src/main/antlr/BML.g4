@@ -14,7 +14,7 @@ botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
 botHead : BOT name=Identifier? LPAREN elementExpressionPairList RPAREN ;
 
-elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* ;
+elementExpressionPairList returns [Scope scope] : elementExpressionPair (COMMA elementExpressionPair)* ;
 
 elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 

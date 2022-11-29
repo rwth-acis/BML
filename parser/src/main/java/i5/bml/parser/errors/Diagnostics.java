@@ -1,4 +1,4 @@
-package i5.bml.parser.types.openapi;
+package i5.bml.parser.errors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;

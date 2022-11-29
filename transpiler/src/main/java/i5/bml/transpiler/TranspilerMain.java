@@ -28,7 +28,7 @@ public class TranspilerMain {
         try {
             diagnostics = Parser.parseAndCollectDiagnostics(inputString, stringBuilder);
         } catch (Exception e) {
-            System.err.printf("PARSING ERROR: %s%n", e.getMessage());
+            e.printStackTrace();
         }
 
         if (diagnostics != null) {

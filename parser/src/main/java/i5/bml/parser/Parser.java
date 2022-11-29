@@ -2,23 +2,27 @@ package i5.bml.parser;
 
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
+import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.lsp4j.Diagnostic;
 
 import java.util.List;
 
 public class Parser {
 
-    private static DiagnosticsCollector diagnosticsCollector;
-
     public static List<Diagnostic> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
         var start = System.nanoTime();
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
         var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
+        var syntaxErrorListener = new SyntaxErrorListener();
+        bmlParser.removeErrorListeners();
+        bmlParser.addErrorListener(syntaxErrorListener);
         var end = System.nanoTime();
         Measurements.add("Parsing (%s Bytes)".formatted(inputString.getBytes().length), (end - start));
 
@@ -34,28 +38,21 @@ public class Parser {
 //
 //        bmlParser.reset();
 
-        diagnosticsCollector = new DiagnosticsCollector();
+        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
         start = System.nanoTime();
         new ParseTreeWalker().walk(diagnosticsCollector, bmlParser.program());
         end = System.nanoTime();
         Measurements.add("Collect diagnostics", "Fetch OpenAPI Spec", (end - start));
         Measurements.print(report);
 
+        diagnosticsCollector.getCollectedDiagnostics().addAll(syntaxErrorListener.getCollectedSyntaxErrors());
         return diagnosticsCollector.getCollectedDiagnostics();
     }
 
-    public static BMLParser parse(String inputString, StringBuilder report) {
-        var start = System.nanoTime();
+    public static Pair<BMLLexer, BMLParser> parse(String inputString) {
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
         var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
-        var end = System.nanoTime();
-        Measurements.add("Parsing (%s Bytes)".formatted(inputString.getBytes().length), (end - start));
-        Measurements.print(report);
 
-        return bmlParser;
-    }
-
-    public static DiagnosticsCollector getDiagnosticsCollector() {
-        return diagnosticsCollector;
+        return new ImmutablePair<>(bmlLexer, bmlParser);
     }
 }

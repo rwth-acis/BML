@@ -1,0 +1,44 @@
+Bot(host="localhost", port=8080) {
+
+    Number b()
+
+    @Routine(rate="1h")
+    alreadyDefinedInLocalScope(data) {
+        a = 1
+        a = 2
+    }
+
+    @Routine(rate="1h")
+    functionNameIsDefinedInLocalScope(data) {
+        alreadyDefinedInLocalScope = 1
+    }
+
+    @Routine(rate="1h")
+    alreadyDefinedInGlobalScope(data) {
+        b = 1
+    }
+
+    @Routine(rate="1h")
+    notDefinedInAnyScope(data) {
+        a = d
+    }
+
+    @Routine(rate="1h")
+    alreadyDefinedInFunctionScope(data) {
+        data = 1
+    }
+
+    @Routine(rate="1h")
+    statementHasLocalScope(data) {
+        a = 1
+        if 1 == 0 {
+            z = a // No problem, a from parent scope
+        }
+        c = z // z not defined in this scope
+    }
+
+    @Routine(rate="1h", rate="2h")
+    alreadyDefinedInParameterList(data) {
+
+    }
+}

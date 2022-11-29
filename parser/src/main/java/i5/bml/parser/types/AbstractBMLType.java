@@ -1,7 +1,7 @@
 package i5.bml.parser.types;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.types.openapi.Diagnostics;
+import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
@@ -57,6 +57,10 @@ public abstract class AbstractBMLType implements Type {
     }
 
     public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+
         var parameterListMutable = new HashSet<>(ctx.elementExpressionPair());
 
         for (var requiredParameter : requiredParameters) {

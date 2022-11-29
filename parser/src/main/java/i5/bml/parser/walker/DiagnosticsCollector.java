@@ -4,7 +4,7 @@ import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
-import i5.bml.parser.types.openapi.Diagnostics;
+import i5.bml.parser.errors.Diagnostics;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -50,6 +50,18 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
+    public void enterElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
+        Scope s = new BlockScope(currentScope);
+        ctx.scope = s;
+        pushScope(s);
+    }
+
+    @Override
+    public void exitElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
+        popScope();
+    }
+
+    @Override
     public void enterComponent(BMLParser.ComponentContext ctx) {
         checkAlreadyDefinedElseDefine(ctx.name);
     }
@@ -63,6 +75,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
         f.setEnclosingScope(currentScope);
         ctx.scope = f;
         pushScope(f);
+    }
+
+    @Override
+    public void exitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
+        popScope();
     }
 
     @Override

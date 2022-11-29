@@ -1,0 +1,22 @@
+Bot(host="localhost", port=8080) {
+
+    Number b()
+
+    @Routine(rate="1h")
+    notYetDefinedInAnyScope(data) {
+        a = "test"
+    }
+
+    @Routine(rate="1h")
+    definedInGlobalScope(data) {
+        a = b + 1
+    }
+
+    @Routine(rate="1h")
+    statementHasLocalScope(data) {
+        a = 1
+        if 1 == 0 {
+            z = a // No problem, a from parent scope
+        }
+    }
+}
