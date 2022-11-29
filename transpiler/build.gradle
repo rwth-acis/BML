@@ -19,6 +19,22 @@ dependencies {
     implementation project(":parser")
 }
 
+jar {
+    dependsOn(":parser:jar")
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes 'Main-Class': 'i5.bml.transpiler.TranspilerMain'
+    }
+
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
+}
+
 test {
     useJUnitPlatform()
 }

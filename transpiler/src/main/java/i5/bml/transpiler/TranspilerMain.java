@@ -10,14 +10,14 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
-public class Transpiler {
+public class TranspilerMain {
     public static void main(String[] args) {
         var fileName = "Example.bml";
 //        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
 //        var fileName = "ExampleAutomaton.bml";
         var inputString = "";
         try {
-            var inputResource = Objects.requireNonNull(Transpiler.class.getClassLoader().getResource(fileName));
+            var inputResource = Objects.requireNonNull(TranspilerMain.class.getClassLoader().getResource(fileName));
             inputString = Files.readString(Paths.get(inputResource.toURI()));
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -26,13 +26,17 @@ public class Transpiler {
         var stringBuilder = new StringBuilder();
         List<Diagnostic> diagnostics = null;
         try {
-            diagnostics = Parser.parse(inputString, stringBuilder);
+            diagnostics = Parser.parseAndCollectDiagnostics(inputString, stringBuilder);
         } catch (Exception e) {
             System.err.printf("PARSING ERROR: %s%n", e.getMessage());
         }
-        for (Diagnostic diagnostic : diagnostics) {
-            System.err.println(diagnostic.getMessage());
+
+        if (diagnostics != null) {
+            for (Diagnostic diagnostic : diagnostics) {
+                System.err.println(diagnostic.getMessage());
+            }
         }
+
         System.out.println(stringBuilder);
     }
 }
