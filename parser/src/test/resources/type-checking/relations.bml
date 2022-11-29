@@ -1,0 +1,23 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    wrongTypeOnLHSOfRelation(data) {
+        a = 0
+        b = true
+        c = b > a
+    }
+
+    @Routine(rate="1h")
+    wrongTypeOnRHSOfRelation(data) {
+        a = 1
+        b = false
+        c = a > b
+    }
+
+    @Routine(rate="1h")
+    wrongTypeOnBothSidesOfRelation(data) {
+        a = "abcd"
+        b = true
+        c = a > b
+    }
+}

@@ -32,4 +32,31 @@ Bot(host="localhost", port=8080) {
     alreadyDefinedInLocalScope(data) {
         data = 1
     }
+
+    @Routine(rate="1h")
+    ifHasLocalScope(data) {
+        a = 1
+        if 1 == 0 {
+            b = a // No problem, a from parent scope
+        }
+        a = b // b not defined in this scope
+    }
+
+    @Routine(rate="1h")
+    forEachHasLocalScope(data) {
+        a = 1
+        forEach c in [1, 2, 3] {
+            b = a // No problem, a from parent scope
+        }
+        a = b // b not defined in this scope
+    }
+
+    @Routine(rate="1h")
+    forEachHasLocalScope(data) {
+        a = 1
+        forEach c in [1, 2, 3] {
+            b = a // No problem, a from parent scope
+        }
+        a = b // b not defined in this scope
+    }
 }

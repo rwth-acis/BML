@@ -1,0 +1,26 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    @Routine(rate="1h")
+    initializeList(data) {
+        a = [1, 2, 3]
+    }
+
+    @Routine(rate="1h")
+    badListInitialization(data) {
+        a = [1, 2, "3"]
+    }
+
+    @Routine(rate="1h")
+    accessListFields(data) {
+        a = [1, 2, 3]
+        b = [petStore.get(path="/pet/{petId}", petId=1)]
+
+        d = 0
+        forEach c in a
+            d += c
+
+        d += b[0].tags[1].id
+    }
+}

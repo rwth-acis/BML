@@ -1,0 +1,14 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    @Routine(rate="1h")
+    unknownPath(data) {
+        petStore.get(path="/pet/{petId}/get", petId="1")
+    }
+
+    @Routine(rate="1h")
+    getNotDefinedForPath(data) {
+        petStore.get(path="/pet")
+    }
+}

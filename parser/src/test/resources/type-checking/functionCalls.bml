@@ -1,0 +1,24 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    @Routine(rate="1h")
+    wrongParameterTypePetId(data) {
+        petStore.get(path="/pet/{petId}", petId="1")
+    }
+
+    @Routine(rate="1h")
+    unknownParameterName(data) {
+        petStore.get(path="/pet/{petId}", petId=1, name="test")
+    }
+
+    @Routine(rate="1h")
+    missingParameterPetId(data) {
+        petStore.get(path="/pet/{petId}")
+    }
+
+    @Routine(rate="1h")
+    unknownFunctionCallDo(data) {
+        petStore.do(path="/pet/{petId}", petId=1)
+    }
+}

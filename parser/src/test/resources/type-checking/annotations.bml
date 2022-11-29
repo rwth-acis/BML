@@ -1,0 +1,15 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate=2)
+    wrongTypeForRoutineAnnotation(data) {
+        a = 1
+        b = !a
+    }
+
+    @Routine(rate="1h")
+    correctTypeForRoutineAnnotation(data) {
+        a = 1
+        b = false
+        c = 1 and b
+    }
+}

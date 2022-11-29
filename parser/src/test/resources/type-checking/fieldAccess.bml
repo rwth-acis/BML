@@ -1,0 +1,22 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    @Routine(rate="1h")
+    allowedAccess(data) {
+        pet = petStore.get(path="/pet/{petId}", petId=1)
+        petName = "Pet's name: " + pet.name
+    }
+
+    @Routine(rate="1h")
+    multiplyAccess(data) {
+        pet = petStore.get(path="/pet/{petId}", petId=1)
+        petCategory = pet.name + " is a " + pet.category.name
+    }
+
+    @Routine(rate="1h")
+    fieldAndListAccess(data) {
+        pet = petStore.get(path="/pet/{petId}", petId=1)
+        petInfo = pet.name + " is a " + pet.category.name + " with tag " + pet.tags[0].name
+    }
+}

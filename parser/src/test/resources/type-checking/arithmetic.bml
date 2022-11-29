@@ -1,0 +1,43 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    wrongTypeOnLeftOfOperation(data) {
+        a = 0
+        b = true
+        c = b + a
+    }
+
+    @Routine(rate="1h")
+    wrongTypeOnRightOfOperation(data) {
+        a = 1
+        b = false
+        c = a + b
+    }
+
+    @Routine(rate="1h")
+    wrongTypeOnLeftOfOperation(data) {
+        a = ["test"]
+        b = "abc"
+        c = a + b
+    }
+
+    @Routine(rate="1h")
+    wrongTypeUnaryOperation(data) {
+        a = [1]
+        b = -a
+    }
+
+    @Routine(rate="1h")
+    floatingPointConversion(data) {
+        a = 2.5
+        b = 2
+        c = a + b // c is floating point now
+    }
+
+    @Routine(rate="1h")
+    noFloatingPointConversion(data) {
+        a = 5
+        b = 2
+        c = a + b // c should still be integral
+    }
+}

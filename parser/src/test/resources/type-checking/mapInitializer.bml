@@ -1,0 +1,42 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    @Routine(rate="1h")
+    initializeMap(data) {
+        a = {
+            a = 1,
+            b = 2,
+            c = 3,
+        }
+    }
+
+    @Routine(rate="1h")
+    badMapInitialization(data) {
+        a = {
+            a = 1,
+            b = 2,
+            a = 3, // Key in explicit initializer is present twice
+        }
+    }
+
+    @Routine(rate="1h")
+    initializeMapDifferentValueTypes(data) {
+        a = {
+            a = 1,
+            b = [1, 2, 3],
+            c = petStore.get(path="/pet/{petId}", petId=1) // Has type Pet
+        }
+    }
+
+    @Routine(rate="1h")
+    accessMapFields(data) {
+        a = {
+            a = 1,
+            b = [1, 2, 3],
+            c = petStore.get(path="/pet/{petId}", petId=1)
+        }
+
+        b = a.a + a.b[0] + a.c.id
+    }
+}

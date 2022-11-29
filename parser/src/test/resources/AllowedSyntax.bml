@@ -36,7 +36,29 @@ Bot(host="localhost", port=8080) {
      * FOREACH STATEMENTS
      */
     @Routine(rate="1h")
-    simpleForeach(data) { // ALLOWED
-
+    nestedForEach(data) { // ALLOWED
+        forEach a in [1, 2, 3]
+            forEach b in [1, 2, 3]
+                c = a + b
     }
+
+    /*
+     * BLOCKS
+     */
+    @Routine(rate="1h")
+    anonymousBlock(data) { // ALLOWED
+        {
+            a = 1
+        }
+    }
+
+    /*
+     * TERNARY EXPRESSIONS
+     */
+     @Routine(rate="1h")
+     nestedTernary(data) { // ALLOWED
+         // Both are right-associative
+         a = 1 == 0 ? 1 : "a" == "b" ? 0 : 1
+         b = "a" == "b" ? 1 == 0 ? 1 : 0 : 1
+     }
 }

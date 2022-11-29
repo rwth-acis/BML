@@ -13,8 +13,8 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    wrongTypeInOperationAssignment(data) {
+    reassignment(data) { // ALLOWED
         a = 1
-        a += [1, 2, 3]
+        a = [1, 2, 3]
     }
 }

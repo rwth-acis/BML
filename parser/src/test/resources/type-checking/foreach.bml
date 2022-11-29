@@ -1,0 +1,18 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    foreachList(data) {
+        a = [1, 2, 3]
+        forEach b in a {
+
+        }
+    }
+
+    @Routine(rate="1h")
+    foreachMap(data) {
+        a = [a = 1, b = 2, c = 3]
+        forEach (b, c) in a {
+
+        }
+    }
+}

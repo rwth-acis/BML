@@ -1,16 +1,22 @@
 Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
-    wrongTypeEqual(data) {
-        a = 1
-        b = [1, 2, 3]
-        c = a == b
+    nestedTernaryWithWrongType(data) {
+        a = 1 == 0 ? 1 : "a" == "b" ? 0 : "c"
     }
 
     @Routine(rate="1h")
-    correctTypeEqual(data) {
-        a = 1
-        b = [1, 2, 3]
-        c = 1 == b[0]
+    nestedTernaryWithWrongType(data) {
+        a = "a" == "b" ? 1 > 0 ? "a" : "b" : 1
+    }
+
+    @Routine(rate="1h")
+    booleanCondition(data) {
+        a = "a" + "b" ? 1 : 0
+    }
+
+    @Routine(rate="1h")
+    argumentTypesAreDifferent(data) {
+        a = "a" > "b" ? 1 : "a"
     }
 }
