@@ -10,20 +10,21 @@ import Tokens, Literals, DialogueAutomaton;
 
 program : botDeclaration EOF ;
 
+/*
+ * Bot declaration
+ */
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
 botHead : BOT name=Identifier? LPAREN elementExpressionPairList RPAREN ;
 
+botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
+
+/*
+ * Parameter Lists
+ */
 elementExpressionPairList returns [Scope scope] : elementExpressionPair (COMMA elementExpressionPair)* ;
 
 elementExpressionPair : name=Identifier ASSIGN expr=expression ;
-
-literal returns [Type type] : StringLiteral
-                            | IntegerLiteral
-                            | FloatingPointLiteral
-                            | BooleanLiteral ;
-
-botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 
 /*
  * Components
@@ -42,12 +43,18 @@ functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 /*
  * Statement blocks
  */
-block : LBRACE blockStatement* RBRACE ;
+statement returns [Scope scope] : block
+                                | ifStatement
+                                | forEachStatement
+                                | expression
+                                | assignment ;
 
-blockStatement : assignment
-               | statement ;
+block : LBRACE statement* RBRACE ;
 
-// Assignment
+ifStatement : IF expression statement (ELSE statement)? ;
+
+forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expression statement ;
+
 assignment : name=Identifier op=assignmentOperator expression ;
 
 assignmentOperator : ASSIGN
@@ -56,10 +63,6 @@ assignmentOperator : ASSIGN
                    | MOD_ASSIGN
                    | ADD_ASSIGN
                    | SUB_ASSIGN ;
-
-statement returns [Scope scope] : block
-                                | stmt=IF expression blockStatement (ELSE blockStatement)?
-                                | stmt=FOREACH (Identifier (comma=COMMA Identifier)?) IN expression blockStatement ;
 
 /*
  * Expressions
@@ -80,8 +83,11 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | left=expression op=OR right=expression
                                | <assoc=right> expression op=QUESTION expression COLON expression ;
 
-atom returns [Type type] : literal
-                         | Identifier ;
+atom returns [Type type] : token=StringLiteral
+                         | token=IntegerLiteral
+                         | token=FloatingPointLiteral
+                         | token=BooleanLiteral
+                         | token=Identifier ;
 
 functionCall : functionName=Identifier LPAREN elementExpressionPairList? RPAREN ;
 
