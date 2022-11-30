@@ -31,6 +31,7 @@ class ScopeTest {
     @BeforeAll
     static void fileHasCorrectSyntax() {
         Assertions.assertTrue(TestUtils.collectSyntaxErrors(WRONG_SCOPES_BML).isEmpty());
+        Assertions.assertTrue(TestUtils.collectSyntaxErrors(CORRECT_SCOPES_BML).isEmpty());
     }
 
     private static List<String> wrongScopeErrors() {

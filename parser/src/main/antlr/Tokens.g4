@@ -54,4 +54,4 @@ NEWLINE : ('\r'? '\n' | '\r')+ -> channel(HIDDEN) ;
 SEMICOLON : ';' -> channel(HIDDEN) ;
 
 // Identifier needs to come last
-Identifier : [a-zA-Z]+ ;
+Identifier : [a-zA-Z$_] ([a-zA-Z$_] | [0-9])*;
