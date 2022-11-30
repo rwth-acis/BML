@@ -37,6 +37,10 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     @Override
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        if (ctx == null) { // Missing parameters, but it has been reported by `checkParameters`
+            return;
+        }
+
         var expr = ctx.elementExpressionPair(0).expr;
         var atom = expr.atom();
         if (atom == null || atom.StringLiteral() == null) {
@@ -49,7 +53,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     @Override
     public void initializeType(ParserRuleContext ctx) {
-        Objects.requireNonNull(url);
+        if (url == null) { // Missing URL parameter, but it has been reported by `checkParameters`
+            return;
+        }
 
         var start = System.nanoTime();
         SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, null);
