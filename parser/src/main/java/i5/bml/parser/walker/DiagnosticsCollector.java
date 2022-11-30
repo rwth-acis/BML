@@ -2,13 +2,12 @@ package i5.bml.parser.walker;
 
 import generatedParser.BMLBaseListener;
 import generatedParser.BMLParser;
+import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
-import i5.bml.parser.errors.Diagnostics;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.eclipse.lsp4j.Diagnostic;
 
@@ -88,15 +87,34 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void enterBlock(BMLParser.BlockContext ctx) {
-        Scope s = new BlockScope(currentScope);
-        ctx.scope = s;
-        pushScope(s);
+    public void enterStatement(BMLParser.StatementContext ctx) {
+        // We create a scope if we have an if or foreach statement or a block
+        if (ctx.ifStatement() != null || ctx.forEachStatement() != null || ctx.block() != null) {
+            Scope s = new BlockScope(currentScope);
+            ctx.scope = s;
+            pushScope(s);
+        }
+        // We do not have a "block", so we check whether it's a "statement expression" (e.g., function call)
+        else if (ctx.expression() != null // We have an expression
+                && (ctx.expression().op == null || ctx.expression().op.getType() != BMLParser.DOT) // Expression is not using obj.foo()
+                && ctx.expression().functionCall() == null) { // Expression is not a function call
+            Diagnostics.addDiagnostic(collectedDiagnostics, "Not a statement", ctx.expression());
+        }
     }
 
     @Override
-    public void exitBlock(BMLParser.BlockContext ctx) {
-        popScope();
+    public void exitStatement(BMLParser.StatementContext ctx) {
+        if (ctx.ifStatement() != null || ctx.forEachStatement() != null || ctx.block() != null) {
+            popScope();
+        }
+    }
+
+    @Override
+    public void enterForEachStatement(BMLParser.ForEachStatementContext ctx) {
+        checkAlreadyDefinedElseDefine(ctx.Identifier(0).getSymbol());
+        if (ctx.comma != null) {
+            checkAlreadyDefinedElseDefine(ctx.Identifier(1).getSymbol());
+        }
     }
 
     private void pushScope(Scope s) {
@@ -177,6 +195,32 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
+    public void exitForEachStatement(BMLParser.ForEachStatementContext ctx) {
+        var exprType = ctx.expression().type;
+        Type itemType;
+        Type valueType = null;
+        if (!(exprType instanceof BMLList) && !(exprType instanceof BMLMap)) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List or Map", exprType), ctx.expression());
+            itemType = TypeRegistry.resolveType("Object");
+        } else if (exprType instanceof BMLList) {
+            itemType = ((BMLList) exprType).getItemType();
+        } else { // Map
+            itemType = ((BMLMap) exprType).getKeyType();
+            valueType = ((BMLMap) exprType).getValueType();
+        }
+
+        // Resolve iterator variable
+        var resolvedSymbol = currentScope.resolve(ctx.Identifier().get(0).getText());
+        ((VariableSymbol) resolvedSymbol).setType(itemType);
+
+        // Check for second iterator variable
+        if (ctx.comma != null) {
+            resolvedSymbol = currentScope.resolve(ctx.Identifier().get(1).getText());
+            ((VariableSymbol) resolvedSymbol).setType(valueType);
+        }
+    }
+
+    @Override
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
         // When exiting an assignment, we can assume that the right-hand side type was computed already,
         // since it is an expression
@@ -206,33 +250,26 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void exitLiteral(BMLParser.LiteralContext ctx) {
-        var terminalNodeType = ((TerminalNode) ctx.getChild(0)).getSymbol().getType();
-        ctx.type = switch (terminalNodeType) {
+    public void exitAtom(BMLParser.AtomContext ctx) {
+        ctx.type = switch (ctx.token.getType()) {
             case BMLParser.IntegerLiteral -> TypeRegistry.resolveType("Number");
             case BMLParser.FloatingPointLiteral -> TypeRegistry.resolveType("Float Number");
             case BMLParser.StringLiteral -> TypeRegistry.resolveType("String");
             case BMLParser.BooleanLiteral -> TypeRegistry.resolveType("Boolean");
-            // This can never happen
+            case BMLParser.Identifier -> {
+                var name = ctx.Identifier().getText();
+                var resolvedSymbol = currentScope.resolve(name);
+                if (!(resolvedSymbol instanceof VariableSymbol)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
+                    // We don't know the type, so we go with Object
+                    yield TypeRegistry.resolveType("Object");
+                } else {
+                    yield ((VariableSymbol) resolvedSymbol).getType();
+                }
+            }
+            // This should never happen
             default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
         };
-    }
-
-    @Override
-    public void exitAtom(BMLParser.AtomContext ctx) {
-        if (ctx.literal() != null) {
-            ctx.type = ctx.literal().type;
-        } else { // Identifier
-            var name = ctx.Identifier().getText();
-            var r = currentScope.resolve(name);
-            if (!(r instanceof VariableSymbol)) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
-                // We don't know the type, so we go with Object
-                ctx.type = TypeRegistry.resolveType("Object");
-            } else {
-                ctx.type = ((VariableSymbol) r).getType();
-            }
-        }
     }
 
     @Override
@@ -433,6 +470,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     @Override
     public void exitElementExpressionPair(BMLParser.ElementExpressionPairContext ctx) {
         urlCheck(ctx.expr);
+        // TODO: This could be removed once we have implemented parameter checks for annotation, Bot head, etc.
         checkAlreadyDefinedElseDefine(ctx.name);
     }
 

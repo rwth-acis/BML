@@ -39,9 +39,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
         var expr = ctx.elementExpressionPair(0).expr;
         var atom = expr.atom();
-        if (atom == null || atom.literal() == null) {
+        if (atom == null || atom.StringLiteral() == null) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    EXPECTED_BUT_FOUND.format("String", expr.type), expr);
+                    EXPECTED_BUT_FOUND.format("String Literal", expr.type), expr);
         } else {
             url = atom.getText().substring(1, atom.getText().length() - 1);
         }
