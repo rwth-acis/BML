@@ -16,7 +16,7 @@ Bot(host="localhost", port=8080) {
         a = {
             a = 1,
             b = 2,
-            a = 3, // Key in explicit initializer is present twice
+            a = 3 // Key in explicit initializer is present twice
         }
     }
 

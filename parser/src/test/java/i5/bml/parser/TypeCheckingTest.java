@@ -29,13 +29,10 @@ public class TypeCheckingTest {
 
     @BeforeAll
     static void fileHasCorrectSyntax() {
-        var match = Stream.of(Objects.requireNonNull(new File("src/test/resources/" + TYPE_CHECKING_BASE_PATH).listFiles()))
+        var dirPath = "src/test/resources/" + TYPE_CHECKING_BASE_PATH;
+        var match = Stream.of(Objects.requireNonNull(new File(dirPath).listFiles()))
                 .filter(file -> !file.isDirectory())
-                .map(f -> {
-                    System.out.println(f.getName());
-                    System.out.println(TestUtils.collectSyntaxErrors(TYPE_CHECKING_BASE_PATH + f.getName()));
-                    return TestUtils.collectSyntaxErrors(TYPE_CHECKING_BASE_PATH + f.getName());
-                })
+                .map(f -> TestUtils.collectSyntaxErrors(TYPE_CHECKING_BASE_PATH + f.getName()))
                 .allMatch(List::isEmpty);
 
         Assertions.assertTrue(match);

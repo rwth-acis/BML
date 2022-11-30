@@ -22,7 +22,7 @@ botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 /*
  * Parameter Lists
  */
-elementExpressionPairList returns [Scope scope] : elementExpressionPair (COMMA elementExpressionPair)* ;
+elementExpressionPairList returns [Scope scope] : elementExpressionPair (COMMA elementExpressionPair)* COMMA? ;
 
 elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 

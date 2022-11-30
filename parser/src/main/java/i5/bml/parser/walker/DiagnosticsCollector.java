@@ -338,7 +338,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 case BMLParser.BANG -> {
                     var exprType = ctx.expr.type;
                     if (!(exprType instanceof BMLBoolean)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", exprType), ctx.left);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Boolean", exprType), ctx.expr);
                         yield TypeRegistry.resolveType("Boolean");
                     } else {
                         yield exprType;
@@ -498,6 +498,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     public void exitElementExpressionPair(BMLParser.ElementExpressionPairContext ctx) {
         urlCheck(ctx.expr);
         // TODO: This could be removed once we have implemented parameter checks for annotation, Bot head, etc.
+        //       Map initializers could be checked separately
         checkAlreadyDefinedElseDefine(ctx.name);
     }
 
