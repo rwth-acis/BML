@@ -25,6 +25,8 @@ public abstract class AbstractBMLType implements Type {
 
     protected List<Diagnostic> cachedDiagnostics = new ArrayList<>();
 
+    protected int typeIndex;
+
     protected void addDiagnostic(String msg, DiagnosticSeverity severity) {
         var d = new Diagnostic();
         d.setMessage(msg);
@@ -132,9 +134,13 @@ public abstract class AbstractBMLType implements Type {
         return this.getClass().getAnnotation(BMLType.class).name();
     }
 
+    public void setTypeIndex(int typeIndex) {
+        this.typeIndex = typeIndex;
+    }
+
     @Override
     public int getTypeIndex() {
-        return -1;
+        return typeIndex;
     }
 
     @Override

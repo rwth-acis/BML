@@ -14,6 +14,8 @@ public class TypeRegistry {
 
     private static final Map<String, Class<?>> complexTypeBlueprints = new HashMap<>();
 
+    private static int typeIndex = 0;
+
     static {
         init();
     }
@@ -53,6 +55,7 @@ public class TypeRegistry {
     }
 
     public static void registerType(String typeName, Type type) {
+        ((AbstractBMLType) type).setTypeIndex(typeIndex++);
         typeRegistry.put(typeName.toLowerCase(), type);
     }
 
@@ -98,12 +101,15 @@ public class TypeRegistry {
                     throw new RuntimeException(e);
                 }
 
+                ((AbstractBMLType) primitiveTypeInstance).setTypeIndex(typeIndex++);
                 typeRegistry.put(type.name().toLowerCase(), primitiveTypeInstance);
             }
         }
 
         // Explicitly add "Float Number" as Type
-        typeRegistry.put("float number", new BMLNumber(true));
+        BMLNumber type = new BMLNumber(true);
+        type.setTypeIndex(typeIndex++);
+        typeRegistry.put("float number", type);
     }
 
     public static void clear() {

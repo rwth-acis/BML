@@ -53,7 +53,9 @@ block : LBRACE statement* RBRACE ;
 
 ifStatement : IF expression statement (ELSE statement)? ;
 
-forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expression statement ;
+forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expression forEachBody ;
+
+forEachBody : statement ;
 
 assignment : name=Identifier op=assignmentOperator expression ;
 

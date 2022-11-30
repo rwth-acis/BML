@@ -12,7 +12,9 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.eclipse.lsp4j.Diagnostic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -137,7 +139,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     /*
-     * Type Synthesizer
+     * Type Checking
      */
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
@@ -195,12 +197,14 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void exitForEachStatement(BMLParser.ForEachStatementContext ctx) {
-        var exprType = ctx.expression().type;
+    public void enterForEachBody(BMLParser.ForEachBodyContext ctx) {
+        var forEachStmtCtx = ((BMLParser.ForEachStatementContext) ctx.parent);
+        var exprType = forEachStmtCtx.expression().type;
         Type itemType;
         Type valueType = null;
         if (!(exprType instanceof BMLList) && !(exprType instanceof BMLMap)) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List or Map", exprType), ctx.expression());
+            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List or Map", exprType),
+                    forEachStmtCtx.expression());
             itemType = TypeRegistry.resolveType("Object");
         } else if (exprType instanceof BMLList) {
             itemType = ((BMLList) exprType).getItemType();
@@ -210,12 +214,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
         }
 
         // Resolve iterator variable
-        var resolvedSymbol = currentScope.resolve(ctx.Identifier().get(0).getText());
+        var resolvedSymbol = currentScope.resolve(forEachStmtCtx.Identifier().get(0).getText());
         ((VariableSymbol) resolvedSymbol).setType(itemType);
 
         // Check for second iterator variable
-        if (ctx.comma != null) {
-            resolvedSymbol = currentScope.resolve(ctx.Identifier().get(1).getText());
+        if (forEachStmtCtx.comma != null) {
+            resolvedSymbol = currentScope.resolve(forEachStmtCtx.Identifier().get(1).getText());
             ((VariableSymbol) resolvedSymbol).setType(valueType);
         }
     }
@@ -268,7 +272,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 }
             }
             // This should never happen
-            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
+            default ->
+                    throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
         };
     }
 
@@ -277,9 +282,9 @@ public class DiagnosticsCollector extends BMLBaseListener {
         if (ctx.atom() != null) {
             ctx.type = ctx.atom().type;
         } else if (ctx.op != null) {
-            switch (ctx.op.getText()) {
-                case "(" -> ctx.type = ctx.expr.type;
-                case "." -> {
+            ctx.type = switch (ctx.op.getType()) {
+                case BMLParser.LBRACE -> ctx.expr.type;
+                case BMLParser.DOT -> {
                     AbstractBMLType prevType = (AbstractBMLType) ctx.expr.type;
                     var currentCtx = ctx.Identifier() != null ? ctx.Identifier() : ctx.functionCall();
                     AbstractBMLType resolvedType = (AbstractBMLType) prevType.resolveAccess(this, currentCtx);
@@ -294,23 +299,23 @@ public class DiagnosticsCollector extends BMLBaseListener {
                                     ctx.functionCall());
                         }
 
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else {
                         // In case of a function call, we need to unwrap the BMLFunction type to get the return type
                         if (ctx.functionCall() != null) {
                             if (resolvedType instanceof BMLFunction) {
                                 // If method: check parameters -> delegate check to BMLFunction
                                 resolvedType.checkParameters(this, ctx.functionCall().elementExpressionPairList());
-                                ctx.type = ((BMLFunction) resolvedType).getReturnType();
+                                yield ((BMLFunction) resolvedType).getReturnType();
                             } else {
-                                ctx.type = TypeRegistry.resolveType("Object");
+                                yield TypeRegistry.resolveType("Object");
                             }
                         } else {
-                            ctx.type = resolvedType;
+                            yield resolvedType;
                         }
                     }
                 }
-                case "[" -> {
+                case BMLParser.LBRACK -> {
                     var firstExpression = ctx.expression().get(0);
                     var firstExpressionType = firstExpression.type;
                     var secondExpression = ctx.expression().get(1);
@@ -318,28 +323,28 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
                     if (!(firstExpressionType instanceof BMLList)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List", firstExpressionType), firstExpression);
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else if (!(secondExpressionType instanceof BMLNumber)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", secondExpressionType), secondExpression);
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else if (((BMLNumber) secondExpressionType).isFloatingPoint()) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(new BMLNumber(false), secondExpressionType), secondExpression);
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else {
                         // Safe cast because we checked that first expression is a list
-                        ctx.type = ((BMLList) firstExpressionType).getItemType();
+                        yield ((BMLList) firstExpressionType).getItemType();
                     }
                 }
-                case "!" -> {
+                case BMLParser.BANG -> {
                     var exprType = ctx.expr.type;
                     if (!(exprType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", exprType), ctx.left);
-                        ctx.type = TypeRegistry.resolveType("Boolean");
+                        yield TypeRegistry.resolveType("Boolean");
                     } else {
-                        ctx.type = exprType;
+                        yield exprType;
                     }
                 }
-                case "<", "<=", ">", ">=" -> {
+                case BMLParser.LT, BMLParser.LE, BMLParser.GT, BMLParser.GE -> {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!(leftType instanceof BMLNumber)) {
@@ -348,69 +353,71 @@ public class DiagnosticsCollector extends BMLBaseListener {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
                     }
 
-                    ctx.type = TypeRegistry.resolveType("Boolean");
+                    yield TypeRegistry.resolveType("Boolean");
                 }
-                case "==", "!=" -> {
+                case BMLParser.EQUAL, BMLParser.NOTEQUAL -> {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!leftType.equals(rightType)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(leftType, ctx.op.getText(), rightType), ctx);
                     }
 
-                    ctx.type = TypeRegistry.resolveType("Boolean");
+                    yield TypeRegistry.resolveType("Boolean");
                 }
-                case "+", "-", "*", "/", "%" -> {
+                case BMLParser.ADD, BMLParser.SUB, BMLParser.MUL, BMLParser.DIV, BMLParser.MOD -> {
                     if (ctx.left == null) {
                         var expressionType = ctx.expr.type;
                         if (!(expressionType instanceof BMLNumber)) {
                             Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", expressionType), ctx.expr);
-                            ctx.type = TypeRegistry.resolveType("Number");
+                            yield TypeRegistry.resolveType("Number");
                         } else {
-                            ctx.type = expressionType;
+                            yield expressionType;
                         }
                     } else {
                         var leftType = ctx.left.type;
                         var rightType = ctx.right.type;
                         if (!(leftType instanceof BMLNumber)) {
                             Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
-                            ctx.type = TypeRegistry.resolveType("Number");
+                            yield TypeRegistry.resolveType("Number");
                         } else if (!(rightType instanceof BMLNumber)) {
                             Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", rightType), ctx.right);
-                            ctx.type = TypeRegistry.resolveType("Number");
+                            yield TypeRegistry.resolveType("Number");
                         } else {
                             var isLeftOrRightFloat = ((BMLNumber) leftType).isFloatingPoint() || ((BMLNumber) rightType).isFloatingPoint();
-                            ctx.type = TypeRegistry.resolveType(isLeftOrRightFloat ? "Float Number" : "Number");
+                            yield TypeRegistry.resolveType(isLeftOrRightFloat ? "Float Number" : "Number");
                         }
                     }
                 }
-                case "and", "or" -> {
+                case BMLParser.AND, BMLParser.OR -> {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
                     if (!(leftType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", leftType), ctx.left);
-                        ctx.type = TypeRegistry.resolveType("Boolean");
+                        yield TypeRegistry.resolveType("Boolean");
                     } else if (!(rightType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", rightType), ctx.right);
-                        ctx.type = TypeRegistry.resolveType("Boolean");
+                        yield TypeRegistry.resolveType("Boolean");
                     } else {
-                        ctx.type = leftType;
+                        yield leftType;
                     }
                 }
-                case "?" -> {
+                case BMLParser.QUESTION -> {
                     var condType = ctx.expression().get(0).type;
                     var firstType = ctx.expression().get(1).type;
                     var secondType = ctx.expression().get(2).type;
                     if (!(condType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", condType), ctx.expression().get(0));
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else if (!firstType.equals(secondType)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(condType + " ? " + firstType, ":", secondType), ctx);
-                        ctx.type = TypeRegistry.resolveType("Object");
+                        yield TypeRegistry.resolveType("Object");
                     } else {
-                        ctx.type = firstType;
+                        yield firstType;
                     }
                 }
-            }
+                // This should never happen
+                default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op, ctx));
+            };
         } else if (ctx.functionCall() != null) {
             var name = ctx.functionCall().functionName.getText();
             var symbol = currentScope.resolve(name);
@@ -420,47 +427,67 @@ public class DiagnosticsCollector extends BMLBaseListener {
             } else {
                 ctx.type = ((BMLFunction) ((TypedSymbol) symbol).getType()).getReturnType();
             }
-        } else { // Initializer
-            if (ctx.initializer().mapInitializer() != null) {
-                // TODO
-                //ctx.initializer().mapInitializer().elementExpressionPairList()
-            } else { // List initializer
-                // TODO
-                // Find type of list items & check they are all equal
-                var expressions = ctx.initializer().listInitializer().expression();
-                if (expressions.isEmpty()) {
-                    Type listType = new BMLList(TypeRegistry.resolveType("Object"));
+        } else { // Initializers
+            handleInitializers(ctx);
+        }
+    }
 
-                    var resolvedType = TypeRegistry.resolveComplexType(listType.toString());
-                    if (resolvedType == null) {
-                        TypeRegistry.registerType(listType.toString(), listType);
-                        ctx.type = listType;
-                    } else {
-                        ctx.type = resolvedType;
+    private void handleInitializers(BMLParser.ExpressionContext ctx) {
+        if (ctx.initializer().mapInitializer() != null) {
+            var elementExpressionPairs = ctx.initializer().mapInitializer().elementExpressionPairList().elementExpressionPair();
+            if (elementExpressionPairs.isEmpty()) {
+                Type mapType = new BMLMap(TypeRegistry.resolveType("Object"), TypeRegistry.resolveType("Object"));
+                ctx.type = tryToResolveElseRegister(mapType);
+            } else {
+                var firstItemType = elementExpressionPairs.get(0).expr.type;
+                var equalTypes = true;
+                Map<String, Type> supportedAccesses = new HashMap<>();
+                for (int i = 1, expressionSize = elementExpressionPairs.size(); i < expressionSize; ++i) {
+                    var currExprType = elementExpressionPairs.get(i).expr.type;
+                    if (!firstItemType.equals(currExprType)) {
+                        equalTypes = false;
                     }
+
+                    supportedAccesses.put(elementExpressionPairs.get(i).name.getText(), currExprType);
+                }
+
+                if (equalTypes) {
+                    ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType("String"),
+                            firstItemType, supportedAccesses));
                 } else {
-                    var firstItemType = expressions.get(0).type;
-                    for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
-                        if (!firstItemType.equals(expressions.get(i).type)) {
-                            Diagnostics.addDiagnostic(collectedDiagnostics, "List initialization requires homogeneous types", ctx.initializer());
-                            ctx.type = TypeRegistry.resolveType("Object");
-                            break;
-                        }
-                    }
-
-                    if (ctx.type == null) {
-                        Type listType = new BMLList(firstItemType);
-
-                        var resolvedType = TypeRegistry.resolveComplexType(listType.toString());
-                        if (resolvedType == null) {
-                            TypeRegistry.registerType(listType.toString(), listType);
-                            ctx.type = listType;
-                        } else {
-                            ctx.type = resolvedType;
-                        }
-                    }
+                    ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType("String"),
+                            TypeRegistry.resolveType("Object"), supportedAccesses));
                 }
             }
+        } else { // List initializer
+            // Find type of list items & check they are all equal
+            var expressions = ctx.initializer().listInitializer().expression();
+            if (expressions.isEmpty()) {
+                ctx.type = tryToResolveElseRegister(new BMLList(TypeRegistry.resolveType("Object")));
+            } else {
+                // Check whether types are homogeneous
+                var firstItemType = expressions.get(0).type;
+                for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
+                    if (!firstItemType.equals(expressions.get(i).type)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics, "List initialization requires homogeneous types", ctx.initializer());
+                        ctx.type = TypeRegistry.resolveType("Object");
+                        return;
+                    }
+                }
+
+                // Types are homogeneous -> try to register type
+                ctx.type = tryToResolveElseRegister(new BMLList(firstItemType));
+            }
+        }
+    }
+
+    private Type tryToResolveElseRegister(Type typeToCheck) {
+        var resolvedType = TypeRegistry.resolveType(typeToCheck.toString());
+        if (resolvedType == null) {
+            TypeRegistry.registerType(typeToCheck.toString(), typeToCheck);
+            return typeToCheck;
+        } else {
+            return resolvedType;
         }
     }
 
