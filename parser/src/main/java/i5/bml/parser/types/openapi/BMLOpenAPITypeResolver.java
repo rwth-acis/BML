@@ -37,11 +37,10 @@ public class BMLOpenAPITypeResolver {
 
             return null;
         } else {
-            Type resolvedType;
-            switch (type) {
-                case "string", "boolean" -> resolvedType = TypeRegistry.resolveType(type);
-                case "integer" -> resolvedType = TypeRegistry.resolveType("Number");
-                case "number" -> resolvedType = TypeRegistry.resolveType("Float Number");
+            return switch (type) {
+                case "string", "boolean" -> TypeRegistry.resolveType(type);
+                case "integer" -> TypeRegistry.resolveType("Number");
+                case "number" -> TypeRegistry.resolveType("Float Number");
                 default -> {
                     var resolvedOpenAPIType = TypeRegistry.resolveType(type);
                     if (resolvedOpenAPIType == null) {
@@ -49,21 +48,20 @@ public class BMLOpenAPITypeResolver {
                         computeComponentFields(openAPI, type, supportedFields);
 
                         // Add to type registry
-                        resolvedType = new BMLOpenAPISchema(type, supportedFields);
-                        TypeRegistry.registerType(type, resolvedType);
+                        var newType = new BMLOpenAPISchema(type, supportedFields);
+                        TypeRegistry.registerType(type, newType);
+                        yield newType;
                     } else {
-                        resolvedType = resolvedOpenAPIType;
+                        yield resolvedOpenAPIType;
                     }
                 }
-            }
-
-            return resolvedType;
+            };
         }
     }
 
     public static String extractOpenAPITypeFromSchema(Schema<?> schema, String object, String objectName) {
         // Resolve type
-        // TODO: Handle AnyType and OneOf (i.e., mixed i5.bml.parser.types)
+        // TODO: Handle AnyType and OneOf (i.e., mixed types)
         String type;
         if (schema.getType() == null) {
             if (schema.get$ref() == null) {
