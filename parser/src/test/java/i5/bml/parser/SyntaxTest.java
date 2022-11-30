@@ -18,7 +18,7 @@ public class SyntaxTest {
         var diagnosticsCollector = new DiagnosticsCollector();
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics().stream()
-                .map(Diagnostic::getMessage)
+                .map(d -> "line=%d: %s".formatted(d.getRange().getStart().getLine(), d.getMessage()))
                 .toList();
 
         Assertions.assertTrue(diagnostics.isEmpty(), () -> String.join("\n", diagnostics));
