@@ -1,0 +1,9 @@
+Bot(host="localhost", port=8080) {
+
+    @Routine(rate="1h")
+    nestedLonelyExpression(data) {
+        if "b" == "a"
+            if 1 == 2
+                1 + 2
+    }
+}
