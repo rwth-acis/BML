@@ -1,6 +1,8 @@
 package i5.bml.transpiler;
 
 import i5.bml.parser.Parser;
+import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
 
 import java.io.IOException;
@@ -23,20 +25,17 @@ public class TranspilerMain {
             throw new RuntimeException(e);
         }
 
-        var stringBuilder = new StringBuilder();
-        List<Diagnostic> diagnostics = null;
-        try {
-            diagnostics = Parser.parseAndCollectDiagnostics(inputString, stringBuilder);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        var pair = Parser.parse(inputString);
+        Parser.makeParseTree(pair.getRight());
+
+        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
+        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         if (diagnostics != null) {
             for (Diagnostic diagnostic : diagnostics) {
                 System.err.println(diagnostic.getMessage());
             }
         }
-
-        System.out.println(stringBuilder);
     }
 }
