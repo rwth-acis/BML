@@ -4,8 +4,8 @@ import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.Type;
 
-@BMLType(name = "List", isComplex = true)
-public class BMLList extends AbstractBMLType {
+@BMLType(name = BuiltinType.LIST, isComplex = true)
+public class BMLList extends AbstractBMLType implements Summable {
 
     private Type itemType;
 

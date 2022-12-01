@@ -11,28 +11,20 @@ import java.util.Map;
 
 import static i5.bml.parser.errors.ParserError.NOT_DEFINED;
 
-@BMLType(name = "Map", isComplex = true)
+@BMLType(name = BuiltinType.MAP, isComplex = true)
 public class BMLMap extends AbstractBMLType {
 
     Type keyType;
 
-    /**
-     * Either type Object when there are values with heterogeneous types.
-     * Or a specific type because all values have this type.
-     */
-    Type valueType;
-
     public BMLMap() {
     }
 
-    public BMLMap(Type keyType, Type valueType) {
+    public BMLMap(Type keyType) {
         this.keyType = keyType;
-        this.valueType = valueType;
     }
 
-    public BMLMap(Type keyType, Type valueType, Map<String, Type> supportedAccesses) {
+    public BMLMap(Type keyType, Map<String, Type> supportedAccesses) {
         this.keyType = keyType;
-        this.valueType = valueType;
         super.supportedAccesses = supportedAccesses;
     }
 
@@ -51,7 +43,7 @@ public class BMLMap extends AbstractBMLType {
             if (valueType == null) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                         NOT_DEFINED.format(ctx.getText()), ((TerminalNode) ctx).getSymbol());
-                return TypeRegistry.resolveType("Object");
+                return TypeRegistry.resolveType(BuiltinType.OBJECT);
             }
 
             return valueType;
@@ -61,7 +53,7 @@ public class BMLMap extends AbstractBMLType {
             if (valueType == null) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                         NOT_DEFINED.format(ctx.getText()), functionCallCtx.functionName);
-                return TypeRegistry.resolveType("Object");
+                return TypeRegistry.resolveType(BuiltinType.OBJECT);
             }
 
             return valueType;
@@ -70,6 +62,6 @@ public class BMLMap extends AbstractBMLType {
 
     @Override
     public String encodeToString() {
-        return "BMLMap{keyType=%s, valueType=%s, supportedAccesses=%s}".formatted(keyType, valueType, supportedAccesses);
+        return "BMLMap{keyType=%s, supportedAccesses=%s}".formatted(keyType, supportedAccesses);
     }
 }

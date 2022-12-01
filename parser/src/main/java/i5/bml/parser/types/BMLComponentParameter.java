@@ -11,7 +11,7 @@ public @interface BMLComponentParameter {
 
     String name();
 
-    String expectedBMLType();
+    BuiltinType expectedBMLType();
 
     boolean isRequired();
 }

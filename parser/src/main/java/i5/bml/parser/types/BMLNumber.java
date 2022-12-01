@@ -2,10 +2,10 @@ package i5.bml.parser.types;
 
 import java.math.BigDecimal;
 
-@BMLType(name = "Number", isComplex = false)
-public class BMLNumber extends AbstractBMLType {
+@BMLType(name = BuiltinType.NUMBER, isComplex = false)
+public class BMLNumber extends AbstractBMLType implements Summable {
 
-    @BMLComponentParameter(name = "value", expectedBMLType = "Number", isRequired = false)
+    @BMLComponentParameter(name = "value", expectedBMLType = BuiltinType.NUMBER, isRequired = false)
     private BigDecimal value;
 
     private boolean isFloatingPoint;

@@ -9,7 +9,8 @@ public enum ParserError {
     ALREADY_DEFINED("`%s` is already defined in scope"),
     INCOMPATIBLE("%s %s %s is not compatible"),
     MISSING_PARAM("Missing parameter `%s`"),
-    CANT_RESOLVE_IN("Can't resolve `%s` in `%s`");
+    CANT_RESOLVE_IN("Can't resolve `%s` in `%s`"),
+    CANNOT_APPLY_OP("Operator `%s` can't be applied to `%s`, `%s`");
 
     public final String message;
 

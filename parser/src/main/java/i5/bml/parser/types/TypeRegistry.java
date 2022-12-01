@@ -8,7 +8,10 @@ import java.util.*;
 
 public class TypeRegistry {
 
-    private static final Map<String, Type> typeRegistry = new HashMap<>();
+    private TypeRegistry() {
+    }
+
+    private static final Map<String, Type> registeredTypes = new HashMap<>();
 
     private static final Set<String> builtinTypes = new HashSet<>();
 
@@ -20,22 +23,12 @@ public class TypeRegistry {
         init();
     }
 
-    public static Type resolveBuiltinType(String typeName) {
-        typeName = typeName.toLowerCase();
-
-        if (!isTypeBuiltin(typeName)) {
-            throw new IllegalStateException("Unknown type `%s`".formatted(typeName));
-        }
-
-        if (isTypeComplex(typeName)) {
-            return resolveComplexType(typeName);
-        } else {
-            return resolveType(typeName);
-        }
+    public static Type resolveType(String typeName) {
+        return registeredTypes.get(typeName.toLowerCase());
     }
 
-    public static Type resolveType(String typeName) {
-        return typeRegistry.get(typeName.toLowerCase());
+    public static Type resolveType(BuiltinType typeName) {
+        return registeredTypes.get(typeName.toString().toLowerCase());
     }
 
     public static Type resolveComplexType(String typeName) {
@@ -49,14 +42,14 @@ public class TypeRegistry {
         try {
             complexTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         return complexTypeInstance;
     }
 
     public static void registerType(Type type) {
         ((AbstractBMLType) type).setTypeIndex(typeIndex++);
-        typeRegistry.put(((AbstractBMLType) type).encodeToString().toLowerCase(), type);
+        registeredTypes.put(((AbstractBMLType) type).encodeToString().toLowerCase(), type);
     }
 
     public static boolean isTypeBuiltin(String typeName) {
@@ -68,8 +61,10 @@ public class TypeRegistry {
     }
 
     public static void init() {
-        for (BuiltinTypes value : BuiltinTypes.values()) {
-            builtinTypes.add(value.name().toLowerCase());
+        for (BuiltinType value : BuiltinType.values()) {
+            if (!value.isInternal()) {
+                builtinTypes.add(value.name().toLowerCase());
+            }
         }
 
         Reflections reflections = new Reflections("i5.bml.parser.types");
@@ -91,29 +86,29 @@ public class TypeRegistry {
             }
 
             if (type.isComplex()) {
-                complexTypeBlueprints.put(type.name().toLowerCase(), clazz);
+                complexTypeBlueprints.put(type.name().toString().toLowerCase(), clazz);
             } else {
                 Type primitiveTypeInstance;
                 try {
                     primitiveTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                          NoSuchMethodException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalStateException(e);
                 }
 
                 ((AbstractBMLType) primitiveTypeInstance).setTypeIndex(typeIndex++);
-                typeRegistry.put(type.name().toLowerCase(), primitiveTypeInstance);
+                registeredTypes.put(type.name().toString().toLowerCase(), primitiveTypeInstance);
             }
         }
 
-        // Explicitly add "Float Number" as Type
+        // Explicitly add BuiltinTypes.FLOAT_NUMBER.toString() as Type
         BMLNumber type = new BMLNumber(true);
         type.setTypeIndex(typeIndex++);
-        typeRegistry.put("Float Number".toLowerCase(), type);
+        registeredTypes.put(BuiltinType.FLOAT_NUMBER.toString().toLowerCase(), type);
     }
 
     public static void clear() {
-        typeRegistry.clear();
+        registeredTypes.clear();
         builtinTypes.clear();
         complexTypeBlueprints.clear();
     }

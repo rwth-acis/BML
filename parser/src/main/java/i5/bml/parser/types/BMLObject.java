@@ -1,6 +1,6 @@
 package i5.bml.parser.types;
 
-@BMLType(name = "Object", isComplex = false)
+@BMLType(name = BuiltinType.OBJECT, isComplex = false)
 public class BMLObject extends AbstractBMLType {
 
 }

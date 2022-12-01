@@ -11,6 +11,9 @@ import java.util.List;
 
 public class Diagnostics {
 
+    private Diagnostics() {
+    }
+
     public static void addDiagnostic(List<Diagnostic> diagnostics, Diagnostic diagnostic, ParserRuleContext ctx) {
         Position start;
         Position end;

@@ -23,10 +23,10 @@ import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
 
-@BMLType(name = "OpenAPI", isComplex = true)
+@BMLType(name = BuiltinType.OPENAPI, isComplex = true)
 public class BMLOpenAPIComponent extends AbstractBMLType {
 
-    @BMLComponentParameter(name = "url", expectedBMLType = "String", isRequired = true)
+    @BMLComponentParameter(name = "url", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String url;
 
     private OpenAPI openAPI;
@@ -88,7 +88,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             var optionalParameters = routeParameters.getRight();
 
             var p = new ParameterSymbol("path");
-            p.setType(TypeRegistry.resolveType("String"));
+            p.setType(TypeRegistry.resolveType(BuiltinType.STRING));
             requiredParameters.add(p);
 
             var function = new BMLFunction(returnType, requiredParameters, optionalParameters);
@@ -184,7 +184,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Check: http method is valid
         if (!httpMethods.contains(httpMethod)) {
             Diagnostics.addDiagnostic(diagnostics, NOT_DEFINED.format(httpMethod), functionCallCtx.functionName);
-            return TypeRegistry.resolveType("Object");
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         // Check: path is specified
@@ -194,15 +194,15 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
         if (pathParameter.isEmpty()) {
             Diagnostics.addDiagnostic(diagnostics, MISSING_PARAM.format("path"), functionCallCtx);
-            return TypeRegistry.resolveType("Object");
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         // Check: path parameter has correct type
         var pathParameterType = pathParameter.get().expression().type;
-        if (!pathParameterType.equals(TypeRegistry.resolveType("String"))) {
+        if (!pathParameterType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
             Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format("String", pathParameterType),
                     pathParameter.get().expression());
-            return TypeRegistry.resolveType("Object");
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         // Check: route is valid
@@ -212,7 +212,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         if (!routes.contains(path)) {
             Diagnostics.addDiagnostic(diagnostics, "Path `%s` is not defined for API:\n`%s`"
                     .formatted(path, url), pathParameter.get().expression());
-            return TypeRegistry.resolveType("Object");
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         // Check: HTTP_METHOD + ROUTE is a valid combination
@@ -221,7 +221,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         if (functionType == null) {
             Diagnostics.addDiagnostic(diagnostics, "Path `%s` does not support HTTP method `%s` for API:\n`%s`"
                             .formatted(path, httpMethod, url), pathParameter.get().expression());
-            return TypeRegistry.resolveType("Object");
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         var end = System.nanoTime();

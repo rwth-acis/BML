@@ -35,26 +35,17 @@ public abstract class AbstractBMLType implements Type {
     }
 
     public void collectParameters() {
-        var annotatedFields = Arrays.stream(this.getClass().getDeclaredFields())
+        Arrays.stream(this.getClass().getDeclaredFields())
                 .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
-                .toList();
-
-        annotatedFields.stream()
                 .map(f -> f.getAnnotation(BMLComponentParameter.class))
-                .filter(BMLComponentParameter::isRequired)
                 .forEach(p -> {
                     var parameterSymbol = new ParameterSymbol(p.name());
-                    parameterSymbol.setType(TypeRegistry.resolveBuiltinType(p.expectedBMLType()));
-                    requiredParameters.add(parameterSymbol);
-                });
-
-        annotatedFields.stream()
-                .map(f -> f.getAnnotation(BMLComponentParameter.class))
-                .filter(p -> !p.isRequired())
-                .forEach(p -> {
-                    var parameterSymbol = new ParameterSymbol(p.name());
-                    parameterSymbol.setType(TypeRegistry.resolveBuiltinType(p.expectedBMLType()));
-                    optionalParameters.add(parameterSymbol);
+                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    if (p.isRequired()) {
+                        requiredParameters.add(parameterSymbol);
+                    } else {
+                        optionalParameters.add(parameterSymbol);
+                    }
                 });
     }
 
@@ -131,7 +122,7 @@ public abstract class AbstractBMLType implements Type {
 
     @Override
     public String getName() {
-        return this.getClass().getAnnotation(BMLType.class).name();
+        return this.getClass().getAnnotation(BMLType.class).name().toString();
     }
 
     public void setTypeIndex(int typeIndex) {

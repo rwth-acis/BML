@@ -1,6 +1,7 @@
 package i5.bml.parser;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
 import i5.bml.parser.utils.TypeCheckWalker;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static i5.bml.parser.errors.ParserError.CANNOT_APPLY_OP;
 import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
 
 public class TypeCheckingTest {
@@ -39,11 +41,11 @@ public class TypeCheckingTest {
 
     private static Stream<Arguments> typeChecks() {
         return Stream.of(
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "annotations.bml", EXPECTED_BUT_FOUND.format("String", "Number")),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "Boolean")),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "Boolean")),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("String", "List<String>")),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "List<Number>"))
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "annotations.bml", EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("+", BuiltinType.BOOLEAN, BuiltinType.NUMBER)),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("+", BuiltinType.NUMBER, BuiltinType.STRING)),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("-", "List<String>", BuiltinType.STRING)),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, "List<Number>"))
         );
     }
 
@@ -74,10 +76,10 @@ public class TypeCheckingTest {
             var name = ((BMLParser.AssignmentContext) ctx).name.getText();
             if (name.equals("c4")) {
                 var symbol = currentScope.resolve(name);
-                floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType("Float Number"));
+                floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
             } else if (name.equals("c5")) {
                 var symbol = currentScope.resolve(name);
-                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType("Number"));
+                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER));
             }
         });
 

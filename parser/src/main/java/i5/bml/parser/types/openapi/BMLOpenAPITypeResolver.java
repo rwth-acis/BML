@@ -39,8 +39,8 @@ public class BMLOpenAPITypeResolver {
         } else {
             return switch (type) {
                 case "string", "boolean" -> TypeRegistry.resolveType(type);
-                case "integer" -> TypeRegistry.resolveType("Number");
-                case "number" -> TypeRegistry.resolveType("Float Number");
+                case "integer" -> TypeRegistry.resolveType(BuiltinType.NUMBER);
+                case "number" -> TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER);
                 default -> {
                     var resolvedOpenAPIType = TypeRegistry.resolveType(type);
                     if (resolvedOpenAPIType == null) {

@@ -19,12 +19,8 @@ public class BMLFunction extends AbstractBMLType {
 
     @Override
     public String getName() {
-        return "Function"; // TODO
-    }
-
-    @Override
-    public int getTypeIndex() {
-        return -1; // TODO
+        // TODO: Improve this
+        return "Function<Returns=%s>".formatted(returnType);
     }
 
     @Override
@@ -36,4 +32,13 @@ public class BMLFunction extends AbstractBMLType {
         return returnType;
     }
 
+    @Override
+    public String toString() {
+        return "BMLFunction{returnType=%s, requiredParameters=%s, optionalParameters=%s}".formatted(returnType, requiredParameters, optionalParameters);
+    }
+
+    @Override
+    public String encodeToString() {
+        return toString();
+    }
 }

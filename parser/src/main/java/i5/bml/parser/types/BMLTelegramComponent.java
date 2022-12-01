@@ -4,7 +4,7 @@ import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.symtab.Type;
 
-@BMLType(name = "Telegram", isComplex = true)
+@BMLType(name = BuiltinType.TELEGRAM, isComplex = true)
 public class BMLTelegramComponent extends AbstractBMLType {
 
     @Override

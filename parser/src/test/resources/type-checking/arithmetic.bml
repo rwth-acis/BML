@@ -15,10 +15,10 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    wrongTypeOnLeftOfOperation(data) {
+    wrongTypeOnLeftOfOperationString(data) {
         a = ["test"]
         b = "abc"
-        c3 = a + b
+        c3 = a - b
     }
 
     @Routine(rate="1h")
