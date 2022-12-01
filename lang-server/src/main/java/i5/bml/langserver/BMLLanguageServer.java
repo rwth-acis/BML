@@ -3,6 +3,7 @@ package i5.bml.langserver;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
@@ -50,7 +51,12 @@ public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
         capabilities.setCompletionProvider(new CompletionOptions());
         capabilities.setCodeActionProvider(false);
         capabilities.setDiagnosticProvider(new DiagnosticRegistrationOptions());
-        //capabilities.setDocumentHighlightProvider(new DocumentHighlightOptions());
+        var semanticTokensOptions = new SemanticTokensWithRegistrationOptions();
+        semanticTokensOptions.setLegend(new SemanticTokensLegend(List.of(SemanticTokenTypes.Number, SemanticTokenTypes.Comment),
+                List.of(SemanticTokenModifiers.Declaration, SemanticTokenModifiers.Definition)));
+        semanticTokensOptions.setRange(false);
+        semanticTokensOptions.setFull(true);
+        capabilities.setSemanticTokensProvider(semanticTokensOptions);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

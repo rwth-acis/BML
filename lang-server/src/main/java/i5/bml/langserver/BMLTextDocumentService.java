@@ -221,17 +221,20 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        return TextDocumentService.super.semanticTokensFull(params);
+        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Semantic Tokens Full Request: " + params.toString()));
+        return CompletableFuture.supplyAsync(() -> new SemanticTokens(List.of(1)));
     }
 
     @Override
     public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
-        return TextDocumentService.super.semanticTokensFullDelta(params);
+        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Semantic Tokens Full Delta Request: " + params.toString()));
+        return CompletableFuture.supplyAsync(() -> Either.forLeft(new SemanticTokens(List.of(1, 2))));
     }
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensRange(SemanticTokensRangeParams params) {
-        return TextDocumentService.super.semanticTokensRange(params);
+        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Semantic Tokens Range Request: " + params.toString()));
+        return CompletableFuture.supplyAsync(() -> new SemanticTokens(List.of(1, 2, 3)));
     }
 
     @Override
