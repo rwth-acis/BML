@@ -5,6 +5,7 @@ public enum ParserError {
     EXPECTED_BUT_FOUND("Expected `%s`\nFound `%s`"),
     UNKNOWN_TYPE("Unknown type `%s`"),
     NOT_DEFINED("`%s` is not defined"),
+    PARAM_NOT_DEFINED("Parameter `%s` is not defined"),
     NOT_DEFINED_FOR("`%s` is not defined for `%s`"),
     ALREADY_DEFINED("`%s` is already defined in scope"),
     INCOMPATIBLE("%s %s %s is not compatible"),

@@ -203,8 +203,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
         Type itemType;
         Type valueType = null;
         if (!(exprType instanceof BMLList) && !(exprType instanceof BMLMap)) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List or Map", exprType),
-                    forEachStmtCtx.expression());
+            Diagnostics.addDiagnostic(collectedDiagnostics, "forEach not applicable to `%s`"
+                    .formatted(exprType), forEachStmtCtx.expression());
             itemType = TypeRegistry.resolveType(BuiltinType.OBJECT);
         } else if (exprType instanceof BMLList) {
             itemType = ((BMLList) exprType).getItemType();

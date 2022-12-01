@@ -186,6 +186,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
         // Check: http method is valid
         if (!httpMethods.contains(httpMethod)) {
+            // TODO: The error message could be improved (e.g., more context)
             Diagnostics.addDiagnostic(diagnostics, NOT_DEFINED.format(httpMethod), functionCallCtx.functionName);
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }

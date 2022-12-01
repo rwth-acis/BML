@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static i5.bml.parser.errors.ParserError.CANNOT_APPLY_OP;
-import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
+import static i5.bml.parser.errors.ParserError.*;
 
 class TypeCheckingTest {
 
@@ -58,7 +57,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckAssignments() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml",List.of(
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml", List.of(
                 CANNOT_APPLY_OP.format("+=", BuiltinType.NUMBER, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format("+=", "List<String>", "List<Number>"),
                 CANNOT_APPLY_OP.format("-=", "List<String>", "List<String>")
@@ -67,7 +66,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckBools() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "bools.bml",List.of(
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "bools.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.NUMBER),
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING)
         ));
@@ -75,21 +74,21 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckComponents() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "components.bml",List.of(
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "components.bml", List.of(
                 "Url ':/petstore3.swagger.io/api/v3/openapi.json' is not valid",
                 "Could not connect to url `:/petstore3.swagger.io/api/v3/openapi.json`",
-                "Missing parameter `url`",
-                "Parameter `link` is not defined",
+                MISSING_PARAM.format("url"),
+                PARAM_NOT_DEFINED.format("link"),
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
-                "Missing parameter `url`",
-                "Parameter `id` is not defined"
+                MISSING_PARAM.format("url"),
+                PARAM_NOT_DEFINED.format("id")
         ));
     }
 
     @Test
     void typeCheckBotHead() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml",List.of());
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml",List.of(
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml", List.of());
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING)
         ));
@@ -97,19 +96,31 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckEqualities() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "equalities.bml",List.of(
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "equalities.bml", List.of(
                 CANNOT_APPLY_OP.format("==", BuiltinType.NUMBER, "List<Number>")
         ));
     }
 
     @Test
     void typeCheckFieldAccesses() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "fieldAccesses.bml",List.of());
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "fieldAccesses.bml", List.of());
     }
 
     @Test
     void typeCheckForEach() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml",List.of());
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml", List.of(
+                "forEach not applicable to `String`"
+        ));
+    }
+
+    @Test
+    void typeCheckFunctionCalls() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "functionCalls.bml", List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
+                PARAM_NOT_DEFINED.format("name"),
+                MISSING_PARAM.format("petId"),
+                NOT_DEFINED.format("do")
+        ));
     }
 
     @Test

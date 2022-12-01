@@ -91,7 +91,7 @@ public abstract class AbstractBMLType implements Type {
 
             if (optionalParameter.isEmpty()) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        "Parameter %s".formatted(NOT_DEFINED.format(name)), parameterPair.name);
+                        PARAM_NOT_DEFINED.format(name), parameterPair.name);
             } else {
                 // We can assume that parameter is present, so we expect the correct type
                 var optionalParameterType = optionalParameter.get().getType();
