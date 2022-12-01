@@ -456,25 +456,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 Type mapType = new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT));
                 ctx.type = tryToResolveElseRegister(mapType);
             } else {
-                var firstItemType = elementExpressionPairs.get(0).expr.type;
-                var equalTypes = true;
                 Map<String, Type> supportedAccesses = new HashMap<>();
-                for (int i = 1, expressionSize = elementExpressionPairs.size(); i < expressionSize; ++i) {
-                    var currExprType = elementExpressionPairs.get(i).expr.type;
-                    if (!firstItemType.equals(currExprType)) {
-                        equalTypes = false;
-                    }
-
-                    supportedAccesses.put(elementExpressionPairs.get(i).name.getText(), currExprType);
+                for (var elementExpressionPair : elementExpressionPairs) {
+                    supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);
                 }
 
-                if (equalTypes) {
-                    ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING),
-                            supportedAccesses));
-                } else {
-                    ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING),
-                            supportedAccesses));
-                }
+                ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), supportedAccesses));
             }
         } else { // List initializer
             // Find type of list items & check they are all equal
