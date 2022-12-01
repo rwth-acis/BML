@@ -5,6 +5,7 @@ import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,6 +37,17 @@ public class TestUtils {
         pair.getRight().addErrorListener(syntaxErrorListener);
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
         return syntaxErrorListener.getCollectedSyntaxErrors();
+    }
+
+    public static void assertNoErrors(String relativeFilePath, List<String> expectedErrors) {
+        var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
+        var diagnosticsCollector = new DiagnosticsCollector();
+        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+        diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage()));
+
+        Assertions.assertTrue(diagnostics.isEmpty(), () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
     }
 
     public static String prettyPrintDiagnostics(List<Diagnostic> diagnostics) {

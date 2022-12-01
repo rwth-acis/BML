@@ -39,28 +39,37 @@ class TypeCheckingTest {
         Assertions.assertTrue(match);
     }
 
-    private static Stream<Arguments> typeChecks() {
-        return Stream.of(
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "annotations.bml", EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("+", BuiltinType.BOOLEAN, BuiltinType.NUMBER)),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("+", BuiltinType.NUMBER, BuiltinType.STRING)),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", CANNOT_APPLY_OP.format("-", "List<String>", BuiltinType.STRING)),
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, "List<Number>"))
-        );
+    @Test
+    void typeCheckAnnotations() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "annotations.bml", List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)
+        ));
     }
 
-    @ParameterizedTest
-    @MethodSource("typeChecks")
-    void checkAllowedSyntax(String relativeFilePath, String errorMsg) {
-        var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
-        var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+    @Test
+    void typeCheckArithmetic() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", List.of(
+                CANNOT_APPLY_OP.format("+", BuiltinType.BOOLEAN, BuiltinType.NUMBER),
+                CANNOT_APPLY_OP.format("+", BuiltinType.NUMBER, BuiltinType.STRING),
+                CANNOT_APPLY_OP.format("-", "List<String>", BuiltinType.STRING),
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, "List<Number>")
+        ));
+    }
 
-        var containsMsg = diagnostics.stream()
-                .anyMatch(d -> d.getMessage().equals(errorMsg));
+    @Test
+    void typeCheckAssignments() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml",List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
+                EXPECTED_BUT_FOUND.format("List<String>", "List<Number>")
+        ));
+    }
 
-        Assertions.assertTrue(containsMsg, () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+    @Test
+    void typeCheckBools() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "bools.bml",List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.NUMBER),
+                EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING)
+        ));
     }
 
     @Test

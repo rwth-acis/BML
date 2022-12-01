@@ -8,8 +8,8 @@ Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
     wrongTypeAnd(data) {
-        a = 1
+        a = "true"
         b = false
-        c = 1 and b
+        c = a and b
     }
 }

@@ -243,12 +243,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var v = currentScope.resolve(ctx.name.getText());
             if (!(v instanceof VariableSymbol)) {
                 Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(ctx.name.getText()), ctx.name);
-            }
-
-            // Type of left-hand side should already be set
-            var rightType = ctx.expression().type;
-            if (!(rightType instanceof BMLNumber)) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER.toString(), rightType), ctx.name);
+            } else {
+                // Type of left-hand side should already be set
+                var rightType = ctx.expression().type;
+                if (!(rightType instanceof Summable)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(((VariableSymbol) v).getType(), rightType), ctx.name);
+                }
             }
         }
     }

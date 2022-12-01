@@ -3,18 +3,18 @@ Bot(host="localhost", port=8080) {
     @Routine(rate="1h")
     wrongTypeInOperationAssignment(data) {
         a = 1
-        a += "test"
-    }
+        a += "test" // NOT OKAY
 
-    @Routine(rate="1h")
-    wrongTypeInOperationAssignment(data) {
-        a = 1
-        a += [1, 2, 3]
-    }
+        b = 1
+        b += 1 // OKAY
 
-    @Routine(rate="1h")
-    reassignment(data) { // ALLOWED
-        a = 1
-        a = [1, 2, 3]
+        c = "foo"
+        c += "bar" // OKAY
+
+        d = ["foo"]
+        d += [1] // NOT OKAY
+
+        e = ["foo"]
+        e += ["bar"] // OKAY
     }
 }
