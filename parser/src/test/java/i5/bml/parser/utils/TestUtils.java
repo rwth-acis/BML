@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class TestUtils {
 
@@ -35,5 +36,11 @@ public class TestUtils {
         pair.getRight().addErrorListener(syntaxErrorListener);
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
         return syntaxErrorListener.getCollectedSyntaxErrors();
+    }
+
+    public static String prettyPrintDiagnostics(List<Diagnostic> diagnostics) {
+        return diagnostics.stream()
+                .map(d -> "line=%d: %s".formatted(d.getRange().getStart().getLine(), d.getMessage()))
+                .collect(Collectors.joining("\n"));
     }
 }

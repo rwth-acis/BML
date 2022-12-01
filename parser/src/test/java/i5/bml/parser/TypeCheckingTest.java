@@ -21,12 +21,6 @@ public class TypeCheckingTest {
     // File path relative to test resources folder
     private static final String TYPE_CHECKING_BASE_PATH = "type-checking/";
 
-    private static Stream<Arguments> typeChecks() {
-        return Stream.of(
-                Arguments.of(TYPE_CHECKING_BASE_PATH + "annotations.bml", EXPECTED_BUT_FOUND.format("String", "Number"))
-        );
-    }
-
     @BeforeAll
     static void fileHasCorrectSyntax() {
         var dirPath = "src/test/resources/" + TYPE_CHECKING_BASE_PATH;
@@ -38,16 +32,27 @@ public class TypeCheckingTest {
         Assertions.assertTrue(match);
     }
 
+    private static Stream<Arguments> typeChecks() {
+        return Stream.of(
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "annotations.bml", EXPECTED_BUT_FOUND.format("String", "Number")),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "Boolean")),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "Boolean")),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("String", "List<String>")),
+                Arguments.of(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", EXPECTED_BUT_FOUND.format("Number", "List<Number>"))
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("typeChecks")
     void checkAllowedSyntax(String relativeFilePath, String errorMsg) {
         var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
-        var containsMsg = diagnosticsCollector.getCollectedDiagnostics().stream()
+        var containsMsg = diagnostics.stream()
                 .anyMatch(d -> d.getMessage().equals(errorMsg));
 
-        Assertions.assertTrue(containsMsg);
+        Assertions.assertTrue(containsMsg, () -> TestUtils.prettyPrintDiagnostics(diagnostics));
     }
 }

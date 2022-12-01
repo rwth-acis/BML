@@ -17,11 +17,8 @@ public class SyntaxTest {
         var pair = Parser.parse(TestUtils.readFileIntoString(ALLOWED_SYNTAX_BML));
         var diagnosticsCollector = new DiagnosticsCollector();
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-        var diagnostics = diagnosticsCollector.getCollectedDiagnostics().stream()
-                .map(d -> "line=%d: %s".formatted(d.getRange().getStart().getLine(), d.getMessage()))
-                .toList();
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
-        Assertions.assertTrue(diagnostics.isEmpty(), () -> String.join("\n", diagnostics));
+        Assertions.assertTrue(diagnostics.isEmpty(), () -> TestUtils.prettyPrintDiagnostics(diagnostics));
     }
-
 }
