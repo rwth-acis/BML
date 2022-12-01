@@ -1,10 +1,15 @@
 package i5.bml.parser;
 
+import generatedParser.BMLParser;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
+import i5.bml.parser.utils.TypeCheckWalker;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -53,6 +58,33 @@ public class TypeCheckingTest {
         var containsMsg = diagnostics.stream()
                 .anyMatch(d -> d.getMessage().equals(errorMsg));
 
-        Assertions.assertTrue(containsMsg, () -> TestUtils.prettyPrintDiagnostics(diagnostics));
+        Assertions.assertTrue(containsMsg, () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+    }
+
+    @Test
+    void testFloatingPointConversion() {
+        var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
+        var diagnosticsCollector = new DiagnosticsCollector();
+        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+
+        final boolean[] floatConversionWasDone = new boolean[]{false};
+        final boolean[] floatConversionWasNotDone = new boolean[]{false};
+        var typeCheckWalker = new TypeCheckWalker((currentScope, ctx) -> {
+            var name = ((BMLParser.AssignmentContext) ctx).name.getText();
+            if (name.equals("c4")) {
+                var symbol = currentScope.resolve(name);
+                floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType("Float Number"));
+            } else if (name.equals("c5")) {
+                var symbol = currentScope.resolve(name);
+                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType("Number"));
+            }
+        });
+
+        pair.getRight().reset();
+        new ParseTreeWalker().walk(typeCheckWalker, pair.getRight().program());
+
+        Assertions.assertTrue(floatConversionWasDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+        Assertions.assertTrue(floatConversionWasNotDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
     }
 }

@@ -52,4 +52,5 @@ generateGrammarSource {
 clean.doLast {
     file("${project.projectDir}/src/main/gen").deleteDir()
     file("${project.projectDir}/src/main/antlr/Tokens.tokens").delete()
+    file("${project.projectDir}/src/main/antlr/Literals.tokens").delete()
 }

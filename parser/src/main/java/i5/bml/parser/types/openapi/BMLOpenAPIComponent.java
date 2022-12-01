@@ -234,7 +234,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     }
 
     @Override
-    public String toString() {
+    public String encodeToString() {
         return "%s{url='%s'}".formatted(getName(), url);
     }
 

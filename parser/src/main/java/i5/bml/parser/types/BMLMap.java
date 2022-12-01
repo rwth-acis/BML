@@ -69,7 +69,7 @@ public class BMLMap extends AbstractBMLType {
     }
 
     @Override
-    public String toString() {
+    public String encodeToString() {
         return "BMLMap{keyType=%s, valueType=%s, supportedAccesses=%s}".formatted(keyType, valueType, supportedAccesses);
     }
 }

@@ -4,21 +4,21 @@ Bot(host="localhost", port=8080) {
     wrongTypeOnLeftOfOperation(data) {
         a = 0
         b = true
-        c = b + a
+        c1 = b + a
     }
 
     @Routine(rate="1h")
     wrongTypeOnRightOfOperation(data) {
         a = 1
         b = "false"
-        c = a + b
+        c2 = a + b
     }
 
     @Routine(rate="1h")
     wrongTypeOnLeftOfOperation(data) {
         a = ["test"]
         b = "abc"
-        c = a + b
+        c3 = a + b
     }
 
     @Routine(rate="1h")
@@ -31,13 +31,13 @@ Bot(host="localhost", port=8080) {
     floatingPointConversion(data) {
         a = 2.5
         b = 2
-        c = a + b // c is floating point now
+        c4 = a + b
     }
 
     @Routine(rate="1h")
     noFloatingPointConversion(data) {
         a = 5
         b = 2
-        c = a + b // c should still be integral
+        c5 = a + b // c should still be integral
     }
 }

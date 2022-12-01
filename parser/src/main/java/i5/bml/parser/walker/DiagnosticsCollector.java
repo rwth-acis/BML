@@ -22,7 +22,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     private final List<Diagnostic> collectedDiagnostics = new ArrayList<>();
 
-    private Scope currentScope;
+    protected Scope currentScope;
 
     public List<Diagnostic> getCollectedDiagnostics() {
         return collectedDiagnostics;
@@ -177,7 +177,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             // itself to store its type initialization specific diagnostics. The reason is that
             // this branch is only visited when we encounter a new type (e.g., OpenAPI + new URL)
             resolvedType.initializeType(ctx);
-            TypeRegistry.registerType(resolvedType.toString(), resolvedType);
+            TypeRegistry.registerType(resolvedType);
         } else {
             resolvedType = registeredType;
         }
@@ -376,6 +376,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     } else {
                         var leftType = ctx.left.type;
                         var rightType = ctx.right.type;
+                        // TODO: Allow string addition
+
                         if (!(leftType instanceof BMLNumber)) {
                             Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Number", leftType), ctx.left);
                             yield TypeRegistry.resolveType("Number");
@@ -484,7 +486,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     private Type tryToResolveElseRegister(Type typeToCheck) {
         var resolvedType = TypeRegistry.resolveType(typeToCheck.toString());
         if (resolvedType == null) {
-            TypeRegistry.registerType(typeToCheck.toString(), typeToCheck);
+            TypeRegistry.registerType(typeToCheck);
             return typeToCheck;
         } else {
             return resolvedType;

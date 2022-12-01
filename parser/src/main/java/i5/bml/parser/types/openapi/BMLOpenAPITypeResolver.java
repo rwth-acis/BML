@@ -49,7 +49,7 @@ public class BMLOpenAPITypeResolver {
 
                         // Add to type registry
                         var newType = new BMLOpenAPISchema(type, supportedFields);
-                        TypeRegistry.registerType(type, newType);
+                        TypeRegistry.registerType(newType);
                         yield newType;
                     } else {
                         yield resolvedOpenAPIType;

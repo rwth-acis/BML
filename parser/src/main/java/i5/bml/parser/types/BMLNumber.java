@@ -23,6 +23,11 @@ public class BMLNumber extends AbstractBMLType {
 
     @Override
     public String toString() {
-        return "%s%s".formatted(isFloatingPoint ? "Float " : "", super.toString());
+        return "%s%s".formatted(isFloatingPoint ? "Float " : "", super.getName());
+    }
+
+    @Override
+    public String encodeToString() {
+        return toString();
     }
 }

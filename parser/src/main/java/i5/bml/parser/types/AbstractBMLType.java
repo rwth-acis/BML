@@ -148,6 +148,10 @@ public abstract class AbstractBMLType implements Type {
         return getName();
     }
 
+    public String encodeToString() {
+        return getName();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -155,6 +159,6 @@ public abstract class AbstractBMLType implements Type {
 
         AbstractBMLType that = (AbstractBMLType) o;
 
-        return this.getName().equals(that.getName());
+        return this.getTypeIndex() == that.getTypeIndex();
     }
 }

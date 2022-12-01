@@ -30,7 +30,7 @@ public class BMLList extends AbstractBMLType {
     }
 
     @Override
-    public String toString() {
+    public String encodeToString() {
         return "%s{itemType=%s}".formatted(getName(), itemType);
     }
 }

@@ -54,9 +54,9 @@ public class TypeRegistry {
         return complexTypeInstance;
     }
 
-    public static void registerType(String typeName, Type type) {
+    public static void registerType(Type type) {
         ((AbstractBMLType) type).setTypeIndex(typeIndex++);
-        typeRegistry.put(typeName.toLowerCase(), type);
+        typeRegistry.put(((AbstractBMLType) type).encodeToString().toLowerCase(), type);
     }
 
     public static boolean isTypeBuiltin(String typeName) {
@@ -109,7 +109,7 @@ public class TypeRegistry {
         // Explicitly add "Float Number" as Type
         BMLNumber type = new BMLNumber(true);
         type.setTypeIndex(typeIndex++);
-        typeRegistry.put("float number", type);
+        typeRegistry.put("Float Number".toLowerCase(), type);
     }
 
     public static void clear() {
