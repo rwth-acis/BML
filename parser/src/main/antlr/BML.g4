@@ -1,6 +1,6 @@
 grammar BML;
 
-import Tokens, Literals, DialogueAutomaton;
+import Tokens, DialogueAutomaton;
 
 @header {
     package generatedParser;
@@ -85,9 +85,9 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | left=expression op=OR right=expression
                                | <assoc=right> expression op=QUESTION expression COLON expression ;
 
-atom returns [Type type] : token=StringLiteral
-                         | token=IntegerLiteral
+atom returns [Type type] : token=IntegerLiteral
                          | token=FloatingPointLiteral
+                         | token=StringLiteral
                          | token=BooleanLiteral
                          | token=Identifier ;
 
