@@ -13,7 +13,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
-import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
 
 public abstract class AbstractBMLType implements Type {
 

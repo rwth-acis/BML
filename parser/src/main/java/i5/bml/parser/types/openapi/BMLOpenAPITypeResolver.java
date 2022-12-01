@@ -1,6 +1,8 @@
 package i5.bml.parser.types.openapi;
 
-import i5.bml.parser.types.*;
+import i5.bml.parser.types.BMLList;
+import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;

@@ -1,7 +1,5 @@
 package i5.bml.parser.types;
 
-import org.apache.commons.lang3.StringUtils;
-
 public enum BuiltinType {
     /*
      * Primitives
