@@ -14,10 +14,6 @@ import java.util.logging.Logger;
 public class BMLLangServerMain {
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        LogManager.getLogManager().reset();
-        Logger globalLogger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
-        globalLogger.setLevel(Level.OFF);
-
         try (Socket socket = new Socket("localhost", 42069)) {
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
