@@ -203,7 +203,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Check: path parameter has correct type
         var pathParameterType = pathParameter.get().expression().type;
         if (!pathParameterType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
-            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format("String", pathParameterType),
+            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.STRING, pathParameterType),
                     pathParameter.get().expression());
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }

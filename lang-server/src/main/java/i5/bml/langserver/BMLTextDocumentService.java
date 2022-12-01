@@ -301,11 +301,11 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
-
+        // Not interesting
     }
 
     @Override
     public void didSave(DidSaveTextDocumentParams params) {
-
+        // Not interesting
     }
 }

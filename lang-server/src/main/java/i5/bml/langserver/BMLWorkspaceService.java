@@ -65,11 +65,11 @@ public class BMLWorkspaceService implements WorkspaceService {
 
     @Override
     public void didChangeConfiguration(DidChangeConfigurationParams params) {
-
+        // Not interesting
     }
 
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-
+        // Not interesting
     }
 }

@@ -12,17 +12,13 @@ import java.nio.file.Paths;
 import java.util.Objects;
 
 public class TranspilerMain {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, URISyntaxException {
         var fileName = "Example.bml";
 //        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
 //        var fileName = "ExampleAutomaton.bml";
         var inputString = "";
-        try {
-            var inputResource = Objects.requireNonNull(TranspilerMain.class.getClassLoader().getResource(fileName));
-            inputString = Files.readString(Paths.get(inputResource.toURI()));
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        var inputResource = Objects.requireNonNull(TranspilerMain.class.getClassLoader().getResource(fileName));
+        inputString = Files.readString(Paths.get(inputResource.toURI()));
 
         var pair = Parser.parse(inputString);
         Parser.makeParseTree(pair.getRight());

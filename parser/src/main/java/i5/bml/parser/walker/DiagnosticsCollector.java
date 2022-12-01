@@ -339,7 +339,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var exprType = ctx.expr.type;
 
                     if (!(exprType instanceof BMLBoolean)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("Boolean", exprType), ctx.expr);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, exprType), ctx.expr);
                         yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
                     } else {
                         yield exprType;
@@ -408,10 +408,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var rightType = ctx.right.type;
 
                     if (!(leftType instanceof BMLBoolean)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", leftType), ctx.left);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, leftType), ctx.left);
                         yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
                     } else if (!(rightType instanceof BMLBoolean)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", rightType), ctx.right);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, rightType), ctx.right);
                         yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
                     } else {
                         yield leftType;
@@ -423,7 +423,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var secondType = ctx.expression().get(2).type;
 
                     if (!(condType instanceof BMLBoolean)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("boolean", condType), ctx.expression().get(0));
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, condType), ctx.expression().get(0));
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                     } else if (!firstType.equals(secondType)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(condType + " ? " + firstType, ":", secondType), ctx);

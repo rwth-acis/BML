@@ -19,6 +19,9 @@ import java.util.List;
 
 public class Parser {
 
+    private Parser() {
+    }
+
     public static List<Diagnostic> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
         var start = System.nanoTime();
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
@@ -54,7 +57,7 @@ public class Parser {
         viewer.setScale(1);
         panel.add(viewer);
         frame.add(panel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
 

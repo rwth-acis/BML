@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SyntaxTest {
+class SyntaxTest {
 
     // File path relative to test resources folder
     private static final String ALLOWED_SYNTAX_BML = "AllowedSyntax.bml";

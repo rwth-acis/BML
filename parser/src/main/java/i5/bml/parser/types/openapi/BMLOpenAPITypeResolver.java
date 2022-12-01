@@ -15,6 +15,11 @@ import java.util.Map;
  */
 public class BMLOpenAPITypeResolver {
 
+    private static final String OPENAPI_ARRAY_TYPE_IDENTIFIER = "array";
+
+    private BMLOpenAPITypeResolver() {
+    }
+
     private static void computeComponentFields(OpenAPI openAPI, String componentName, Map<String, Type> supportedFields) {
         var componentSchema = openAPI.getComponents().getSchemas().get(componentName);
         (((Schema<?>) componentSchema).getProperties()).forEach((fieldName, propertySchema) -> {
@@ -26,8 +31,8 @@ public class BMLOpenAPITypeResolver {
     }
 
     public static Type resolveOpenAPITypeToBMLType(OpenAPI openAPI, String type) {
-        if (type.startsWith("array")) {
-            var arrayItemType = type.substring("array".length() + 1);
+        if (type.startsWith(OPENAPI_ARRAY_TYPE_IDENTIFIER)) {
+            var arrayItemType = type.substring(OPENAPI_ARRAY_TYPE_IDENTIFIER.length() + 1);
             return new BMLList(resolveOpenAPITypeToBMLType(openAPI, arrayItemType));
         } else if (type.startsWith("object")) {
             // TODO:
@@ -80,7 +85,7 @@ public class BMLOpenAPITypeResolver {
 
         // If we have an array, we similarly try to resolve its type
         String arrayType = "";
-        if (type.equals("array")) {
+        if (type.equals(OPENAPI_ARRAY_TYPE_IDENTIFIER)) {
             var itemSchema = schema.getItems();
             if (itemSchema == null) {
                 // TODO

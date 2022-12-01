@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import static i5.bml.parser.errors.ParserError.CANNOT_APPLY_OP;
 import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
 
-public class TypeCheckingTest {
+class TypeCheckingTest {
 
     // File path relative to test resources folder
     private static final String TYPE_CHECKING_BASE_PATH = "type-checking/";

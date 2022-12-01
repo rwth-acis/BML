@@ -8,7 +8,10 @@ import java.util.Map;
 
 public class Measurements {
 
-    private static final Map<String, Pair<String, Long>> MEASUREMENTS = new LinkedHashMap<>();
+    private Measurements() {
+    }
+
+    private static final Map<String, Pair<String, Long>> measuredTimes = new LinkedHashMap<>();
 
     private static long totalTime = 0;
 
@@ -27,32 +30,32 @@ public class Measurements {
     public static void add(String name, long time) {
         var p = calculateUnit(time);
         totalTime += time;
-        MEASUREMENTS.put(name,
+        measuredTimes.put(name,
                 new ImmutablePair<>("%s: %.2f %s".formatted(name, p.getLeft(), p.getRight()), time));
     }
 
     public static void add(String name, String subtractTime, long time) {
-        time -= MEASUREMENTS.getOrDefault(subtractTime, new ImmutablePair<>("", 0L)).getRight();
+        time -= measuredTimes.getOrDefault(subtractTime, new ImmutablePair<>("", 0L)).getRight();
         add(name, time);
     }
 
     public static void print() {
         System.out.println("--------------- MEASUREMENTS ---------------");
-        for (var p : MEASUREMENTS.values()) {
+        for (var p : measuredTimes.values()) {
             System.out.println(p.getLeft());
         }
         System.out.println("---------------");
         var p = calculateUnit(totalTime);
-        System.out.printf("TOTAL: %s %s\n", p.getLeft(), p.getRight());
+        System.out.printf("TOTAL: %s %s%n", p.getLeft(), p.getRight());
         System.out.println("--------------- MEASUREMENTS ---------------");
 
-        MEASUREMENTS.clear();
+        measuredTimes.clear();
         totalTime = 0;
     }
 
     public static void print(StringBuilder stringBuilder) {
         stringBuilder.append("--------------- MEASUREMENTS ---------------\n");
-        for (var p : MEASUREMENTS.values()) {
+        for (var p : measuredTimes.values()) {
             stringBuilder.append(p.getLeft()).append("\n");
         }
         stringBuilder.append("---------------\n");
@@ -60,7 +63,7 @@ public class Measurements {
         stringBuilder.append("TOTAL: %s %s\n".formatted(p.getLeft(), p.getRight()));
         stringBuilder.append("--------------- MEASUREMENTS ---------------\n");
 
-        MEASUREMENTS.clear();
+        measuredTimes.clear();
         totalTime = 0;
     }
 }
