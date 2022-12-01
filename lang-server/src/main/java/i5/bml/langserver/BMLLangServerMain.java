@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class BMLLangServerMain {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         LogManager.getLogManager().reset();
         Logger globalLogger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         globalLogger.setLevel(Level.OFF);
@@ -23,12 +23,9 @@ public class BMLLangServerMain {
             OutputStream out = socket.getOutputStream();
 
             var bmlLangServer = new BMLLanguageServer();
-            System.out.println("STARTED");
             var launcher = LSPLauncher.createServerLauncher(bmlLangServer, in, out);
             bmlLangServer.connect(launcher.getRemoteProxy());
             launcher.startListening().get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 }
