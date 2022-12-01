@@ -103,6 +103,16 @@ class TypeCheckingTest {
     }
 
     @Test
+    void typeCheckFieldAccesses() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "fieldAccesses.bml",List.of());
+    }
+
+    @Test
+    void typeCheckForEach() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml",List.of());
+    }
+
+    @Test
     void testFloatingPointConversion() {
         var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
         var diagnosticsCollector = new DiagnosticsCollector();
