@@ -57,14 +57,7 @@ forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expression 
 
 forEachBody : statement ;
 
-assignment : name=Identifier op=assignmentOperator expression ;
-
-assignmentOperator : ASSIGN
-                   | MUL_ASSIGN
-                   | DIV_ASSIGN
-                   | MOD_ASSIGN
-                   | ADD_ASSIGN
-                   | SUB_ASSIGN ;
+assignment : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN) expression ;
 
 /*
  * Expressions

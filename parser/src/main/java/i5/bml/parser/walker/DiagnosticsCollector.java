@@ -228,7 +228,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
         // When exiting an assignment, we can assume that the right-hand side type was computed already,
         // since it is an expression
-        if (ctx.op.getText().equals("=")) {
+        if (ctx.op.getType() == BMLParser.ASSIGN) {
             var name = ctx.name.getText();
             // Check: name is already defined in scope
             if (currentScope.resolve(name) != null) {
@@ -245,9 +245,19 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(ctx.name.getText()), ctx.name);
             } else {
                 // Type of left-hand side should already be set
+                var leftType = ((VariableSymbol) v).getType();
                 var rightType = ctx.expression().type;
-                if (!(rightType instanceof Summable)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(((VariableSymbol) v).getType(), rightType), ctx.name);
+
+                if (ctx.op.getType() == BMLParser.ADD_ASSIGN) {
+                    if (!leftType.equals(rightType) || !(leftType instanceof Summable) || !(rightType instanceof Summable)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics,
+                                CANNOT_APPLY_OP.format(ctx.op.getText(), ((VariableSymbol) v).getType(), rightType), ctx.name);
+                    }
+                } else {
+                    if (!(leftType instanceof BMLNumber) || !(rightType instanceof BMLNumber)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics,
+                                CANNOT_APPLY_OP.format(ctx.op.getText(), ((VariableSymbol) v).getType(), rightType), ctx.name);
+                    }
                 }
             }
         }
@@ -362,7 +372,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var rightType = ctx.right.type;
 
                     if (!leftType.equals(rightType)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(leftType, ctx.op.getText(), rightType), ctx);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, CANNOT_APPLY_OP.format(ctx.op.getText(), leftType, rightType), ctx);
                     }
 
                     yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
@@ -486,7 +496,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     private Type tryToResolveElseRegister(Type typeToCheck) {
-        var resolvedType = TypeRegistry.resolveType(typeToCheck.toString());
+        var resolvedType = TypeRegistry.resolveType(typeToCheck);
         if (resolvedType == null) {
             TypeRegistry.registerType(typeToCheck);
             return typeToCheck;

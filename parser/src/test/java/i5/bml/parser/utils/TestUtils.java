@@ -46,14 +46,15 @@ public class TestUtils {
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
 
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+
         expectedErrors.forEach(e -> {
             Assertions.assertTrue(diagnostics.stream().anyMatch(d -> d.getMessage().equals(e)),
-                    () -> "Expected error: %s".formatted(e));
+                    () -> "Expected error: %s\nFound instead:\n%s:".formatted(e, TestUtils.prettyPrintDiagnostics(diagnostics)));
         });
         diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage())
                 || d.getSeverity() != DiagnosticSeverity.Error);
 
-        Assertions.assertTrue(diagnostics.isEmpty(), () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+        Assertions.assertTrue(diagnostics.isEmpty(), () -> "Unexpected diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
     }
 
     public static String prettyPrintDiagnostics(List<Diagnostic> diagnostics) {

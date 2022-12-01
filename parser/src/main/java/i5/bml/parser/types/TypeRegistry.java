@@ -27,6 +27,10 @@ public class TypeRegistry {
         return registeredTypes.get(typeName.toLowerCase());
     }
 
+    public static Type resolveType(Type type) {
+        return registeredTypes.get(((AbstractBMLType) type).encodeToString().toLowerCase());
+    }
+
     public static Type resolveType(BuiltinType typeName) {
         return registeredTypes.get(typeName.toString().toLowerCase());
     }

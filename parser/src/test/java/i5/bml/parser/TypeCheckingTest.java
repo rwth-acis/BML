@@ -59,8 +59,9 @@ class TypeCheckingTest {
     @Test
     void typeCheckAssignments() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml",List.of(
-                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
-                EXPECTED_BUT_FOUND.format("List<String>", "List<Number>")
+                CANNOT_APPLY_OP.format("+=", BuiltinType.NUMBER, BuiltinType.STRING),
+                CANNOT_APPLY_OP.format("+=", "List<String>", "List<Number>"),
+                CANNOT_APPLY_OP.format("-=", "List<String>", "List<String>")
         ));
     }
 
@@ -94,7 +95,12 @@ class TypeCheckingTest {
         ));
     }
 
-    
+    @Test
+    void typeCheckEqualities() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "equalities.bml",List.of(
+                CANNOT_APPLY_OP.format("==", BuiltinType.NUMBER, "List<Number>")
+        ));
+    }
 
     @Test
     void testFloatingPointConversion() {

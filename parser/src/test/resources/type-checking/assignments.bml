@@ -16,5 +16,8 @@ Bot(host="localhost", port=8080) {
 
         e = ["foo"]
         e += ["bar"] // OKAY
+
+        f = ["foo"]
+        f -= ["bar"] // NOT OKAY
     }
 }
