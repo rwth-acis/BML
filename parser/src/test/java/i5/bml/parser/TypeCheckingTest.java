@@ -86,6 +86,17 @@ class TypeCheckingTest {
     }
 
     @Test
+    void typeCheckBotHead() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml",List.of());
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml",List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING)
+        ));
+    }
+
+    
+
+    @Test
     void testFloatingPointConversion() {
         var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
         var diagnosticsCollector = new DiagnosticsCollector();
