@@ -15,4 +15,12 @@ Bot(host="localhost", port=8080) {
 
         }
     }
+
+    @Routine(rate="1h")
+    foreachString(data) { // NOT ALLOWED
+        a = "test"
+        forEach b in a {
+
+        }
+    }
 }
