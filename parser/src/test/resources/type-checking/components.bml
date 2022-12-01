@@ -2,7 +2,7 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore1(url="https://petstore3.swagger.io/api/v3/openapi.json") // OKAY
 
-    OpenAPI petStore2(url="petstore3.swagger.io/api/v3/openapi.json") // Bad URL
+    OpenAPI petStore2(url=":/petstore3.swagger.io/api/v3/openapi.json") // Bad URL
 
     OpenAPI petStore3(link="https://petstore3.swagger.io/api/v3/openapi.json") // missing param url, wrong param link
 

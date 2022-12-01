@@ -5,6 +5,7 @@ import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
@@ -45,7 +46,12 @@ public class TestUtils {
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
 
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
-        diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage()));
+        expectedErrors.forEach(e -> {
+            Assertions.assertTrue(diagnostics.stream().anyMatch(d -> d.getMessage().equals(e)),
+                    () -> "Expected error: %s".formatted(e));
+        });
+        diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage())
+                || d.getSeverity() != DiagnosticSeverity.Error);
 
         Assertions.assertTrue(diagnostics.isEmpty(), () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
     }

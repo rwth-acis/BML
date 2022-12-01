@@ -73,6 +73,19 @@ class TypeCheckingTest {
     }
 
     @Test
+    void typeCheckComponents() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "components.bml",List.of(
+                "Url ':/petstore3.swagger.io/api/v3/openapi.json' is not valid",
+                "Could not connect to url `:/petstore3.swagger.io/api/v3/openapi.json`",
+                "Missing parameter `url`",
+                "Parameter `link` is not defined",
+                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                "Missing parameter `url`",
+                "Parameter `id` is not defined"
+        ));
+    }
+
+    @Test
     void testFloatingPointConversion() {
         var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
         var diagnosticsCollector = new DiagnosticsCollector();

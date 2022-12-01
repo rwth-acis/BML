@@ -500,20 +500,22 @@ public class DiagnosticsCollector extends BMLBaseListener {
      */
     @Override
     public void exitElementExpressionPair(BMLParser.ElementExpressionPairContext ctx) {
-        urlCheck(ctx.expr);
+        urlCheck(ctx);
         // TODO: This could be removed once we have implemented parameter checks for annotation, Bot head, etc.
         //       Map initializers could be checked separately
         checkAlreadyDefinedElseDefine(ctx.name);
     }
 
-    private void urlCheck(ParserRuleContext ctx) {
-        var url = ctx.getText();
-        if (url.equals("url")) {
-            url = url.substring(1, url.length() - 1);
-            UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"},
-                    UrlValidator.ALLOW_LOCAL_URLS + UrlValidator.ALLOW_ALL_SCHEMES);
-            if (!urlValidator.isValid(url)) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, "Url '%s' is not valid".formatted(url), ctx);
+    private void urlCheck(BMLParser.ElementExpressionPairContext ctx) {
+        var parameterName = ctx.name.getText();
+        if (parameterName.equals("url")) {
+            var url = ctx.expr.getText();
+            if (url.length() > 1) {
+                url = url.substring(1, url.length() - 1);
+                UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
+                if (!urlValidator.isValid(url)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, "Url '%s' is not valid".formatted(url), ctx);
+                }
             }
         }
     }
