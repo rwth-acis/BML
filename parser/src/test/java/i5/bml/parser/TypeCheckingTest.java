@@ -191,7 +191,11 @@ class TypeCheckingTest {
     @Test
     void typeCheckTernary() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "ternary.bml", List.of(
-
+                "expressions need to have the same type\nFound `Number` : `String`",
+                "expressions need to have the same type\nFound `Number` : `Object`",
+                "expressions need to have the same type\nFound `String` : `Number`",
+                EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING),
+                CANNOT_APPLY_OP.format(">", BuiltinType.STRING, BuiltinType.STRING)
         ));
     }
 }

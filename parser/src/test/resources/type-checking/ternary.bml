@@ -1,12 +1,12 @@
 Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
-    nestedTernaryWithWrongType(data) {
+    nestedTernaryWithWrongTypes(data) {
         a = 1 == 0 ? 1 : "a" == "b" ? 0 : "c"
     }
 
     @Routine(rate="1h")
-    nestedTernaryWithWrongType(data) {
+    nestedTernaryWithWrongTypes2(data) {
         a = "a" == "b" ? 1 > 0 ? "a" : "b" : 1
     }
 

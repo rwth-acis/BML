@@ -441,8 +441,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     if (!(condType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, condType), ctx.expression().get(0));
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
-                    } else if (!firstType.equals(secondType)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, INCOMPATIBLE.format(condType + " ? " + firstType, ":", secondType), ctx);
+                    }
+
+                    if (!firstType.equals(secondType)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics,
+                                "expressions need to have the same type\nFound `%s` : `%s`"
+                                        .formatted(firstType, secondType), ctx);
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                     } else {
                         yield firstType;
