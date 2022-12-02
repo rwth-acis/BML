@@ -68,12 +68,12 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         openAPI = result.getOpenAPI();
 
         if (openAPI == null) {
-            super.addDiagnostic("Could not connect to url `%s`".formatted(url), DiagnosticSeverity.Error);
+            super.cacheDiagnostic("Could not connect to url `%s`".formatted(url), DiagnosticSeverity.Error);
             return;
         }
         // Check for OpenAPI parser errors
         else if ((result.getMessages() != null && result.getMessages().size() > 0)) {
-            super.addDiagnostic("Could not connect to url `%s`\nPossible reason(s):\n%s"
+            super.cacheDiagnostic("Could not connect to url `%s`\nPossible reason(s):\n%s"
                     .formatted(url, String.join("\n", result.getMessages())), DiagnosticSeverity.Error);
             return;
         }
@@ -110,7 +110,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 var mediaType = response.getContent().get("application/json");
                 if (mediaType == null) {
                     var msg = "`%s %s` has no application/json media type for response code `%s`\n";
-                    super.addDiagnostic(msg.formatted(httpMethod.toUpperCase(), route, responseCode), DiagnosticSeverity.Warning);
+                    super.cacheDiagnostic(msg.formatted(httpMethod.toUpperCase(), route, responseCode), DiagnosticSeverity.Warning);
                 } else {
                     var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
                             "Operation", operation.getOperationId());
@@ -125,7 +125,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     private void computeArgumentTypes(List<ParameterSymbol> arguments, Schema<?> schema, String parameterName) {
         if (schema == null) {
             var msg = "Couldn't find schema for parameter `%s`".formatted(parameterName);
-            super.addDiagnostic(msg, DiagnosticSeverity.Warning);
+            super.cacheDiagnostic(msg, DiagnosticSeverity.Warning);
             return;
         }
 
@@ -162,7 +162,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             var mediaType = operation.getRequestBody().getContent().get("application/json");
             if (mediaType == null) {
                 var msg = "`%s %s` has no application/json media type";
-                super.addDiagnostic(msg.formatted(httpMethod.toUpperCase(), route),
+                super.cacheDiagnostic(msg.formatted(httpMethod.toUpperCase(), route),
                         DiagnosticSeverity.Warning);
             } else {
                 var required = operation.getRequestBody().getRequired();

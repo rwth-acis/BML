@@ -39,4 +39,18 @@ Bot(host="localhost", port=8080) {
 
         b = a.a + a.b[0] + a.c.id
     }
+
+    @Routine(rate="1h")
+    badAccessMapFields(data) {
+        a = {
+            a = 1,
+            b = [1, 2, 3],
+            c = petStore.get(path="/pet/{petId}", petId=1)
+        }
+
+        e = {}
+
+        b = a.d
+        c = e.get(key="a")
+    }
 }

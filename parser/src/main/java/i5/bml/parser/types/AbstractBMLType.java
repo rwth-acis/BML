@@ -26,7 +26,7 @@ public abstract class AbstractBMLType implements Type {
 
     protected int typeIndex;
 
-    protected void addDiagnostic(String msg, DiagnosticSeverity severity) {
+    protected void cacheDiagnostic(String msg, DiagnosticSeverity severity) {
         var d = new Diagnostic();
         d.setMessage(msg);
         d.setSeverity(severity);

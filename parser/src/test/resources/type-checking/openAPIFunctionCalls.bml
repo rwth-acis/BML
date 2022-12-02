@@ -11,4 +11,14 @@ Bot(host="localhost", port=8080) {
     getNotDefinedForPath(data) {
         petStore.get(path="/pet")
     }
+
+    @Routine(rate="1h")
+    pathNotSpecified(data) {
+        petStore.get(pat="/pet/{petId}/get", petId=1)
+    }
+
+    @Routine(rate="1h")
+    pathWrongType(data) {
+        petStore.get(path=1, petId=1)
+    }
 }

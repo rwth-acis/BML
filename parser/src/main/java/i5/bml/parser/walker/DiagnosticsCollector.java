@@ -169,7 +169,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         // 2.2 Populate annotated fields with parameters (required vs optional)
         resolvedType.populateParameters(this, ctx.params);
 
-        var registeredType = (AbstractBMLType) TypeRegistry.resolveType(resolvedType.toString());
+        var registeredType = (AbstractBMLType) TypeRegistry.resolveType(resolvedType);
         if (registeredType == null) {
             // 3. Invoke initializer (e.g., fetch OpenAPI schemas from provided url parameter)
             // NOTE: We do not pass a diagnosticsCollector to this method since we want the type
@@ -181,7 +181,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             resolvedType = registeredType;
         }
 
-        // 5. Add collected diagnostics (either from initialization or cached)
+        // 5. Add collected diagnostics (either from initialization or cached) with NEW CONTEXT (!)
         // See comment above, this is important for the type caching functionality
         // Whenever we have already initialized type but encountered errors, we want
         // to have them saved such that we do not have to retrieve them again
@@ -191,8 +191,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
         }
 
         // 6. Lastly, we set the type of the corresponding symbol
-        var v = currentScope.resolve(componentName);
-        ((VariableSymbol) v).setType(resolvedType);
+        var symbol = currentScope.resolve(componentName);
+        ((VariableSymbol) symbol).setType(resolvedType);
     }
 
     @Override
@@ -471,11 +471,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     private void handleInitializers(BMLParser.ExpressionContext ctx) {
         if (ctx.initializer().mapInitializer() != null) {
-            var elementExpressionPairs = ctx.initializer().mapInitializer().elementExpressionPairList().elementExpressionPair();
-            if (elementExpressionPairs.isEmpty()) {
-                Type mapType = new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT));
-                ctx.type = tryToResolveElseRegister(mapType);
+            var elementExpressionPairList = ctx.initializer().mapInitializer().elementExpressionPairList();
+            if (elementExpressionPairList == null) {
+                ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT)));
             } else {
+                var elementExpressionPairs = elementExpressionPairList.elementExpressionPair();
                 Map<String, Type> supportedAccesses = new HashMap<>();
                 for (var elementExpressionPair : elementExpressionPairs) {
                     supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);

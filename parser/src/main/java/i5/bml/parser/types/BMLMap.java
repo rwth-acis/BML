@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.Map;
 
+import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
 import static i5.bml.parser.errors.ParserError.NOT_DEFINED;
 
 @BMLType(name = BuiltinType.MAP, isComplex = true)
@@ -42,21 +43,22 @@ public class BMLMap extends AbstractBMLType {
             var valueType = supportedAccesses.get(ctx.getText());
             if (valueType == null) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        NOT_DEFINED.format(ctx.getText()), ((TerminalNode) ctx).getSymbol());
+                        CANT_RESOLVE_IN.format(ctx.getText(), getName()), ((TerminalNode) ctx).getSymbol());
                 return TypeRegistry.resolveType(BuiltinType.OBJECT);
             }
 
             return valueType;
         } else { // Function call
             var functionCallCtx = (BMLParser.FunctionCallContext) ctx;
-            var valueType = supportedAccesses.get(functionCallCtx.functionName.getText());
-            if (valueType == null) {
+            var returnType = supportedAccesses.get(functionCallCtx.functionName.getText());
+            if (returnType == null) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        NOT_DEFINED.format(ctx.getText()), functionCallCtx.functionName);
+                        CANT_RESOLVE_IN.format(((BMLParser.FunctionCallContext) ctx).functionName.getText(), getName()),
+                        functionCallCtx.functionName);
                 return TypeRegistry.resolveType(BuiltinType.OBJECT);
             }
 
-            return valueType;
+            return returnType;
         }
     }
 

@@ -6,8 +6,10 @@ import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
 import i5.bml.parser.utils.TypeCheckWalker;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -167,15 +170,20 @@ class TypeCheckingTest {
     @Test
     void typeCheckMapInitializer() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "mapInitializer.bml", List.of(
-                ALREADY_DEFINED.format("a")
+                ALREADY_DEFINED.format("a"),
+                CANT_RESOLVE_IN.format("d", "Map"),
+                CANT_RESOLVE_IN.format("get", "Map")
         ));
+
     }
 
     @Test
     void typeCheckOpenAPIFunctionCalls() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "openAPIFunctionCalls.bml", List.of(
                 "Path `/pet/{petId}/get` is not defined for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`",
-                "Path `/pet` does not support HTTP method `get` for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`"
+                "Path `/pet` does not support HTTP method `get` for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`",
+                MISSING_PARAM.format("path"),
+                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)
         ));
     }
 
@@ -197,5 +205,17 @@ class TypeCheckingTest {
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format(">", BuiltinType.STRING, BuiltinType.STRING)
         ));
+    }
+
+    @AfterAll
+    static void a() {
+        try {
+            var field = TypeRegistry.class.getDeclaredField("registeredTypes");
+            field.setAccessible(true);
+            var f = field.get(null);
+            ((Map<String, Type>) f).forEach((k, v) -> System.out.println(k + " -> " + v));
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
