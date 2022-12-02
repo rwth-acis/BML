@@ -6,7 +6,6 @@ import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
 import org.antlr.symtab.*;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.eclipse.lsp4j.Diagnostic;
@@ -274,7 +273,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             case BMLParser.IntegerLiteral -> TypeRegistry.resolveType(BuiltinType.NUMBER);
             case BMLParser.FloatingPointLiteral -> TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER);
             case BMLParser.StringLiteral -> TypeRegistry.resolveType(BuiltinType.STRING);
-            case BMLParser.BooleanLiteral -> TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+            case BMLParser.BooleanLiteral -> TypeRegistry.resolveType(BuiltinType.BOOLEAN);
             case BMLParser.Identifier -> {
                 var name = ctx.Identifier().getText();
                 var resolvedSymbol = currentScope.resolve(name);
@@ -355,7 +354,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
                     if (!(exprType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, exprType), ctx.expr);
-                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN);
                     } else {
                         yield exprType;
                     }
@@ -364,13 +363,15 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var leftType = ctx.left.type;
                     var rightType = ctx.right.type;
 
-                    if (!(leftType instanceof BMLNumber)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER.toString(), leftType), ctx.left);
+                    if (!(leftType instanceof BMLNumber) && !(rightType instanceof BMLNumber)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics, CANNOT_APPLY_OP.format(ctx.op.getText(), leftType, rightType), ctx.left);
+                    } else if (!(leftType instanceof BMLNumber)) {
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, leftType), ctx.left);
                     } else if (!(rightType instanceof BMLNumber)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER.toString(), rightType), ctx.right);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, rightType), ctx.right);
                     }
 
-                    yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+                    yield TypeRegistry.resolveType(BuiltinType.BOOLEAN);
                 }
                 case BMLParser.EQUAL, BMLParser.NOTEQUAL -> {
                     var leftType = ctx.left.type;
@@ -380,7 +381,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                         Diagnostics.addDiagnostic(collectedDiagnostics, CANNOT_APPLY_OP.format(ctx.op.getText(), leftType, rightType), ctx);
                     }
 
-                    yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+                    yield TypeRegistry.resolveType(BuiltinType.BOOLEAN);
                 }
                 case BMLParser.ADD, BMLParser.SUB, BMLParser.MUL, BMLParser.DIV, BMLParser.MOD -> {
                     if (ctx.left == null) {
@@ -424,10 +425,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
                     if (!(leftType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, leftType), ctx.left);
-                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN);
                     } else if (!(rightType instanceof BMLBoolean)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, rightType), ctx.right);
-                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN.toString());
+                        yield TypeRegistry.resolveType(BuiltinType.BOOLEAN);
                     } else {
                         yield leftType;
                     }

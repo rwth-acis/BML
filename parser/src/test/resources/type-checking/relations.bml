@@ -10,7 +10,7 @@ Bot(host="localhost", port=8080) {
     @Routine(rate="1h")
     wrongTypeOnRHSOfRelation(data) {
         a = 1
-        b = false
+        b = "false"
         c = a > b
     }
 

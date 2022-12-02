@@ -163,4 +163,35 @@ class TypeCheckingTest {
                 "List initialization requires homogeneous types"
         ));
     }
+
+    @Test
+    void typeCheckMapInitializer() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "mapInitializer.bml", List.of(
+                ALREADY_DEFINED.format("a")
+        ));
+    }
+
+    @Test
+    void typeCheckOpenAPIFunctionCalls() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "openAPIFunctionCalls.bml", List.of(
+                "Path `/pet/{petId}/get` is not defined for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`",
+                "Path `/pet` does not support HTTP method `get` for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`"
+        ));
+    }
+
+    @Test
+    void typeCheckRelations() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "relations.bml", List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.BOOLEAN),
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
+                CANNOT_APPLY_OP.format(">", BuiltinType.STRING, BuiltinType.BOOLEAN)
+        ));
+    }
+
+    @Test
+    void typeCheckTernary() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "ternary.bml", List.of(
+
+        ));
+    }
 }
