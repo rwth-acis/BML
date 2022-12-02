@@ -99,7 +99,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         else if (ctx.expression() != null // We have an expression
                 && (ctx.expression().op == null || ctx.expression().op.getType() != BMLParser.DOT) // Expression is not using obj.foo()
                 && ctx.expression().functionCall() == null) { // Expression is not a function call
-            Diagnostics.addDiagnostic(collectedDiagnostics, "Not a statement", ctx.expression());
+            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_A_STATEMENT.message, ctx.expression());
         }
     }
 
@@ -178,10 +178,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
             resolvedType.initializeType(ctx);
             TypeRegistry.registerType(resolvedType);
         } else {
+            // 3. We simply use the already registered type, no need to re-initialize
             resolvedType = registeredType;
         }
 
-        // 5. Add collected diagnostics (either from initialization or cached) with NEW CONTEXT (!)
+        // 4. Add collected diagnostics (either from initialization or cached) with NEW CONTEXT (!)
         // See comment above, this is important for the type caching functionality
         // Whenever we have already initialized type but encountered errors, we want
         // to have them saved such that we do not have to retrieve them again
@@ -190,7 +191,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             Diagnostics.addDiagnostic(collectedDiagnostics, diagnostic, ctx);
         }
 
-        // 6. Lastly, we set the type of the corresponding symbol
+        // 5. Lastly, we set the type of the corresponding symbol
         var symbol = currentScope.resolve(componentName);
         ((VariableSymbol) symbol).setType(resolvedType);
     }
@@ -202,8 +203,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
         Type itemType;
         Type valueType = null;
         if (!(exprType instanceof BMLList) && !(exprType instanceof BMLMap)) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, "forEach not applicable to `%s`"
-                    .formatted(exprType), forEachStmtCtx.expression());
+            Diagnostics.addDiagnostic(collectedDiagnostics, FOREACH_NOT_APPLICABLE.format(exprType),
+                    forEachStmtCtx.expression());
             itemType = TypeRegistry.resolveType(BuiltinType.OBJECT);
         } else if (exprType instanceof BMLList) {
             itemType = ((BMLList) exprType).getItemType();
@@ -336,7 +337,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     var secondExpressionType = secondExpression.type;
 
                     if (!(firstExpressionType instanceof BMLList)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format("List", firstExpressionType), firstExpression);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.LIST, firstExpressionType), firstExpression);
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                     } else if (!(secondExpressionType instanceof BMLNumber)) {
                         Diagnostics.addDiagnostic(collectedDiagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER.toString(), secondExpressionType), secondExpression);
@@ -493,7 +494,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 var firstItemType = expressions.get(0).type;
                 for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
                     if (!firstItemType.equals(expressions.get(i).type)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, "List initialization requires homogeneous types", ctx.initializer());
+                        Diagnostics.addDiagnostic(collectedDiagnostics, LIST_BAD_TYPES.message, ctx.initializer());
                         ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
                         return;
                     }
@@ -530,11 +531,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
         var parameterName = ctx.name.getText();
         if (parameterName.equals("url")) {
             var url = ctx.expr.getText();
-            if (url.length() > 1) {
+            if (url.length() > 1 && ctx.expr.atom() != null && ctx.expr.atom().StringLiteral() != null) {
                 url = url.substring(1, url.length() - 1);
                 UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
                 if (!urlValidator.isValid(url)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, "Url '%s' is not valid".formatted(url), ctx);
+                    Diagnostics.addDiagnostic(collectedDiagnostics, URL_NOT_VALID.format(url), ctx);
                 }
             }
         }

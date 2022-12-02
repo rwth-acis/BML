@@ -48,7 +48,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var atom = expr.atom();
         if (atom == null || atom.StringLiteral() == null) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    EXPECTED_BUT_FOUND.format(BuiltinType.STRING, expr.type), expr);
+                    PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING), expr);
         } else {
             url = atom.getText().substring(1, atom.getText().length() - 1);
         }
@@ -68,13 +68,14 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         openAPI = result.getOpenAPI();
 
         if (openAPI == null) {
-            super.cacheDiagnostic("Could not connect to url `%s`".formatted(url), DiagnosticSeverity.Error);
+            super.cacheDiagnostic(CONNECT_FAILED.format(url), DiagnosticSeverity.Error);
             return;
         }
         // Check for OpenAPI parser errors
         else if ((result.getMessages() != null && result.getMessages().size() > 0)) {
-            super.cacheDiagnostic("Could not connect to url `%s`\nPossible reason(s):\n%s"
-                    .formatted(url, String.join("\n", result.getMessages())), DiagnosticSeverity.Error);
+            super.cacheDiagnostic("%s\nPossible reason(s):\n%s"
+                    .formatted(CONNECT_FAILED.format(url), String.join("\n", result.getMessages())),
+                    DiagnosticSeverity.Error);
             return;
         }
 
@@ -214,8 +215,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         path = path.substring(1, path.length() - 1);
 
         if (!routes.contains(path)) {
-            Diagnostics.addDiagnostic(diagnostics, "Path `%s` is not defined for API:\n`%s`"
-                    .formatted(path, url), pathParameter.get().expression());
+            Diagnostics.addDiagnostic(diagnostics, NO_PATH_FOR_API.format(path, url), pathParameter.get().expression());
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
@@ -223,8 +223,8 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var functionType = supportedAccesses.get(httpMethod + path);
 
         if (functionType == null) {
-            Diagnostics.addDiagnostic(diagnostics, "Path `%s` does not support HTTP method `%s` for API:\n`%s`"
-                            .formatted(path, httpMethod, url), pathParameter.get().expression());
+            Diagnostics.addDiagnostic(diagnostics, METHOD_NOT_SUPPORTED.format(path, httpMethod, url),
+                    pathParameter.get().expression());
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 

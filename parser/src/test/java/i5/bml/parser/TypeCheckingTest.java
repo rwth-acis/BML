@@ -105,8 +105,8 @@ class TypeCheckingTest {
     @Test
     void typeCheckComponents() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "components.bml", List.of(
-                "Url ':/petstore3.swagger.io/api/v3/openapi.json' is not valid",
-                "Could not connect to url `:/petstore3.swagger.io/api/v3/openapi.json`",
+                URL_NOT_VALID.format(":/petstore3.swagger.io/api/v3/openapi.json"),
+                CONNECT_FAILED.format(":/petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("url"),
                 PARAM_NOT_DEFINED.format("link"),
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
@@ -139,7 +139,7 @@ class TypeCheckingTest {
     @Test
     void typeCheckForEach() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml", List.of(
-                "forEach not applicable to `String`"
+                FOREACH_NOT_APPLICABLE.format(BuiltinType.STRING)
         ));
     }
 
@@ -163,7 +163,7 @@ class TypeCheckingTest {
     @Test
     void typeCheckListInitializer() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "listInitializer.bml", List.of(
-                "List initialization requires homogeneous types"
+                LIST_BAD_TYPES.message
         ));
     }
 
@@ -180,10 +180,12 @@ class TypeCheckingTest {
     @Test
     void typeCheckOpenAPIFunctionCalls() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "openAPIFunctionCalls.bml", List.of(
-                "Path `/pet/{petId}/get` is not defined for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`",
-                "Path `/pet` does not support HTTP method `get` for API:\n`https://petstore3.swagger.io/api/v3/openapi.json`",
+                NO_PATH_FOR_API.format("/pet/{petId}/get", "https://petstore3.swagger.io/api/v3/openapi.json"),
+                METHOD_NOT_SUPPORTED.format("/pet", "get", "https://petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("path"),
-                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)
+                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING),
+                PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING)
         ));
     }
 
@@ -199,23 +201,11 @@ class TypeCheckingTest {
     @Test
     void typeCheckTernary() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "ternary.bml", List.of(
-                "expressions need to have the same type\nFound `Number` : `String`",
-                "expressions need to have the same type\nFound `Number` : `Object`",
-                "expressions need to have the same type\nFound `String` : `Number`",
+                TERNARY_BAD_TYPES.format(BuiltinType.NUMBER, BuiltinType.STRING),
+                TERNARY_BAD_TYPES.format(BuiltinType.NUMBER, BuiltinType.OBJECT),
+                TERNARY_BAD_TYPES.format(BuiltinType.STRING, BuiltinType.NUMBER),
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format(">", BuiltinType.STRING, BuiltinType.STRING)
         ));
-    }
-
-    @AfterAll
-    static void a() {
-        try {
-            var field = TypeRegistry.class.getDeclaredField("registeredTypes");
-            field.setAccessible(true);
-            var f = field.get(null);
-            ((Map<String, Type>) f).forEach((k, v) -> System.out.println(k + " -> " + v));
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

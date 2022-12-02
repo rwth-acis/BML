@@ -11,4 +11,6 @@ Bot(host="localhost", port=8080) {
     OpenAPI petStore5() // missing param
 
     OpenAPI petStore6(url="https://petstore3.swagger.io/api/v3/openapi.json", id=2) // Too many params
+
+    OpenAPI petStore7(url="https://petstore3.swagger.io/api/v3/" + "openapi.json", id=2) // URL is not a constant string
 }
