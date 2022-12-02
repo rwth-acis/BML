@@ -34,32 +34,13 @@ class ScopeTest {
         Assertions.assertTrue(TestUtils.collectSyntaxErrors(CORRECT_SCOPES_BML).isEmpty());
     }
 
-    private static List<String> wrongScopeErrors() {
-        // Arguments follow the structure: (expectedMessage)
-        return List.of(
-                ALREADY_DEFINED.format("a"),
-                ALREADY_DEFINED.format("alreadyDefinedInLocalScope"),
-                ALREADY_DEFINED.format("b"),
-                NOT_DEFINED.format("d"),
-                ALREADY_DEFINED.format("data"),
-                NOT_DEFINED.format("z"),
-                ALREADY_DEFINED.format("rate")
-        );
-    }
-
     @Test
     void testWrongScopes() {
-        var pair = Parser.parse(TestUtils.readFileIntoString(WRONG_SCOPES_BML));
-        var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-
-        var diagnostics = new ArrayList<>(diagnosticsCollector.getCollectedDiagnostics().stream()
-                .map(Diagnostic::getMessage)
-                .toList());
-
-        Assertions.assertTrue(diagnostics.containsAll(wrongScopeErrors()));
-        diagnostics.removeAll(wrongScopeErrors());
-        Assertions.assertTrue(diagnostics.isEmpty(), () -> String.join("\n", diagnostics));
+        TestUtils.assertNoErrors(WRONG_SCOPES_BML, List.of(
+                NOT_DEFINED.format("d"),
+                NOT_DEFINED.format("z"),
+                ALREADY_DEFINED.format("rate")
+        ));
     }
 
     @Test

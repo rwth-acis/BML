@@ -24,13 +24,18 @@ Bot(host="localhost", port=8080) {
     shadowing(data) {
         a = 1
         if 1 == 0 {
-            a = 1 // Shadowing
+            a = "te" // Shadowing
+            c = a + "st"
         }
+
+        b = "te" // Even more shadowing, with different type now
+        a = b + "st"
+        a += "." // Should not give a type error
     }
 
     @Routine(rate="1h")
-    shadowing(data) {
+    reassignment(data) {
         a = 1
-        a = 2 // Redefinition
+        a = 2 // Redefinition/Reassignment in local scope
     }
 }
