@@ -56,6 +56,33 @@ class TypeCheckingTest {
     }
 
     @Test
+    void testFloatingPointConversion() {
+        var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
+        var diagnosticsCollector = new DiagnosticsCollector();
+        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+
+        final boolean[] floatConversionWasDone = new boolean[]{false};
+        final boolean[] floatConversionWasNotDone = new boolean[]{false};
+        var typeCheckWalker = new TypeCheckWalker((currentScope, ctx) -> {
+            var name = ((BMLParser.AssignmentContext) ctx).name.getText();
+            if (name.equals("c4")) {
+                var symbol = currentScope.resolve(name);
+                floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
+            } else if (name.equals("c5")) {
+                var symbol = currentScope.resolve(name);
+                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER));
+            }
+        });
+
+        pair.getRight().reset();
+        new ParseTreeWalker().walk(typeCheckWalker, pair.getRight().program());
+
+        Assertions.assertTrue(floatConversionWasDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+        Assertions.assertTrue(floatConversionWasNotDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+    }
+
+    @Test
     void typeCheckAssignments() {
         TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml", List.of(
                 CANNOT_APPLY_OP.format("+=", BuiltinType.NUMBER, BuiltinType.STRING),
@@ -124,29 +151,16 @@ class TypeCheckingTest {
     }
 
     @Test
-    void testFloatingPointConversion() {
-        var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
-        var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+    void typeCheckListAccess() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "listAccess.bml", List.of(
+                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.FLOAT_NUMBER)
+        ));
+    }
 
-        final boolean[] floatConversionWasDone = new boolean[]{false};
-        final boolean[] floatConversionWasNotDone = new boolean[]{false};
-        var typeCheckWalker = new TypeCheckWalker((currentScope, ctx) -> {
-            var name = ((BMLParser.AssignmentContext) ctx).name.getText();
-            if (name.equals("c4")) {
-                var symbol = currentScope.resolve(name);
-                floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
-            } else if (name.equals("c5")) {
-                var symbol = currentScope.resolve(name);
-                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER));
-            }
-        });
-
-        pair.getRight().reset();
-        new ParseTreeWalker().walk(typeCheckWalker, pair.getRight().program());
-
-        Assertions.assertTrue(floatConversionWasDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
-        Assertions.assertTrue(floatConversionWasNotDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+    @Test
+    void typeCheckListInitializer() {
+        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "listInitializer.bml", List.of(
+                "List initialization requires homogeneous types"
+        ));
     }
 }

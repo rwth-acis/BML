@@ -45,13 +45,6 @@ class ScopeTest {
 
     @Test
     void testCorrectScopes() {
-        var pair = Parser.parse(TestUtils.readFileIntoString(CORRECT_SCOPES_BML));
-        var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-        var diagnostics = diagnosticsCollector.getCollectedDiagnostics().stream()
-                .map(Diagnostic::getMessage)
-                .toList();
-
-        Assertions.assertTrue(diagnostics.isEmpty(), () -> String.join("\n", diagnostics));
+        TestUtils.assertNoErrors(CORRECT_SCOPES_BML, List.of());
     }
 }

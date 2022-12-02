@@ -3,6 +3,12 @@ Bot(host="localhost", port=8080) {
     @Routine(rate="1h")
     accessListFields(data) {
         a = [1, 2, 3]
-        b = a[0]
+        b = a[0] // OKAY
+    }
+
+    @Routine(rate="1h")
+    accessListFieldWithFloat(data) {
+        a = [1, 2, 3]
+        b = a[0.5] // NOT ALLOWED
     }
 }
