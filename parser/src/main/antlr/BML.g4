@@ -46,18 +46,18 @@ functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 statement returns [Scope scope] : block
                                 | ifStatement
                                 | forEachStatement
-                                | expression
+                                | expr=expression
                                 | assignment ;
 
 block : LBRACE statement* RBRACE ;
 
 ifStatement : IF expression statement (ELSE statement)? ;
 
-forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expression forEachBody ;
+forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expr=expression forEachBody ;
 
 forEachBody : statement ;
 
-assignment : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN) expression ;
+assignment : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN) expr=expression ;
 
 /*
  * Expressions
@@ -65,7 +65,7 @@ assignment : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN |
 expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | atom
                                | expr=expression op=DOT (Identifier | functionCall)
-                               | expr=expression op=LBRACK expression RBRACK
+                               | expr=expression op=LBRACK index=expression RBRACK
                                | functionCall
                                | initializer
                                | op=BANG expr=expression
@@ -76,7 +76,7 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | left=expression op=(EQUAL | NOTEQUAL) right=expression
                                | left=expression op=AND right=expression
                                | left=expression op=OR right=expression
-                               | <assoc=right> expression op=QUESTION expression COLON expression ;
+                               | <assoc=right> cond=expression op=QUESTION thenExpr=expression COLON elseExpr=expression ;
 
 atom returns [Type type] : token=IntegerLiteral
                          | token=FloatingPointLiteral
@@ -84,11 +84,11 @@ atom returns [Type type] : token=IntegerLiteral
                          | token=BooleanLiteral
                          | token=Identifier ;
 
-functionCall : functionName=Identifier LPAREN elementExpressionPairList? RPAREN ;
+functionCall : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
 initializer : mapInitializer
             | listInitializer ;
 
-mapInitializer : LBRACE elementExpressionPairList? RBRACE ;
+mapInitializer : LBRACE params=elementExpressionPairList? RBRACE ;
 
 listInitializer : LBRACK (expression (COMMA expression)*)? RBRACK ;
