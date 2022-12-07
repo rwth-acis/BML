@@ -12,7 +12,7 @@
 
 package i5.bml.transpiler.bot.openapi.petstore3client;
 
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.JavaClientCodegen", date = "2022-12-07T13:33:45.743901666+01:00[Europe/Berlin]")public class Configuration {
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.JavaClientCodegen", date = "2022-12-07T23:49:51.148246289+01:00[Europe/Berlin]")public class Configuration {
     private static ApiClient defaultApiClient = new ApiClient();
 
     /**

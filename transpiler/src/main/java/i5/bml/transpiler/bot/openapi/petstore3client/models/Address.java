@@ -25,7 +25,7 @@ import java.io.IOException;
  * Address
  */
 
-@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.JavaClientCodegen", date = "2022-12-07T13:33:45.743901666+01:00[Europe/Berlin]")
+@javax.annotation.Generated(value = "io.swagger.codegen.v3.generators.java.JavaClientCodegen", date = "2022-12-07T23:49:51.148246289+01:00[Europe/Berlin]")
 public class Address {
   @SerializedName("street")
   private String street = null;

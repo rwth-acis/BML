@@ -50,7 +50,7 @@ public class Parser {
         return new ImmutablePair<>(bmlLexer, bmlParser);
     }
 
-    public static void makeParseTree(BMLParser bmlParser) {
+    public static void drawParseTree(BMLParser bmlParser) {
         JFrame frame = new JFrame("BML AST");
         JPanel panel = new JPanel();
         TreeViewer viewer = new TreeViewer(Arrays.asList(bmlParser.getRuleNames()), bmlParser.program());

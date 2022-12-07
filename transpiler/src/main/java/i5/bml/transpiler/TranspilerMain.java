@@ -2,6 +2,7 @@ package i5.bml.transpiler;
 
 import i5.bml.parser.Parser;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
 
@@ -21,10 +22,11 @@ public class TranspilerMain {
         inputString = Files.readString(Paths.get(inputResource.toURI()));
 
         var pair = Parser.parse(inputString);
-        Parser.makeParseTree(pair.getRight());
+        //Parser.drawParseTree(pair.getRight());
+        ParseTree tree = pair.getRight().program();
 
         DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree);
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         if (diagnostics != null) {
@@ -32,5 +34,8 @@ public class TranspilerMain {
                 System.err.println(diagnostic.getMessage());
             }
         }
+
+        JavaSynthesizer javaSynthesizer = new JavaSynthesizer();
+        javaSynthesizer.visit(tree);
     }
 }
