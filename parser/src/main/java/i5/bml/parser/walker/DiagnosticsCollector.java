@@ -96,10 +96,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
             pushScope(s);
         }
         // We do not have a "block", so we check whether it's a "statement expression" (e.g., function call)
-        else if (ctx.expression() != null // We have an expression
-                && (ctx.expression().op == null || ctx.expression().op.getType() != BMLParser.DOT) // Expression is not using obj.foo()
-                && ctx.expression().functionCall() == null) { // Expression is not a function call
-            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_A_STATEMENT.message, ctx.expression());
+        else if (ctx.expr != null // We have an expression
+                && (ctx.expr.op == null || ctx.expr.op.getType() != BMLParser.DOT) // Expression is not using obj.foo()
+                && ctx.expr.functionCall() == null) { // Expression is not a function call
+            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_A_STATEMENT.message, ctx.expr);
         }
     }
 
@@ -199,12 +199,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
     @Override
     public void enterForEachBody(BMLParser.ForEachBodyContext ctx) {
         var forEachStmtCtx = ((BMLParser.ForEachStatementContext) ctx.parent);
-        var exprType = forEachStmtCtx.expression().type;
+        var exprType = forEachStmtCtx.expr.type;
         Type itemType;
         Type valueType = null;
         if (!(exprType instanceof BMLList) && !(exprType instanceof BMLMap)) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, FOREACH_NOT_APPLICABLE.format(exprType),
-                    forEachStmtCtx.expression());
+            Diagnostics.addDiagnostic(collectedDiagnostics, FOREACH_NOT_APPLICABLE.format(exprType), forEachStmtCtx.expr);
             itemType = TypeRegistry.resolveType(BuiltinType.OBJECT);
         } else if (exprType instanceof BMLList) {
             itemType = ((BMLList) exprType).getItemType();
@@ -237,10 +236,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var symbol = currentScope.getSymbol(name);
             if (symbol != null) {
                 // We simply redefine the type of the variable, when the variable already exists
-                ((VariableSymbol) symbol).setType(ctx.expression().type);
+                ((VariableSymbol) symbol).setType(ctx.expr.type);
             } else {
                 VariableSymbol v = new VariableSymbol(name);
-                v.setType(ctx.expression().type);
+                v.setType(ctx.expr.type);
                 currentScope.define(v);
             }
         } else { // Assignment operators with simultaneous arithmetic operation
@@ -251,7 +250,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             } else {
                 // Type of left-hand side should already be set
                 var leftType = ((VariableSymbol) v).getType();
-                var rightType = ctx.expression().type;
+                var rightType = ctx.expr.type;
 
                 if (ctx.op.getType() == BMLParser.ADD_ASSIGN) {
                     if (!leftType.equals(rightType) || !(leftType instanceof Summable) || !(rightType instanceof Summable)) {
@@ -276,10 +275,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
             case BMLParser.StringLiteral -> TypeRegistry.resolveType(BuiltinType.STRING);
             case BMLParser.BooleanLiteral -> TypeRegistry.resolveType(BuiltinType.BOOLEAN);
             case BMLParser.Identifier -> {
-                var name = ctx.Identifier().getText();
+                var name = ctx.token.getText();
                 var resolvedSymbol = currentScope.resolve(name);
                 if (!(resolvedSymbol instanceof VariableSymbol)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.Identifier().getSymbol());
+                    Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.token);
                     // We don't know the type, so we go with Object
                     yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                 } else {
@@ -472,11 +471,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     private void handleInitializers(BMLParser.ExpressionContext ctx) {
         if (ctx.initializer().mapInitializer() != null) {
-            var elementExpressionPairList = ctx.initializer().mapInitializer().elementExpressionPairList();
-            if (elementExpressionPairList == null) {
+            var params = ctx.initializer().mapInitializer().params;
+            if (params == null) {
                 ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT)));
             } else {
-                var elementExpressionPairs = elementExpressionPairList.elementExpressionPair();
+                var elementExpressionPairs = params.elementExpressionPair();
                 Map<String, Type> supportedAccesses = new HashMap<>();
                 for (var elementExpressionPair : elementExpressionPairs) {
                     supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);
