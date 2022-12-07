@@ -57,6 +57,7 @@ public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
         semanticTokensOptions.setRange(false);
         semanticTokensOptions.setFull(true);
         capabilities.setSemanticTokensProvider(semanticTokensOptions);
+        capabilities.setHoverProvider(true);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

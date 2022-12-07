@@ -57,7 +57,12 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
-        return TextDocumentService.super.hover(params);
+        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Hover Request: " + params.toString()));
+        return CompletableFuture.supplyAsync(() -> {
+            var h = new Hover();
+            h.setContents(List.of(Either.forLeft("This is a"), Either.forLeft("hover message")));
+            return h;
+        });
     }
 
     @Override
