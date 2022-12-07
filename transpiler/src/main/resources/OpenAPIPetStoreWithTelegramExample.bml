@@ -14,23 +14,25 @@ Bot(host="localhost", port=8080) {
 
     Map subscribedUsers()
 
+    Number someCounter()
+
     @UserSentMessage // Uses all messenger components
     collectPetId(data) {
         if data.intent == "id" {
-            id = data.entity
+            id = int(data.entity)
             pet = petStore.get(path="/pet/{petId}", petId=id)
 
-            someCounter += pet.someIntegerAttribute
+            someCounter += pet.id
 
-            if pet.code == 200 { // The responseCode field is provided by the transpiler
+            if pet.code == 200 { // The code field is provided by the transpiler
                 // If not specified otherwise, send back to user that message was received from
                 // send uses all "registered" messengers (see @UserSentMessage)
-                send(message="Thank you, I'll keep you posted about {pet.name} with id {petId}")
+                send(message="Thank you, I'll keep you posted about {pet.name} with id {pet.id}")
                 subscribedUsers.add(key=data.user, value=data.entity)
             } else if pet.code == 400 {
-                send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a number.")
+                send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a valid number.")
             } else { // code == 404
-                send(message="I'm sorry, it seems there is no pet with id {petId}.")
+                send(message="I'm sorry, it seems there is no pet with id {pet.id}.")
             }
         } else {
            /* Do some dialogue to help user send a pet id */
