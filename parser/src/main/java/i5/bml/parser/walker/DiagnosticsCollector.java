@@ -456,52 +456,68 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op, ctx));
             };
         } else if (ctx.functionCall() != null) {
-            var name = ctx.functionCall().functionName.getText();
-            var symbol = currentScope.resolve(name);
-            if (symbol == null) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionCall().functionName);
-                ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-            } else {
-                ctx.type = ((BMLFunction) ((TypedSymbol) symbol).getType()).getReturnType();
-            }
+            ctx.type = ((BMLFunction) ctx.functionCall().type).getReturnType();
         } else { // Initializers
-            handleInitializers(ctx);
+            ctx.type = ctx.initializer().type;
         }
     }
 
-    private void handleInitializers(BMLParser.ExpressionContext ctx) {
-        if (ctx.initializer().mapInitializer() != null) {
-            var params = ctx.initializer().mapInitializer().params;
-            if (params == null) {
-                ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT)));
-            } else {
-                var elementExpressionPairs = params.elementExpressionPair();
-                Map<String, Type> supportedAccesses = new HashMap<>();
-                for (var elementExpressionPair : elementExpressionPairs) {
-                    supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);
-                }
+    @Override
+    public void exitFunctionCall(BMLParser.FunctionCallContext ctx) {
+        var name = ctx.functionName.getText();
+        var symbol = currentScope.resolve(name);
+        if (symbol == null) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionName);
+            ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+        } else {
+            ctx.type = ((TypedSymbol) symbol).getType();
+        }
+    }
 
-                ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), supportedAccesses));
-            }
-        } else { // List initializer
-            // Find type of list items & check they are all equal
-            var expressions = ctx.initializer().listInitializer().expression();
-            if (expressions.isEmpty()) {
-                ctx.type = tryToResolveElseRegister(new BMLList(TypeRegistry.resolveType(BuiltinType.OBJECT)));
-            } else {
-                // Check whether types are homogeneous
-                var firstItemType = expressions.get(0).type;
-                for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
-                    if (!firstItemType.equals(expressions.get(i).type)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics, LIST_BAD_TYPES.message, ctx.initializer());
-                        ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-                        return;
-                    }
-                }
+    @Override
+    public void exitInitializer(BMLParser.InitializerContext ctx) {
+        if (ctx.mapInitializer() != null) {
+            ctx.type = ctx.mapInitializer().type;
+        } else { // list initializer
+            ctx.type = ctx.listInitializer().type;
+        }
+    }
 
-                // Types are homogeneous -> try to register type
-                ctx.type = tryToResolveElseRegister(new BMLList(firstItemType));
+    @Override
+    public void exitMapInitializer(BMLParser.MapInitializerContext ctx) {
+        var params = ctx.params;
+        if (params == null) {
+            ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT)));
+        } else {
+            var elementExpressionPairs = params.elementExpressionPair();
+            Map<String, Type> supportedAccesses = new HashMap<>();
+            for (var elementExpressionPair : elementExpressionPairs) {
+                supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);
             }
+
+            ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), supportedAccesses));
+        }
+    }
+
+    @Override
+    public void exitListInitializer(BMLParser.ListInitializerContext ctx) {
+        // Find type of list items & check they are all equal
+        var expressions = ctx.expression();
+        if (expressions.isEmpty()) {
+            ctx.type = tryToResolveElseRegister(new BMLList(TypeRegistry.resolveType(BuiltinType.OBJECT)));
+        } else {
+            // Check whether types are homogeneous
+            var firstItemType = expressions.get(0).type;
+            for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
+                if (!firstItemType.equals(expressions.get(i).type)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, LIST_BAD_TYPES.message, ctx);
+                    ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+                    return;
+                }
+            }
+
+            // Types are homogeneous -> try to register type
+            ctx.type = tryToResolveElseRegister(new BMLList(firstItemType));
         }
     }
 

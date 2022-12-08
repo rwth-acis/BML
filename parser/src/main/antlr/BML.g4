@@ -84,11 +84,11 @@ atom returns [Type type] : token=IntegerLiteral
                          | token=BooleanLiteral
                          | token=Identifier ;
 
-functionCall : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
+functionCall returns [Type type] : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
-initializer : mapInitializer
+initializer returns [Type type] : mapInitializer
             | listInitializer ;
 
-mapInitializer : LBRACE params=elementExpressionPairList? RBRACE ;
+mapInitializer returns [Type type] : LBRACE params=elementExpressionPairList? RBRACE ;
 
-listInitializer : LBRACK (expression (COMMA expression)*)? RBRACK ;
+listInitializer returns [Type type] : LBRACK (expression (COMMA expression)*)? RBRACK ;
