@@ -34,6 +34,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private final Set<String> httpMethods = new HashSet<>();
 
+    /**
+     * `HTTP method` + `route` -> Pair(Tag, OperationId)
+     */
     private final Map<String, Pair<String, String>> tagOperationIdPairs = new HashMap<>();
 
     @Override

@@ -194,6 +194,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         // 5. Lastly, we set the type of the corresponding symbol
         var symbol = currentScope.resolve(componentName);
         ((VariableSymbol) symbol).setType(resolvedType);
+        ctx.type = resolvedType;
     }
 
     @Override

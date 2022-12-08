@@ -12,7 +12,7 @@ public enum BuiltinType {
     /*
      * Generic type
      */
-    OBJECT("Object"),
+    OBJECT("Object", true),
 
     /*
      * Data structures
@@ -46,12 +46,7 @@ public enum BuiltinType {
     OPENAPI_SCHEMA("OpenAPISchema", true),
     EMAIL("Email"),
     RSS("RSS"),
-    SQL("SQL"),
-
-    /*
-     * Timer
-     */
-    ROUTINE("Routine");
+    SQL("SQL");
 
     private final String name;
 
