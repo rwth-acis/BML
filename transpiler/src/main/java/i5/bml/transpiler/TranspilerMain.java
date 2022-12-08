@@ -1,7 +1,17 @@
 package i5.bml.transpiler;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.type.PrimitiveType;
 import i5.bml.parser.Parser;
+import i5.bml.parser.types.BMLNumber;
+import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
+import i5.bml.parser.types.openapi.BMLOpenAPIComponent;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import i5.bml.transpiler.generators.GeneratorRegistry;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
@@ -34,6 +44,10 @@ public class TranspilerMain {
                 System.err.println(diagnostic.getMessage());
             }
         }
+
+//        var c = StaticJavaParser.parseExpression("\"int x = 1;\"");
+//        System.out.println(c.getMetaModel());
+//        System.out.println(c);
 
         JavaSynthesizer javaSynthesizer = new JavaSynthesizer();
         javaSynthesizer.visit(tree);

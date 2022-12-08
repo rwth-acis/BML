@@ -4,6 +4,7 @@ Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
     updateAvailablePetCounter(data) {
-        pet = petStore.get(path="/pet/{petId}", petId=1)
+        petStore.post(path="/pet/{petId}", petId=1, status="available")
+        //id = pet.id + 1
     }
 }

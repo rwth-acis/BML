@@ -36,6 +36,8 @@ dependencies {
 
     implementation 'io.gsonfire:gson-fire:1.8.5'
 
+    implementation 'org.reflections:reflections:0.10.2'
+
     implementation project(':parser')
 }
 

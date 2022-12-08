@@ -16,25 +16,26 @@ public class BotMain {
 
     private static void generateOpenAPIClientCode(URL url, String openApiUrl) throws IOException {
         var apiName = openApiUrl.split("//")[1].split("\\.")[0];
-        Runtime.getRuntime().exec(
-                "/home/marc/.jdks/corretto-17.0.5/bin/java " +
-                        "-DhideGenerationTimestamp=false " +
-                        "-DsupportingFiles=ApiKeyAuth.java,Authentication.java,HttpBasicAuth.java,OAuth.java," +
-                        "OAuthFlow.java,ApiCallback.java,ApiClient.java,ApiException.java,ApiResponse.java," +
-                        "Configuration.java,GzipRequestInterceptor.java,JSON.java,Pair.java,ProgressRequestBody.java," +
-                        "ProgressResponseBody.java,StringUtil.java " +
-                        "-DmodelDocs=false " +
-                        "-DapiDocs=false " +
-                        "-Dapis " +
-                        "-DapiTests=false " +
-                        "-Dmodels " +
-                        "-DmodelTests=false " +
-                        "-jar %s ".formatted(url.getPath()) +
-                        "generate " +
-                        "--api-package i5.bml.transpiler.bot.openapi.%sclient.apis ".formatted(apiName) +
-                        "-i %s ".formatted(openApiUrl) +
-                        "-l java " +
-                        "--model-package i5.bml.transpiler.bot.openapi.%sclient.models ".formatted(apiName) +
-                        "-o transpiler");
+        var command = "/home/marc/.jdks/corretto-17.0.5/bin/java " +
+                "-DhideGenerationTimestamp=false " +
+                "-DsupportingFiles=ApiKeyAuth.java,Authentication.java,HttpBasicAuth.java,OAuth.java," +
+                "OAuthFlow.java,ApiCallback.java,ApiClient.java,ApiException.java,ApiResponse.java," +
+                "Configuration.java,GzipRequestInterceptor.java,JSON.java,Pair.java,ProgressRequestBody.java," +
+                "ProgressResponseBody.java,StringUtil.java " +
+                "-DmodelDocs=false " +
+                "-DapiDocs=false " +
+                "-Dapis " +
+                "-DapiTests=false " +
+                "-Dmodels " +
+                "-DmodelTests=false " +
+                "-jar %s ".formatted(url.getPath()) +
+                "generate " +
+                "--api-package i5.bml.transpiler.bot.openapi.%sclient.apis ".formatted(apiName) +
+                "-i %s ".formatted(openApiUrl) +
+                "-l java " +
+                "--model-package i5.bml.transpiler.bot.openapi.%sclient.models ".formatted(apiName) +
+                "-o transpiler";
+        System.out.println(command);
+        Runtime.getRuntime().exec(command);
     }
 }

@@ -1,13 +1,18 @@
 package i5.bml.transpiler;
 
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.Statement;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
+import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.GeneratorRegistry;
 
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,7 +75,20 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitBlock(BMLParser.BlockContext ctx) {
-        return super.visitBlock(ctx);
+        var b = new BlockStmt(ctx.statement().stream()
+                .map(p -> {
+                    var v = visit(p);
+                    System.out.println("VISITED: " + p.getText());
+                    if (!(v instanceof Statement)) {
+                        return new ExpressionStmt((Expression) v);
+                    } else {
+                        return (Statement) v;
+                    }
+                })
+                .collect(Collectors.toCollection(NodeList::new))
+        );
+        System.out.println(b);
+        return b;
     }
 
     @Override
@@ -90,8 +108,8 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
-        var type = StaticJavaParser.parseClassOrInterfaceType(ctx.expr.type.toString());
-        var v = new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr));
+        var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
+        var v = new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr))));
         return v;
     }
 
@@ -104,12 +122,11 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 case BMLParser.LBRACE -> new EnclosedExpr((Expression) visit(ctx.expr));
 
                 case BMLParser.DOT -> {
+                    Generator generator = GeneratorRegistry.getGeneratorForType(ctx.expr.type);
                     if (ctx.Identifier() != null) {
-                        // TODO: Do the same as for function calls, decide what to do based on the type
-                        //       if OpenAPI -> turn `pet.id` into `pet.getId()`
-                        yield new FieldAccessExpr((Expression) visit(ctx.expr), ctx.Identifier().getText());
+                        yield generator.generateFieldAccess((Expression) visit(ctx.expr), ctx.Identifier());
                     } else { // functionCall
-                        yield visit(ctx.functionCall());
+                        yield generator.generateFunctionCall(ctx.functionCall(), this);
                     }
                 }
 
@@ -121,7 +138,9 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 case BMLParser.LT, BMLParser.LE, BMLParser.GT, BMLParser.GE, BMLParser.EQUAL, BMLParser.NOTEQUAL,
                         BMLParser.ADD, BMLParser.SUB, BMLParser.MUL, BMLParser.DIV, BMLParser.MOD ->
                         new BinaryExpr((Expression) visit(ctx.left), (Expression) visit(ctx.right),
-                                BinaryExpr.Operator.valueOf(ctx.op.getText()));
+                                Arrays.stream(BinaryExpr.Operator.values())
+                                        .filter(op -> op.asString().equals(ctx.op.getText())).findAny().get()
+                        );
 
                 case BMLParser.AND -> new BinaryExpr((Expression) visit(ctx.left), (Expression) visit(ctx.right),
                         BinaryExpr.Operator.AND);
@@ -144,14 +163,20 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitAtom(BMLParser.AtomContext ctx) {
-
-        return super.visitAtom(ctx);
+        return switch (ctx.token.getType()) {
+            case BMLParser.IntegerLiteral -> new LongLiteralExpr(ctx.token.getText() + "L");
+            case BMLParser.FloatingPointLiteral -> new DoubleLiteralExpr(ctx.token.getText() + "d");
+            case BMLParser.StringLiteral -> new StringLiteralExpr(ctx.token.getText().substring(1, ctx.token.getText().length() - 1));
+            case BMLParser.BooleanLiteral -> new BooleanLiteralExpr(Boolean.parseBoolean(ctx.token.getText()));
+            case BMLParser.Identifier -> new NameExpr(ctx.token.getText());
+            // This should never happen
+            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
+        };
     }
 
     @Override
     public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
-        // TODO: if OpenAPI -> turn `petStore.get(path="/pet/{petId}", petId=1)` into `petApi.getPetById(1)`
-        //       `getPetById` is the operation id of GET /pet/{petId}
+        // TODO: These calls can only be STDLIB calls
         return super.visitFunctionCall(ctx);
     }
 
