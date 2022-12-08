@@ -1,7 +1,6 @@
 package i5.bml.parser.types;
 
 import i5.bml.parser.walker.DiagnosticsCollector;
-import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -11,7 +10,7 @@ public class BMLFunction extends AbstractBMLType {
 
     private final Type returnType;
 
-    public BMLFunction(Type returnType, List<ParameterSymbol> requiredParameters, List<ParameterSymbol> optionalParameters) {
+    public BMLFunction(Type returnType, List<BMLFunctionParameter> requiredParameters, List<BMLFunctionParameter> optionalParameters) {
         this.returnType = returnType;
         super.requiredParameters = requiredParameters;
         super.optionalParameters = optionalParameters;
@@ -30,6 +29,14 @@ public class BMLFunction extends AbstractBMLType {
 
     public Type getReturnType() {
         return returnType;
+    }
+
+    public List<BMLFunctionParameter> getRequiredParameters() {
+        return requiredParameters;
+    }
+
+    public List<BMLFunctionParameter> getOptionalParameters() {
+        return optionalParameters;
     }
 
     @Override

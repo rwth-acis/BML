@@ -116,4 +116,8 @@ public class TypeRegistry {
         builtinTypes.clear();
         complexTypeBlueprints.clear();
     }
+
+    public static Map<String, Type> getRegisteredTypes() {
+        return registeredTypes;
+    }
 }

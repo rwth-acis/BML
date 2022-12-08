@@ -11,7 +11,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -19,10 +18,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -38,9 +34,12 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     private final Set<String> httpMethods = new HashSet<>();
 
+    private final Map<String, Pair<String, String>> tagOperationIdPairs = new HashMap<>();
+
     @Override
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        if (ctx == null) { // Missing parameters, but it has been reported by `checkParameters`
+        // Missing parameters, but it has been reported by `checkParameters`
+        if (ctx == null) {
             return;
         }
 
@@ -91,13 +90,22 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             var requiredParameters = routeParameters.getLeft();
             var optionalParameters = routeParameters.getRight();
 
-            var p = new ParameterSymbol("path");
+            var p = new BMLFunctionParameter("path");
             p.setType(TypeRegistry.resolveType(BuiltinType.STRING));
             requiredParameters.add(p);
 
             var function = new BMLFunction(returnType, requiredParameters, optionalParameters);
             supportedAccesses.put(httpMethod.name().toLowerCase() + route, function);
             httpMethods.add(httpMethod.name().toLowerCase());
+
+            // We store a map with `HTTP method + route` -> `Tag` for code generation
+            if (operation.getTags() == null || operation.getTags().isEmpty()) {
+                tagOperationIdPairs.put(httpMethod.name().toLowerCase() + route.toLowerCase(),
+                        new ImmutablePair<>("Default", operation.getOperationId()));
+            } else {
+                tagOperationIdPairs.put(httpMethod.name().toLowerCase()  + route.toLowerCase(),
+                        new ImmutablePair<>(operation.getTags().get(0), operation.getOperationId()));
+            }
         }));
         end = System.nanoTime();
         Measurements.add("Parsing OpenAPI Spec", end - start);
@@ -120,10 +128,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             }
         });
 
+        // TODO: We need a void type for, e.g., POST /pet/{petId}
         return returnType[0];
     }
 
-    private void computeArgumentTypes(List<ParameterSymbol> arguments, Schema<?> schema, String parameterName) {
+    private void computeArgumentTypes(List<BMLFunctionParameter> arguments, Schema<?> schema, String parameterName) {
         if (schema == null) {
             var msg = "Couldn't find schema for parameter `%s`".formatted(parameterName);
             super.cacheDiagnostic(msg, DiagnosticSeverity.Warning);
@@ -133,16 +142,16 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(schema, "Parameter", parameterName);
         var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
 
-        var parameterSymbol = new ParameterSymbol(parameterName);
-        parameterSymbol.setType(resolvedBMLType);
-        arguments.add(parameterSymbol);
+        var parameter = new BMLFunctionParameter(parameterName);
+        parameter.setType(resolvedBMLType);
+        arguments.add(parameter);
     }
 
-    private Pair<ArrayList<ParameterSymbol>, ArrayList<ParameterSymbol>> computeRouteArguments(String route,
+    private Pair<ArrayList<BMLFunctionParameter>, ArrayList<BMLFunctionParameter>> computeRouteArguments(String route,
                                                                                                String httpMethod,
                                                                                                Operation operation) {
-        var requiredArguments = new ArrayList<ParameterSymbol>();
-        var optionalArguments = new ArrayList<ParameterSymbol>();
+        var requiredArguments = new ArrayList<BMLFunctionParameter>();
+        var optionalArguments = new ArrayList<BMLFunctionParameter>();
 
         // Parameters
         if (operation.getParameters() != null && operation.getParameters().size() > 0) {
@@ -237,18 +246,12 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         return url;
     }
 
-    @Override
-    public String encodeToString() {
-        return "%s{url='%s'}".formatted(getName(), url);
+    public Map<String, Pair<String, String>> getTagOperationIdPairs() {
+        return tagOperationIdPairs;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        BMLOpenAPIComponent that = (BMLOpenAPIComponent) o;
-
-        return this.getName().equals(that.getName()) && url.equals(that.getUrl());
+    public String encodeToString() {
+        return "%s{url='%s'}".formatted(getName(), url);
     }
 }

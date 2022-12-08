@@ -320,6 +320,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                             if (resolvedType instanceof BMLFunction) {
                                 // If method: check parameters -> delegate check to BMLFunction
                                 resolvedType.checkParameters(this, ctx.functionCall().elementExpressionPairList());
+                                ctx.functionCall().type = resolvedType;
                                 yield ((BMLFunction) resolvedType).getReturnType();
                             } else {
                                 yield TypeRegistry.resolveType(BuiltinType.OBJECT);
@@ -456,21 +457,18 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op, ctx));
             };
         } else if (ctx.functionCall() != null) {
-            ctx.type = ((BMLFunction) ctx.functionCall().type).getReturnType();
+            var name = ctx.functionCall().functionName.getText();
+            var symbol = currentScope.resolve(name);
+            if (symbol == null) {
+                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionCall().functionName);
+                ctx.functionCall().type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+                ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+            } else {
+                ctx.functionCall().type = ((TypedSymbol) symbol).getType();
+                ctx.type = ((BMLFunction) ctx.functionCall().type).getReturnType();
+            }
         } else { // Initializers
             ctx.type = ctx.initializer().type;
-        }
-    }
-
-    @Override
-    public void exitFunctionCall(BMLParser.FunctionCallContext ctx) {
-        var name = ctx.functionName.getText();
-        var symbol = currentScope.resolve(name);
-        if (symbol == null) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionName);
-            ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-        } else {
-            ctx.type = ((TypedSymbol) symbol).getType();
         }
     }
 

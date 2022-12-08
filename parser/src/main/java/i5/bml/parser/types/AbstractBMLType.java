@@ -3,7 +3,6 @@ package i5.bml.parser.types;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import org.antlr.symtab.ParameterSymbol;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -18,9 +17,9 @@ public abstract class AbstractBMLType implements Type {
 
     protected Map<String, Type> supportedAccesses = new HashMap<>();
 
-    protected List<ParameterSymbol> requiredParameters = new ArrayList<>();
+    protected List<BMLFunctionParameter> requiredParameters = new ArrayList<>();
 
-    protected List<ParameterSymbol> optionalParameters = new ArrayList<>();
+    protected List<BMLFunctionParameter> optionalParameters = new ArrayList<>();
 
     protected List<Diagnostic> cachedDiagnostics = new ArrayList<>();
 
@@ -38,12 +37,12 @@ public abstract class AbstractBMLType implements Type {
                 .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
                 .map(f -> f.getAnnotation(BMLComponentParameter.class))
                 .forEach(p -> {
-                    var parameterSymbol = new ParameterSymbol(p.name());
-                    parameterSymbol.setType(TypeRegistry.resolveType(p.expectedBMLType()));
+                    var parameter = new BMLFunctionParameter(p.name());
+                    parameter.setType(TypeRegistry.resolveType(p.expectedBMLType()));
                     if (p.isRequired()) {
-                        requiredParameters.add(parameterSymbol);
+                        requiredParameters.add(parameter);
                     } else {
-                        optionalParameters.add(parameterSymbol);
+                        optionalParameters.add(parameter);
                     }
                 });
     }
@@ -65,8 +64,9 @@ public abstract class AbstractBMLType implements Type {
             if (invocationParameter.isEmpty()) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format(name), ctx);
             } else {
+                requiredParameter.setExprCtx(invocationParameter.get().expr);
                 var requiredParameterType = requiredParameter.getType();
-                var invocationParameterType = invocationParameter.get().expression().type;
+                var invocationParameterType = invocationParameter.get().expr.type;
                 if (!requiredParameterType.equals(invocationParameterType)) {
                     Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                             EXPECTED_BUT_FOUND.format(requiredParameterType, invocationParameterType),
@@ -82,24 +82,25 @@ public abstract class AbstractBMLType implements Type {
 
     private void checkOptionalParameters(DiagnosticsCollector diagnosticsCollector,
                                          Set<BMLParser.ElementExpressionPairContext> remainingParameters) {
-        for (var parameterPair : remainingParameters) {
+        for (var invocationParameter : remainingParameters) {
             // Name
-            var name = parameterPair.name.getText();
+            var name = invocationParameter.name.getText();
             var optionalParameter = optionalParameters.stream()
                     .filter(p -> p.getName().equals(name))
                     .findAny();
 
             if (optionalParameter.isEmpty()) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        PARAM_NOT_DEFINED.format(name), parameterPair.name);
+                        PARAM_NOT_DEFINED.format(name), invocationParameter.name);
             } else {
                 // We can assume that parameter is present, so we expect the correct type
+                optionalParameter.get().setExprCtx(invocationParameter.expr);
                 var optionalParameterType = optionalParameter.get().getType();
-                var invocationParameterType = parameterPair.expression().type;
+                var invocationParameterType = invocationParameter.expr.type;
                 if (!optionalParameterType.equals(invocationParameterType)) {
                     Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                             EXPECTED_BUT_FOUND.format(optionalParameterType, invocationParameterType),
-                            parameterPair.expression());
+                            invocationParameter.expression());
                 }
             }
         }
