@@ -15,7 +15,7 @@ program : botDeclaration EOF ;
  */
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
-botHead : BOT name=Identifier? LPAREN elementExpressionPairList RPAREN ;
+botHead : BOT name=Identifier? LPAREN params=elementExpressionPairList RPAREN ;
 
 botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 
@@ -29,7 +29,7 @@ elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 /*
  * Components
  */
-component : typeName=Identifier name=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
+component returns [Type type] : typeName=Identifier name=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
 /*
  * Function Definition (Event Listener or Action)
@@ -51,7 +51,7 @@ statement returns [Scope scope] : block
 
 block : LBRACE statement* RBRACE ;
 
-ifStatement : IF expression statement (ELSE statement)? ;
+ifStatement : IF expr=expression thenStmt=statement (ELSE elseStmt=statement)? ;
 
 forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expr=expression forEachBody ;
 
