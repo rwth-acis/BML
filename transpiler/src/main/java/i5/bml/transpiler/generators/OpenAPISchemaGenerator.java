@@ -21,6 +21,11 @@ public class OpenAPISchemaGenerator implements Generator {
     }
 
     @Override
+    public Node generateComponent(BMLParser.ComponentContext componentContext, BMLBaseVisitor<Node> visitor) {
+        return null;
+    }
+
+    @Override
     public Node generateFieldAccess(Expression object, TerminalNode field) {
         return new MethodCallExpr(object, new SimpleName("get" + StringUtils.capitalize(field.getText())));
     }

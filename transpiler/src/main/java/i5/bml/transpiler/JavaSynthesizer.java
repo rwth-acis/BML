@@ -1,116 +1,115 @@
 package i5.bml.transpiler;
 
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.UnknownType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
-    @Override
-    public Node visitProgram(BMLParser.ProgramContext ctx) {
-        return super.visitProgram(ctx);
-    }
-
-    @Override
-    public Node visitBotDeclaration(BMLParser.BotDeclarationContext ctx) {
-        return super.visitBotDeclaration(ctx);
-    }
+    private String botOutputPath = "transpiler/src/main/java/i5/bml/transpiler/bot/";
 
     @Override
     public Node visitBotHead(BMLParser.BotHeadContext ctx) {
+        try {
+            var botConfig = new File(botOutputPath + "BotConfig.java");
+            CompilationUnit c = StaticJavaParser.parse(botConfig);
+            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
+            var clazz = c.getClassByName("BotConfig").get();
+            System.out.println(c);
+
+            for (var pair : ctx.params.elementExpressionPair()) {
+                var type = BMLTypeResolver.resolveBMLTypeToJavaType(pair.expr.type);
+                var name = pair.name.getText().toUpperCase();
+                clazz.addFieldWithInitializer(type, name, (Expression) visit(pair.expr),
+                        Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
+            }
+
+            // Write back to botConfig
+            Files.write(botConfig.toPath(), c.toString().getBytes());
+        } catch (FileNotFoundException e) {
+            throw new IllegalStateException("Could not find %s in %s".formatted("BotConfig.java", botOutputPath));
+        } catch (IOException e) {
+            throw new IllegalStateException("Error writing to file %s%s: %s"
+                    .formatted(botOutputPath, "BotConfig.java", e.getMessage()));
+        }
+
         return super.visitBotHead(ctx);
     }
 
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
+        // TODO:
+        ctx.component();
+
         return super.visitBotBody(ctx);
     }
 
     @Override
-    public Node visitElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
-        return super.visitElementExpressionPairList(ctx);
-    }
-
-    @Override
-    public Node visitElementExpressionPair(BMLParser.ElementExpressionPairContext ctx) {
-        return super.visitElementExpressionPair(ctx);
-    }
-
-    @Override
     public Node visitComponent(BMLParser.ComponentContext ctx) {
-        return super.visitComponent(ctx);
+        return GeneratorRegistry.getGeneratorForType(ctx.type).generateComponent(ctx, this);
     }
 
     @Override
     public Node visitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
+        // TODO: Make distinction for different Annotations
+
         return super.visitFunctionDefinition(ctx);
     }
 
     @Override
-    public Node visitAnnotation(BMLParser.AnnotationContext ctx) {
-        return super.visitAnnotation(ctx);
-    }
-
-    @Override
-    public Node visitFunctionHead(BMLParser.FunctionHeadContext ctx) {
-        return super.visitFunctionHead(ctx);
-    }
-
-    @Override
-    public Node visitStatement(BMLParser.StatementContext ctx) {
-        return super.visitStatement(ctx);
-    }
-
-    @Override
     public Node visitBlock(BMLParser.BlockContext ctx) {
-        var b = new BlockStmt(ctx.statement().stream()
-                .map(p -> {
-                    var v = visit(p);
-                    System.out.println("VISITED: " + p.getText());
-                    if (!(v instanceof Statement)) {
-                        return new ExpressionStmt((Expression) v);
-                    } else {
-                        return (Statement) v;
-                    }
+        return new BlockStmt(ctx.statement().stream()
+                .map(statementContext -> {
+                    var node = visit(statementContext);
+                    return !(node instanceof Statement) ? new ExpressionStmt((Expression) node) : (Statement) node;
                 })
                 .collect(Collectors.toCollection(NodeList::new))
         );
-        System.out.println(b);
-        return b;
     }
 
     @Override
     public Node visitIfStatement(BMLParser.IfStatementContext ctx) {
-        return super.visitIfStatement(ctx);
+        var elseStmt = ctx.elseStmt == null ? null : (Statement) visit(ctx.elseStmt);
+        return new IfStmt((Expression) visit(ctx.expr), (Statement) visit(ctx.thenStmt), elseStmt);
     }
 
     @Override
     public Node visitForEachStatement(BMLParser.ForEachStatementContext ctx) {
-        return super.visitForEachStatement(ctx);
-    }
+        var forEachArgs = new NodeList<>(new Parameter(new UnknownType(), ctx.Identifier(0).getText()));
+        if (ctx.comma != null) {
+            forEachArgs.add(new Parameter(new UnknownType(), ctx.Identifier(1).getText()));
+        }
 
-    @Override
-    public Node visitForEachBody(BMLParser.ForEachBodyContext ctx) {
-        return super.visitForEachBody(ctx);
+        return new MethodCallExpr((Expression) visit(ctx.expr), new SimpleName("forEach"),
+                new NodeList<>(new LambdaExpr(forEachArgs, (BlockStmt) visit(ctx.forEachBody()))));
     }
 
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
         var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
-        var v = new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr))));
-        return v;
+        return new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr))));
     }
 
     @Override
@@ -177,7 +176,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     @Override
     public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
         // TODO: These calls can only be STDLIB calls
-        return super.visitFunctionCall(ctx);
+        return new MethodCallExpr(ctx.functionName.getText());
     }
 
     @Override

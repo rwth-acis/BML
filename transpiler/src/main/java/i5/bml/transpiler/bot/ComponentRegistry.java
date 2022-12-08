@@ -7,6 +7,7 @@ import i5.bml.transpiler.bot.openapi.petstore3client.apis.StoreApi;
 import i5.bml.transpiler.bot.openapi.petstore3client.apis.UserApi;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ComponentRegistry {
 

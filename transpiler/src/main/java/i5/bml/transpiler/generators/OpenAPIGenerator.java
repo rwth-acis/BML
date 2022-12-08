@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunction;
@@ -23,6 +24,15 @@ public class OpenAPIGenerator implements Generator {
 
     public OpenAPIGenerator(Type openAPIComponent) {
         this.openAPIComponent = (BMLOpenAPIComponent) openAPIComponent;
+    }
+
+    @Override
+    public Node generateComponent(BMLParser.ComponentContext componentContext, BMLBaseVisitor<Node> visitor) {
+        var block = new BlockStmt();
+
+
+
+        return block;
     }
 
     @Override
