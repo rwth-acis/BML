@@ -113,6 +113,8 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
      *     }
      * </pre>
      *
+     * @implNote The lists or maps we are working on are synchronized or concurrent by construction.
+     *
      * @param ctx the parse tree
      * @return the freshly created forEach statement instance of
      *         <a href="https://javadoc.io/doc/com.github.javaparser/javaparser-core/latest/index.html">ForEachStmt</a>
