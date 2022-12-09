@@ -36,7 +36,7 @@ component returns [Type type] : typeName=Identifier name=Identifier LPAREN param
  */
 functionDefinition returns [Scope scope] : AT annotation head=functionHead body=block ;
 
-annotation : typeName=Identifier (LPAREN elementExpressionPairList? RPAREN)? ;
+annotation returns [Type type] : typeName=Identifier (LPAREN elementExpressionPairList? RPAREN)? ;
 
 functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
