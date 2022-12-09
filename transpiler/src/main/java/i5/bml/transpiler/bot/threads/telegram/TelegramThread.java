@@ -7,16 +7,17 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class TelegramThread implements Runnable {
 
-    private final LinkedBlockingDeque<Event> eventQueue;
+    private final PriorityBlockingQueue<Event> eventQueue;
 
     private final String username;
 
     private final String token;
 
-    public TelegramThread(LinkedBlockingDeque<Event> eventQueue, String username, String token) {
+    public TelegramThread(PriorityBlockingQueue<Event> eventQueue, String username, String token) {
         this.eventQueue = eventQueue;
         this.username = username;
         this.token = token;

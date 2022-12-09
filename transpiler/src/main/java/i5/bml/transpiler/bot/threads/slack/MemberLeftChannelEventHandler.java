@@ -21,7 +21,7 @@ public class MemberLeftChannelEventHandler extends AbstractSlackHandler implemen
 
     @Override
     public Response apply(EventsApiPayload<MemberLeftChannelEvent> event, EventContext context) throws IOException, SlackApiException {
-        var slackEvent = new MessageEvent(EventSource.SLACK);
+        var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
         slackEvent.setMessageEventType(MessageEventType.USER_LEFT_CHANNEL);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getUser()));
 

@@ -15,10 +15,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class SlackBotThread implements Callable<SocketModeClient> {
 
-    private final LinkedBlockingDeque<Event> eventQueue;
+    private final PriorityBlockingQueue<Event> eventQueue;
 
     private String botId;
     
@@ -26,7 +27,7 @@ public class SlackBotThread implements Callable<SocketModeClient> {
 
     private final Map<String, Session> activeSessions = new HashMap<>();
 
-    public SlackBotThread(LinkedBlockingDeque<Event> eventQueue) {
+    public SlackBotThread(PriorityBlockingQueue<Event> eventQueue) {
         this.eventQueue = eventQueue;
         botToken = System.getenv("SLACK_BOT_TOKEN");
     }
@@ -73,7 +74,7 @@ public class SlackBotThread implements Callable<SocketModeClient> {
         return null;
     }
 
-    public LinkedBlockingDeque<Event> getEventQueue() {
+    public PriorityBlockingQueue<Event> getEventQueue() {
         return eventQueue;
     }
 

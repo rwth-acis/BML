@@ -28,7 +28,7 @@ public class MessageEventHandler extends AbstractSlackHandler implements BoltEve
             return context.ack();
         }
 
-        var slackEvent = new MessageEvent(EventSource.SLACK);
+        var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
         var session = slackBotThread.getActiveSessions().get(event.getEvent().getChannel());
         if (session == null) {
             session = new Session(event.getEvent().getChannel());

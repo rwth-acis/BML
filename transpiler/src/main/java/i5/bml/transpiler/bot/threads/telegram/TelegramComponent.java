@@ -18,11 +18,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class TelegramComponent extends TelegramLongPollingBot {
 
-    private final LinkedBlockingDeque<Event> eventQueue;
+    private final PriorityBlockingQueue<Event> eventQueue;
 
     private final String username;
 
@@ -30,7 +31,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
     private final Map<Long, Session> activeSessions = new HashMap<>();
 
-    public TelegramComponent(LinkedBlockingDeque<Event> eventQueue, String username, String token) {
+    public TelegramComponent(PriorityBlockingQueue<Event> eventQueue, String username, String token) {
         this.eventQueue = eventQueue;
         this.username = username;
         this.token = token;
@@ -72,7 +73,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM);
+            MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());
             if (filterUpdates(telegramEvent, update)) {
                 eventQueue.offer(telegramEvent);
             }

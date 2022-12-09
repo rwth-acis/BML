@@ -25,7 +25,7 @@ public class MemberJoinedChannelEventHandler extends AbstractSlackHandler implem
 
     @Override
     public Response apply(EventsApiPayload<MemberJoinedChannelEvent> event, EventContext context) throws SlackApiException, IOException {
-        var slackEvent = new MessageEvent(EventSource.SLACK);
+        var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
         if (event.getEvent().getUser().equals(slackBotThread.getBotId())) {
             slackEvent.setMessageEventType(MessageEventType.BOT_ADDED);
             slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getInviter()));

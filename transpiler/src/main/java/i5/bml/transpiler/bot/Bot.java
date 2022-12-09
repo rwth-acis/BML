@@ -8,13 +8,15 @@ import i5.bml.transpiler.bot.events.routines.RoutineEventHandler;
 import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.bot.threads.telegram.TelegramThread;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
 public class Bot {
 
-    private final LinkedBlockingDeque<Event> eventQueue = new LinkedBlockingDeque<>();
+    private final PriorityBlockingQueue<Event> eventQueue = new PriorityBlockingQueue<>(100,
+            Comparator.comparingLong(Event::getArrivalTime));
 
     /**
      * This pool offers threads for the components that are external event resources.

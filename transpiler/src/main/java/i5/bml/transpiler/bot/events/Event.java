@@ -4,5 +4,7 @@ public interface Event {
 
     EventSource getEventSource();
 
+    long getArrivalTime();
+
     String toString();
 }

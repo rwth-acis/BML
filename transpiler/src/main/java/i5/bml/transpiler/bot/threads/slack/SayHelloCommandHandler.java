@@ -22,7 +22,7 @@ public class SayHelloCommandHandler extends AbstractSlackHandler implements Slas
 
     @Override
     public Response apply(SlashCommandRequest slashCommandRequest, SlashCommandContext context) throws IOException, SlackApiException {
-        var slackEvent = new MessageEvent(EventSource.SLACK);
+        var slackEvent = new MessageEvent(EventSource.SLACK, System.currentTimeMillis());
         slackEvent.setMessageEventType(MessageEventType.BOT_COMMAND);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), context.getRequestUserId()));
         slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), context.getChannelId()));

@@ -44,8 +44,11 @@ public class MessageEvent implements Event {
      */
     protected String username;
 
-    public MessageEvent(EventSource eventSource) {
+    private final long arrivalTime;
+
+    public MessageEvent(EventSource eventSource, long arrivalTime) {
         this.eventSource = eventSource;
+        this.arrivalTime = arrivalTime;
     }
 
     public MessageEventType getMessageEventType() {
@@ -99,6 +102,11 @@ public class MessageEvent implements Event {
     @Override
     public EventSource getEventSource() {
         return eventSource;
+    }
+
+    @Override
+    public long getArrivalTime() {
+        return arrivalTime;
     }
 
     @Override
