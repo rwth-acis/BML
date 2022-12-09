@@ -8,11 +8,10 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.*;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
+import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.transpiler.generators.Generator;
@@ -23,6 +22,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -95,21 +97,57 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         return new IfStmt((Expression) visit(ctx.expr), (Statement) visit(ctx.thenStmt), elseStmt);
     }
 
+    /**
+     * We cannot use .forEach(Consumer c) because the consumer c expects final variables,
+     * this would greatly complicate code generation. Hence, we go for the simple good 'n' old
+     * `enhanced for statement`:<br>
+     * <pre>
+     *     for (var i : list) { // For lists
+     *         // Do something
+     *     }
+     *
+     *     for (var e : map.entrySet()) {
+     *         var key = e.getKey();
+     *         var value = e.getValue();
+     *         // Do something
+     *     }
+     * </pre>
+     *
+     * @param ctx the parse tree
+     * @return the freshly created forEach statement instance of
+     *         <a href="https://javadoc.io/doc/com.github.javaparser/javaparser-core/latest/index.html">ForEachStmt</a>
+     */
     @Override
     public Node visitForEachStatement(BMLParser.ForEachStatementContext ctx) {
-        var forEachArgs = new NodeList<>(new Parameter(new UnknownType(), ctx.Identifier(0).getText()));
-        if (ctx.comma != null) {
-            forEachArgs.add(new Parameter(new UnknownType(), ctx.Identifier(1).getText()));
+        VariableDeclarationExpr variable;
+        BlockStmt forEachBody = (BlockStmt) visit(ctx.forEachBody());
+        if (ctx.comma == null) { // List
+            variable = new VariableDeclarationExpr(new VarType(), ctx.Identifier(0).getText());
+        } else { // Map
+            var mapEntryVarName = "e";
+            variable = new VariableDeclarationExpr(new VarType(), mapEntryVarName);
+
+            forEachBody.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
+                    ctx.Identifier(0).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getKey"))));
+            forEachBody.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
+                    ctx.Identifier(1).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getValue"))));
         }
 
-        return new MethodCallExpr((Expression) visit(ctx.expr), new SimpleName("forEach"),
-                new NodeList<>(new LambdaExpr(forEachArgs, (BlockStmt) visit(ctx.forEachBody()))));
+        return new ForEachStmt(variable, (Expression) visit(ctx.expr), forEachBody);
     }
 
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
-        var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
-        return new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr))));
+        if (ctx.op.getType() == BMLParser.ASSIGN) {
+            var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
+            return new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, ctx.name.getText(), (Expression) visit(ctx.expr))));
+        } else {
+            switch (ctx.op.getType()) {
+                // TODO
+            }
+
+            return null;
+        }
     }
 
     @Override
@@ -117,6 +155,9 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         if (ctx.atom() != null) {
             return visit(ctx.atom());
         } else if (ctx.op != null) {
+            // TODO: We need to make sure that operations on primitive, global variables, i.e., strings, bools, and numbers
+            //       are thread-safe
+
             return switch (ctx.op.getType()) {
                 case BMLParser.LBRACE -> new EnclosedExpr((Expression) visit(ctx.expr));
 
@@ -163,8 +204,8 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     @Override
     public Node visitAtom(BMLParser.AtomContext ctx) {
         return switch (ctx.token.getType()) {
-            case BMLParser.IntegerLiteral -> new LongLiteralExpr(ctx.token.getText() + "L");
-            case BMLParser.FloatingPointLiteral -> new DoubleLiteralExpr(ctx.token.getText() + "d");
+            case BMLParser.IntegerLiteral -> new IntegerLiteralExpr(ctx.token.getText());
+            case BMLParser.FloatingPointLiteral -> new DoubleLiteralExpr(ctx.token.getText());
             case BMLParser.StringLiteral -> new StringLiteralExpr(ctx.token.getText().substring(1, ctx.token.getText().length() - 1));
             case BMLParser.BooleanLiteral -> new BooleanLiteralExpr(Boolean.parseBoolean(ctx.token.getText()));
             case BMLParser.Identifier -> new NameExpr(ctx.token.getText());
