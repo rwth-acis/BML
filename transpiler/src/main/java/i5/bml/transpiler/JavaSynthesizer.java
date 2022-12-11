@@ -5,32 +5,52 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
+import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
+import org.antlr.symtab.Scope;
+import org.antlr.symtab.VariableSymbol;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     private String botOutputPath = "transpiler/src/main/java/i5/bml/transpiler/bot/";
+
+    private Scope currentScope;
+
+    private Scope globalScope;
+
+    private void pushScope(Scope s) {
+        currentScope = s;
+    }
+
+    private void popScope() {
+        currentScope = currentScope.getEnclosingScope();
+    }
+
+    @Override
+    public Node visitBotDeclaration(BMLParser.BotDeclarationContext ctx) {
+        pushScope(ctx.scope);
+        globalScope = ctx.scope;
+        var result = super.visitBotDeclaration(ctx);
+        popScope();
+        return result;
+    }
 
     @Override
     public Node visitBotHead(BMLParser.BotHeadContext ctx) {
@@ -61,6 +81,14 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     }
 
     @Override
+    public Node visitElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
+        pushScope(ctx.scope);
+        var result = super.visitElementExpressionPairList(ctx);
+        popScope();
+        return result;
+    }
+
+    @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
         // TODO:
         ctx.component();
@@ -77,7 +105,18 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     public Node visitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
         // TODO: Make distinction for different Annotations
 
-        return super.visitFunctionDefinition(ctx);
+        pushScope(ctx.scope);
+        var result = super.visitFunctionDefinition(ctx);
+        popScope();
+        return result;
+    }
+
+    @Override
+    public Node visitStatement(BMLParser.StatementContext ctx) {
+        pushScope(ctx.scope);
+        var result = super.visitStatement(ctx);
+        popScope();
+        return result;
     }
 
     @Override
@@ -113,11 +152,10 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
      *     }
      * </pre>
      *
-     * @implNote The lists or maps we are working on are synchronized or concurrent by construction.
-     *
      * @param ctx the parse tree
      * @return the freshly created forEach statement instance of
-     *         <a href="https://javadoc.io/doc/com.github.javaparser/javaparser-core/latest/index.html">ForEachStmt</a>
+     * <a href="https://javadoc.io/doc/com.github.javaparser/javaparser-core/latest/index.html">ForEachStmt</a>
+     * @implNote The lists or maps we are working on are synchronized or concurrent by construction.
      */
     @Override
     public Node visitForEachStatement(BMLParser.ForEachStatementContext ctx) {
@@ -157,9 +195,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         if (ctx.atom() != null) {
             return visit(ctx.atom());
         } else if (ctx.op != null) {
-            // TODO: We need to make sure that operations on primitive, global variables, i.e., strings, bools, and numbers
-            //       are thread-safe
-
             return switch (ctx.op.getType()) {
                 case BMLParser.LBRACE -> new EnclosedExpr((Expression) visit(ctx.expr));
 
@@ -172,17 +207,20 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                     }
                 }
 
-                case BMLParser.LBRACK -> new MethodCallExpr((Expression) visit(ctx.expr), new SimpleName("get"),
+                case BMLParser.LBRACK -> new MethodCallExpr((Expression) visit(ctx.expr), "get",
                         new NodeList<>((Expression) visit(ctx.index)));
 
-                case BMLParser.BANG -> new UnaryExpr((Expression) visit(ctx.expr), UnaryExpr.Operator.LOGICAL_COMPLEMENT);
+                case BMLParser.BANG ->
+                        new UnaryExpr((Expression) visit(ctx.expr), UnaryExpr.Operator.LOGICAL_COMPLEMENT);
 
                 case BMLParser.LT, BMLParser.LE, BMLParser.GT, BMLParser.GE, BMLParser.EQUAL, BMLParser.NOTEQUAL,
                         BMLParser.ADD, BMLParser.SUB, BMLParser.MUL, BMLParser.DIV, BMLParser.MOD ->
+                        //noinspection OptionalGetWithoutIsPresent -> Our operators are a subset of Java's, so they exist
                         new BinaryExpr((Expression) visit(ctx.left), (Expression) visit(ctx.right),
                                 Arrays.stream(BinaryExpr.Operator.values())
-                                        .filter(op -> op.asString().equals(ctx.op.getText())).findAny().get()
-                        );
+                                        .filter(op -> op.asString().equals(ctx.op.getText()))
+                                        .findAny()
+                                        .get());
 
                 case BMLParser.AND -> new BinaryExpr((Expression) visit(ctx.left), (Expression) visit(ctx.right),
                         BinaryExpr.Operator.AND);
@@ -190,8 +228,9 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 case BMLParser.OR -> new BinaryExpr((Expression) visit(ctx.left), (Expression) visit(ctx.right),
                         BinaryExpr.Operator.OR);
 
-                case BMLParser.QUESTION -> new ConditionalExpr((Expression) visit(ctx.cond), (Expression) visit(ctx.thenExpr),
-                        (Expression) visit(ctx.elseExpr));
+                case BMLParser.QUESTION ->
+                        new ConditionalExpr((Expression) visit(ctx.cond), (Expression) visit(ctx.thenExpr),
+                                (Expression) visit(ctx.elseExpr));
 
                 // This should never happen
                 default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op, ctx));
@@ -205,14 +244,25 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitAtom(BMLParser.AtomContext ctx) {
+        var atom = ctx.token.getText();
         return switch (ctx.token.getType()) {
-            case BMLParser.IntegerLiteral -> new IntegerLiteralExpr(ctx.token.getText());
-            case BMLParser.FloatingPointLiteral -> new DoubleLiteralExpr(ctx.token.getText());
-            case BMLParser.StringLiteral -> new StringLiteralExpr(ctx.token.getText().substring(1, ctx.token.getText().length() - 1));
-            case BMLParser.BooleanLiteral -> new BooleanLiteralExpr(Boolean.parseBoolean(ctx.token.getText()));
-            case BMLParser.Identifier -> new NameExpr(ctx.token.getText());
+            case BMLParser.IntegerLiteral -> new IntegerLiteralExpr(atom);
+            case BMLParser.FloatingPointLiteral -> new DoubleLiteralExpr(atom);
+            case BMLParser.StringLiteral -> new StringLiteralExpr(atom.substring(1, atom.length() - 1));
+            case BMLParser.BooleanLiteral -> new BooleanLiteralExpr(Boolean.parseBoolean(atom));
+            case BMLParser.Identifier -> {
+                var symbol = ((VariableSymbol) globalScope.getSymbol(atom));
+                if (symbol != null
+                        && (symbol.getType().equals(TypeRegistry.resolveType(BuiltinType.BOOLEAN))
+                            || symbol.getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER)))) {
+                    // We have a global variable -> needs thread-safety
+                    yield new MethodCallExpr(new NameExpr(atom), "getAcquire");
+                } else {
+                    yield new NameExpr(atom);
+                }
+            }
             // This should never happen
-            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
+            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(atom, ctx));
         };
     }
 
@@ -229,9 +279,9 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             var arguments = elementExpressionPairList.elementExpressionPair().stream()
                     .flatMap(p -> Stream.of(new StringLiteralExpr(p.name.getText()), (Expression) visit(p.expr)))
                     .collect(Collectors.toCollection(NodeList::new));
-            return new MethodCallExpr(new NameExpr("Map"), new SimpleName("of"), arguments);
+            return new MethodCallExpr(new NameExpr("Map"), "of", arguments);
         } else {
-            return new MethodCallExpr(new NameExpr("Map"), new SimpleName("of"));
+            return new MethodCallExpr(new NameExpr("Map"), "of");
         }
     }
 

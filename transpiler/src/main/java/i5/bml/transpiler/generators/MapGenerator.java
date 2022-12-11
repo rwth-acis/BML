@@ -1,6 +1,5 @@
 package i5.bml.transpiler.generators;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
@@ -9,14 +8,12 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLMap;
 import i5.bml.transpiler.BMLTypeResolver;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 @CodeGenerator(typeClass = BMLMap.class)
