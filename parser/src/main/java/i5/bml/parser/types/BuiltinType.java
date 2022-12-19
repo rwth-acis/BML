@@ -13,6 +13,7 @@ public enum BuiltinType {
      * Generic type
      */
     OBJECT("Object", true),
+    FUNCTION("Function", true),
 
     /*
      * Data structures
@@ -33,6 +34,7 @@ public enum BuiltinType {
      * Dialogue automaton
      */
     DIALOGUE("Dialogue"),
+    STATE("State", true),
 
     /*
      * Social Networks

@@ -198,6 +198,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
+    public void exitAnnotation(BMLParser.AnnotationContext ctx) {
+
+    }
+
+    @Override
     public void enterForEachBody(BMLParser.ForEachBodyContext ctx) {
         var forEachStmtCtx = ((BMLParser.ForEachStatementContext) ctx.parent);
         var exprType = forEachStmtCtx.expr.type;

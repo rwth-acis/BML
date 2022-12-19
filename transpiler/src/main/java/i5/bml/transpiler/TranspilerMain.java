@@ -17,31 +17,32 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TranspilerMain {
     public static void main(String[] args) throws IOException, URISyntaxException {
-        var fileName = "Example.bml";
+//        var fileName = "Example.bml";
 //        var fileName = "OpenAPIPetStoreWithTelegramExample.bml";
-//        var fileName = "ExampleAutomaton.bml";
+        var fileName = "ExampleAutomaton.bml";
         var inputString = "";
         var inputResource = Objects.requireNonNull(TranspilerMain.class.getClassLoader().getResource(fileName));
         inputString = Files.readString(Paths.get(inputResource.toURI()));
 
         var pair = Parser.parse(inputString);
-        //Parser.drawParseTree(pair.getRight());
+        Parser.drawParseTree(pair.getRight());
         ParseTree tree = pair.getRight().program();
 
-        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
-        ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree);
-        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
-        if (diagnostics != null) {
-            for (Diagnostic diagnostic : diagnostics) {
-                System.err.println(diagnostic.getMessage());
-            }
-        }
-
-        var c = StaticJavaParser.parseExpression("new HashMap<>()");
-        System.out.println(c.getMetaModel());
-
-        JavaSynthesizer javaSynthesizer = new JavaSynthesizer();
-        javaSynthesizer.visit(tree);
+//        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
+//        ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree);
+//        var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+//
+//        if (diagnostics != null) {
+//            for (Diagnostic diagnostic : diagnostics) {
+//                System.err.println(diagnostic.getMessage());
+//            }
+//        }
+//
+//        var c = StaticJavaParser.parseExpression("new HashMap<>()");
+//        System.out.println(c.getMetaModel());
+//
+//        JavaSynthesizer javaSynthesizer = new JavaSynthesizer();
+//        javaSynthesizer.visit(tree);
     }
 }
