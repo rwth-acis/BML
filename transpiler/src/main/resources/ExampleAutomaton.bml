@@ -21,7 +21,7 @@ Bot(host="localhost", port=8080) {
      * - <jumpToState(<State>)>: The idea of the `jumpToState` builtin function is to provide means to skip intent guards.
      *                           This can be helpful if we want to repeat a state, e.g.:
      *                           state A = (intent="foo", action=bar)
-     *                           A -> [B, C -> (action=jumpToState(A))]
+     *                           A -> [B, C -> (action=jumpTo(state=A))]
      *                           Here we can go back from C to A without having to have "foo" as a guard
      *
      * States can be fall-through when they have no intents. I.e., they are not "guarded" by an intent.
@@ -91,7 +91,7 @@ Bot(host="localhost", port=8080) {
             text = "Please provide your receipt ID. You can find it lorem ipsum ...",
             file = example.jpg
         }
-        addReview = initial(intent="review", response)
+        addReview = initial(intent="review", action=response)
 
         giveRating = state(action="How many stars would you like to give?")
 
@@ -102,12 +102,12 @@ Bot(host="localhost", port=8080) {
          */
         addReview -> [
             state(intent="receiptId", action=verifyReceiptId) -> giveRating,
-            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpToState(addReview))
+            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpTo(state=addReview))
         ]
 
         giveRating -> [
             state(intent="stars", action=postReview) -> [
-                state(intent="yes", action=jumpToState(addReview)),
+                state(intent="yes", action=jumpTo(state=addReview)),
                 state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
             ],
             state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
@@ -120,7 +120,7 @@ Bot(host="localhost", port=8080) {
         postReview(data) {
             // Build request body (type is `Map` indicated by { key = value, ... })
             review = {
-                stars = number(data.entity),
+                stars = number(string=data.entity),
                 auth = authKey.file
             }
             
@@ -143,7 +143,7 @@ Bot(host="localhost", port=8080) {
         }
     }
 
-    @Compose(UserSentMessage, UserStartedChat) // A composition calls the handler for either event
+    @Compose(events=[UserSentMessage, UserStartedChat]) // A composition calls the handler for either event
     messageHandler(data) {
         /*
          * The idea behind the step function is to "advance"/step the automaton according to the input `data`.
