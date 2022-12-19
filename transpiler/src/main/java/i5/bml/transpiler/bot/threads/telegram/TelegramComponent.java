@@ -75,7 +75,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
         try {
             MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());
             if (filterUpdates(telegramEvent, update)) {
-                eventQueue.offer(telegramEvent);
+                eventQueue.put(telegramEvent);
             }
         } catch (Exception e) {
             e.printStackTrace();

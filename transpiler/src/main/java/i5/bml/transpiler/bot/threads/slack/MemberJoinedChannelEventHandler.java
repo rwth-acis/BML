@@ -38,7 +38,7 @@ public class MemberJoinedChannelEventHandler extends AbstractSlackHandler implem
 
         slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), event.getEvent().getChannel()));
 
-        slackBotThread.getEventQueue().offer(slackEvent);
+        slackBotThread.getEventQueue().put(slackEvent);
         return context.ack();
     }
 }
