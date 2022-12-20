@@ -15,6 +15,8 @@ public class TypeRegistry {
 
     private static final Set<String> builtinTypes = new HashSet<>();
 
+    private static final Map<String, BMLAnnotationType> builtinAnnotations = new HashMap<>();
+
     private static final Map<String, Class<?>> complexTypeBlueprints = new HashMap<>();
 
     private static int typeIndex = 0;
@@ -60,20 +62,26 @@ public class TypeRegistry {
         return builtinTypes.contains(typeName.toLowerCase());
     }
 
+    public static BMLAnnotationType getBuiltinAnnotation(String annotationName) {
+        return builtinAnnotations.get(annotationName.toLowerCase());
+    }
+
     public static boolean isTypeComplex(String typeName) {
         return complexTypeBlueprints.containsKey(typeName.toLowerCase());
     }
 
     public static void init() {
-        for (BuiltinType value : BuiltinType.values()) {
+        for (var value : BuiltinType.values()) {
             if (!value.isInternal()) {
                 builtinTypes.add(value.name().toLowerCase());
             }
         }
 
-        Reflections reflections = new Reflections("i5.bml.parser.types");
-        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(BMLType.class);
+        for (var value : BuiltinAnnotation.values()) {
+            builtinAnnotations.put(value.name().replaceAll("_", "").toLowerCase(), value.annotationType);
+        }
 
+        var annotated = new Reflections("i5.bml.parser.types").getTypesAnnotatedWith(BMLType.class);
         for (Class<?> clazz : annotated) {
             BMLType type = clazz.getAnnotation(BMLType.class);
 

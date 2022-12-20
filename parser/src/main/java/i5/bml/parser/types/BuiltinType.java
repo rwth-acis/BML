@@ -10,10 +10,17 @@ public enum BuiltinType {
     STRING("String"),
 
     /*
-     * Generic type
+     * Generic types
      */
     OBJECT("Object", true),
     FUNCTION("Function", true),
+
+    /*
+     * Annotations
+     */
+    MESSENGER_ANNOTATION("MessengerAnnotation", true),
+    ACTION_ANNOTATION("ActionAnnotation", true),
+    ROUTINE_ANNOTATION("RoutineAnnotation", true),
 
     /*
      * Data structures
