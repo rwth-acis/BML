@@ -2,6 +2,22 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
+    Dialogue pizzaScarfReview(name="Conversing with a rating bot for PizzaScarf") {
+        @Action
+        verifyReceiptId(data) {
+            response = petStore.get(path="/pet/{petId}", petId=1)
+            if response.code != 200 {
+                //send(text="I'm sorry, you didn't provide a valid receipt id.")
+            }
+        }
+
+        giveRating = state(action="How many stars would you like to give?")
+
+        repeat = state(intent="asdf", action=["Would you like to make another review?"])
+
+        repeat2 = state(intent="asdf2", action=verifyReceiptId)
+    }
+
     @Routine(rate="1h")
     updateAvailablePetCounter(data) {
         if 0 == 1 {

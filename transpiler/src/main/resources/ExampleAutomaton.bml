@@ -113,6 +113,12 @@ Bot(host="localhost", port=8080) {
             state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
         ]
 
+        a -> [ b -> [g, h], c -> [d, e] ] -> f
+        a -> b -> g -> f
+        a -> b -> h -> f
+        a -> c -> d -> f
+        a -> c -> e -> f
+
         /*
          * Actions
          */
@@ -128,9 +134,9 @@ Bot(host="localhost", port=8080) {
 
             // Both "paths" go back to the main state
             if response.code == 200 {
-                send("Your review was successfully processed!") // Automatically addresses user from `data`
+                send(text="Your review was successfully processed!") // Automatically addresses user from `data`
             } else {
-                send("I'm sorry, it seems like there is a problem on our side. Please try again later.")
+                send(text="I'm sorry, it seems like there is a problem on our side. Please try again later.")
             }
         }
 
@@ -138,7 +144,7 @@ Bot(host="localhost", port=8080) {
         verifyReceiptId(data) {
             response = pizzaScarf.get(path="/checkReceiptId/", id=data.entity)
             if response.code != 200 {
-                send("I'm sorry, you didn't provide a valid receipt id.")
+                send(text="I'm sorry, you didn't provide a valid receipt id.")
             }
         }
     }
