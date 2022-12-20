@@ -16,9 +16,6 @@ public class DialogueAutomaton {
 
     private int defaultState;
 
-    private final List<String> greetings = List.of("Hi there, fellow human!", "Hi, nice to meet you!",
-            "Hello, a pleasure to meet you!");
-
     public void init() {
 
     }

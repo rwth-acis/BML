@@ -22,6 +22,7 @@ public class SayHelloCommandHandler extends AbstractSlackHandler implements Slas
 
     @Override
     public Response apply(SlashCommandRequest slashCommandRequest, SlashCommandContext context) throws IOException, SlackApiException {
+        // We use the arrival time in seconds such that is matches the unix time unit used by Slack, Telegram, etc.
         var slackEvent = new MessageEvent(EventSource.SLACK, System.currentTimeMillis() / 1_000);
         slackEvent.setMessageEventType(MessageEventType.BOT_COMMAND);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), context.getRequestUserId()));

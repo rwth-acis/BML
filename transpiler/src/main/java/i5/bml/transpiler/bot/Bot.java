@@ -47,7 +47,7 @@ public class Bot {
 
         // Routines (internal event sources)
         RoutineEventHandler routineEventHandler = new RoutineEventHandler();
-        scheduler.scheduleAtFixedRate(() -> routineEventHandler.reportPetStatus(null), 0, 1, TimeUnit.MINUTES);
+        //scheduler.scheduleAtFixedRate(() -> routineEventHandler.reportPetStatus(null), 0, 1, TimeUnit.MINUTES);
     }
 
     public void run(String botToken) {
