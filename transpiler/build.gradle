@@ -27,6 +27,8 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3:3.12.0'
 
+    implementation 'commons-cli:commons-cli:1.5.0'
+
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.7'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'

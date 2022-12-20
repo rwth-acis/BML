@@ -53,7 +53,10 @@ generated-src
 **/gen
 *.tokens
 
-# Swagger Codegen
+# Swagger code gen
 .swagger-codegen/
 transpiler/gradle/
 .swagger-codegen-ignore
+
+# Bot code gen
+generated-bot
