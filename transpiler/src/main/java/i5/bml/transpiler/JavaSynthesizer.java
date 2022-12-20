@@ -5,7 +5,6 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
@@ -14,7 +13,6 @@ import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.symbols.BlockScope;
-import i5.bml.parser.types.BMLFunction;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
@@ -24,30 +22,34 @@ import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
+import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
-    private String botOutputPath = "transpiler/src/main/java/i5/bml/transpiler/bot/";
+    private final String botOutputPath;
 
     private Scope currentScope;
 
     private Scope globalScope;
 
     private Scope dialogueScope = new BlockScope(null);
+
+    public JavaSynthesizer(String botOutputPath) {
+        this.botOutputPath = botOutputPath + "/";
+    }
 
     private void pushScope(Scope s) {
         currentScope = s;
@@ -68,30 +70,16 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitBotHead(BMLParser.BotHeadContext ctx) {
-        try {
-            var botConfig = new File(botOutputPath + "BotConfig.java");
-            CompilationUnit c = StaticJavaParser.parse(botConfig);
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
-            var clazz = c.getClassByName("BotConfig").get();
-            System.out.println(c);
-
+        Utils.readAndWriteClass(botOutputPath, "BotConfig", clazz -> {
             for (var pair : ctx.params.elementExpressionPair()) {
                 var type = BMLTypeResolver.resolveBMLTypeToJavaType(pair.expr.type);
                 var name = pair.name.getText().toUpperCase();
                 clazz.addFieldWithInitializer(type, name, (Expression) visit(pair.expr),
                         Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
             }
+        });
 
-            // Write back to botConfig
-            Files.write(botConfig.toPath(), c.toString().getBytes());
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s in %s".formatted("BotConfig.java", botOutputPath));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s%s: %s"
-                    .formatted(botOutputPath, "BotConfig.java", e.getMessage()));
-        }
-
-        return super.visitBotHead(ctx);
+        return null;
     }
 
     @Override
@@ -104,10 +92,71 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
-        // TODO:
-        ctx.component();
+        // Components
+        Utils.readAndWriteClass(botOutputPath, "ComponentRegistry", clazz -> {
+            //noinspection OptionalGetWithoutIsPresent -> We can assume class is present
+            var componentRegistryCompilationUnit = clazz.findCompilationUnit().get();
+            for (var componentContext : ctx.component()) {
+                var compilationUnit = (CompilationUnit) visit(componentContext);
+                //noinspection OptionalGetWithoutIsPresent -> We can assume class is present
+                var container = compilationUnit.getClassByName("Container").get();
 
-        return super.visitBotBody(ctx);
+                // Transfer imports
+                componentRegistryCompilationUnit.getImports().addAll(compilationUnit.getImports());
+
+                // Transfer fields, getter, and setter
+                clazz.getMembers().addAll(container.getMembers());
+            }
+        });
+
+        // Dialogues
+        for (var dialogueAutomatonContext : ctx.dialogueAutomaton()) {
+            System.out.println("HERE");
+            var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueAutomatonContext.head.name.getText()));
+            var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueAutomatonContext.head.name.getText()));
+
+            // Duplicate DialogueAutomaton.java and Actions.java
+            try {
+                FileUtils.copyFile(new File(botOutputPath + "dialogue/DialogueAutomaton.java"),
+                        new File("%s/dialogue/%s.java".formatted(botOutputPath, newDialogueClassName)));
+                Utils.readAndWriteClass("%s/dialogue".formatted(botOutputPath), newDialogueClassName, "DialogueAutomaton", clazz -> {
+                    clazz.setName(newDialogueClassName);
+                });
+
+                FileUtils.copyFile(new File(botOutputPath + "dialogue/Actions.java"),
+                        new File("%s/dialogue/%s.java".formatted(botOutputPath, newActionsClassName)));
+                Utils.readAndWriteClass("%s/dialogue".formatted(botOutputPath), newActionsClassName, "Actions", clazz -> {
+                    clazz.setName(newActionsClassName);
+                });
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+            }
+
+            visit(dialogueAutomatonContext);
+        }
+        // After having copied everything, we delete the original
+        try {
+            FileUtils.forceDelete(new File(botOutputPath + "dialogue/DialogueAutomaton.java"));
+            FileUtils.forceDelete(new File(botOutputPath + "dialogue/Actions.java"));
+
+            if (ctx.dialogueAutomaton().isEmpty()) {
+                // When there is no dialogue, we can delete the whole folder
+                FileUtils.deleteDirectory(new File(botOutputPath + "dialogue"));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Function definitions
+        for (var functionContext : ctx.functionDefinition()) {
+            for (var annotationContext : functionContext.annotation()) {
+                var generator = GeneratorRegistry.getGeneratorForType(annotationContext.type);
+                generator.populateClassWithFunction(botOutputPath, functionContext, annotationContext, this);
+            }
+        }
+
+        // We have visited all children already, and we have nothing to return
+        return null;
     }
 
     @Override
@@ -117,6 +166,10 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
+        if (ctx.parent instanceof BMLParser.DialogueFunctionDefinitionContext) {
+            return super.visitFunctionDefinition(ctx);
+        }
+
         // TODO: Make distinction for different Annotations
 
         pushScope(ctx.scope);
@@ -127,10 +180,14 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitStatement(BMLParser.StatementContext ctx) {
-        pushScope(ctx.scope);
-        var result = super.visitStatement(ctx);
-        popScope();
-        return result;
+        if (ctx.ifStatement() != null || ctx.forEachStatement() != null || ctx.block() != null) {
+            pushScope(ctx.scope);
+            var result = super.visitStatement(ctx);
+            popScope();
+            return result;
+        } else {
+            return super.visitStatement(ctx);
+        }
     }
 
     @Override
@@ -333,19 +390,23 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitDialogueBody(BMLParser.DialogueBodyContext ctx) {
-        if (!ctx.functionDefinition().isEmpty()) {
-            readAndWriteClass("dialogue/Actions.java", "Actions", clazz -> {
-                for (var functionDefinitionContext : ctx.functionDefinition()) {
-                    var actionMethod = clazz.addMethod(functionDefinitionContext.head.functionName.getText(),
+        var dialogueHeadContext = ((BMLParser.DialogueAutomatonContext) ctx.parent).head;
+        var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
+        var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
+
+        if (!ctx.dialogueFunctionDefinition().isEmpty()) {
+            Utils.readAndWriteClass(botOutputPath + "dialogue", newActionsClassName, clazz -> {
+                for (var c : ctx.dialogueFunctionDefinition()) {
+                    var actionMethod = clazz.addMethod(c.functionDefinition().head.functionName.getText(),
                             Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
                     actionMethod.addParameter(MessageEventContext.class, "context");
-                    actionMethod.setBody((BlockStmt) visit(functionDefinitionContext.body));
+                    actionMethod.setBody((BlockStmt) visit(c.functionDefinition().body));
                 }
             });
         }
 
         if (!ctx.dialogueAssignment().isEmpty()) {
-            readAndWriteClass("dialogue/DialogueAutomaton.java", "DialogueAutomaton", clazz -> {
+            Utils.readAndWriteClass(botOutputPath + "dialogue", newDialogueClassName, clazz -> {
                 ctx.dialogueAssignment().forEach(c -> {
                     if (c.assignment().expr.type.equals(TypeRegistry.resolveType(BuiltinType.STATE))) {
                         visit(c);
@@ -398,7 +459,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             var block = switch (stateType.getActionType().getClass().getAnnotation(BMLType.class).name()) {
                 case STRING ->
                         new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                                new NodeList<>(new NameExpr("context"), new StringLiteralExpr(((String) stateType.getAction())))));
+                                new NodeList<>(new NameExpr("context"), (StringLiteralExpr) visit(stateType.getAction()))));
                 case LIST -> {
                     var randomType = StaticJavaParser.parseClassOrInterfaceType("Random");
                     clazz.addFieldWithInitializer(Random.class, "random",
@@ -407,13 +468,18 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                     var getRandomIntStmt = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "nextMessage",
                             new MethodCallExpr(new NameExpr("random"), "nextInt", new NodeList<>(new IntegerLiteralExpr("3")))));
 
+                    var getRandomListEntry = new MethodCallExpr((Expression) visit(stateType.getAction()), "get",
+                            new NodeList<>(new NameExpr("nextMessage")));
+
                     var sendMessageStmt = new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                            new NodeList<>(new NameExpr("context"), new StringLiteralExpr(((String) stateType.getAction()))));
+                            new NodeList<>(new NameExpr("context"), getRandomListEntry));
 
                     yield new BlockStmt().addStatement(getRandomIntStmt).addStatement(sendMessageStmt);
                 }
                 case FUNCTION -> {
                     //((String) stateType.getAction()); // Function name
+                    // TODO
+                    yield null;
 
                 }
                 default -> new BlockStmt();
@@ -480,9 +546,9 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         }
 
         // Add body to init method
-        readAndWriteClass("dialogue/DialogueAutomaton.java", "DialogueAutomaton", clazz -> {
-            clazz.getMethodsByName("init").get(0).setBody(initBlock);
-        });
+//        Utils.readAndWriteClass("dialogue", "DialogueAutomaton", clazz -> {
+//            clazz.getMethodsByName("init").get(0).setBody(initBlock);
+//        });
 
         return super.visitAutomatonTransitions(ctx);
     }
@@ -490,22 +556,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     @Override
     public Node visitTransitionInitializer(BMLParser.TransitionInitializerContext ctx) {
         return super.visitTransitionInitializer(ctx);
-    }
-
-    private void readAndWriteClass(String path, String fileName, Consumer<ClassOrInterfaceDeclaration> c) {
-        try {
-            var actions = new File(botOutputPath + path);
-            CompilationUnit compilationUnit = StaticJavaParser.parse(actions);
-
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
-            c.accept(compilationUnit.getClassByName("Actions").get());
-
-            Files.write(actions.toPath(), compilationUnit.toString().getBytes());
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s.java in %s".formatted(fileName, botOutputPath));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s%s: %s".formatted(botOutputPath, path, e.getMessage()));
-        }
     }
 
     private void writeClass(String path, String fileName) {

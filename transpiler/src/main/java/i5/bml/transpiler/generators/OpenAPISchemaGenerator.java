@@ -14,24 +14,14 @@ import org.apache.commons.lang3.StringUtils;
 @CodeGenerator(typeClass = BMLOpenAPISchema.class)
 public class OpenAPISchemaGenerator implements Generator {
 
-    BMLOpenAPISchema openAPISchema;
+    private final BMLOpenAPISchema openAPISchema;
 
     public OpenAPISchemaGenerator(Type openAPISchema) {
         this.openAPISchema = (BMLOpenAPISchema) openAPISchema;
     }
 
     @Override
-    public Node generateComponent(BMLParser.ComponentContext componentContext, BMLBaseVisitor<Node> visitor) {
-        return null;
-    }
-
-    @Override
     public Node generateFieldAccess(Expression object, TerminalNode field) {
         return new MethodCallExpr(object, new SimpleName("get" + StringUtils.capitalize(field.getText())));
-    }
-
-    @Override
-    public Node generateFunctionCall(BMLParser.FunctionCallContext function, BMLBaseVisitor<Node> visitor) {
-        throw new IllegalStateException(openAPISchema.getName() + " does not support function calls");
     }
 }
