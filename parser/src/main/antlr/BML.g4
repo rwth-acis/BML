@@ -34,9 +34,9 @@ component returns [Type type] : typeName=Identifier name=Identifier LPAREN param
 /*
  * Function Definition (Event Listener or Action)
  */
-functionDefinition returns [Scope scope] : AT annotation head=functionHead body=block ;
+functionDefinition returns [Scope scope] : AT annotation+ head=functionHead body=block ;
 
-annotation returns [Type type] : typeName=Identifier (LPAREN elementExpressionPairList? RPAREN)? ;
+annotation returns [Type type] : name=Identifier (LPAREN params=elementExpressionPairList? RPAREN)? ;
 
 functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
