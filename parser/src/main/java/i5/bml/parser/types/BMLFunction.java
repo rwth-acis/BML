@@ -2,13 +2,18 @@ package i5.bml.parser.types;
 
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.List;
 
+@BMLType(name = BuiltinType.FUNCTION, isComplex = false)
 public class BMLFunction extends AbstractBMLType {
 
-    private final Type returnType;
+    private Type returnType;
+
+    public BMLFunction() {
+    }
 
     public BMLFunction(Type returnType, List<BMLFunctionParameter> requiredParameters, List<BMLFunctionParameter> optionalParameters) {
         this.returnType = returnType;
@@ -20,6 +25,11 @@ public class BMLFunction extends AbstractBMLType {
     public String getName() {
         // TODO: Improve this
         return "Function<Returns=%s>".formatted(returnType);
+    }
+
+    @Override
+    public void initializeType(ParserRuleContext ctx) {
+        ((AbstractBMLType) returnType).initializeType(ctx);
     }
 
     @Override

@@ -65,11 +65,15 @@ public abstract class AbstractBMLType implements Type {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format(name), ctx);
             } else {
                 requiredParameter.setExprCtx(invocationParameter.get().expr);
-                var requiredParameterType = requiredParameter.getType();
                 var invocationParameterType = invocationParameter.get().expr.type;
-                if (!requiredParameterType.equals(invocationParameterType)) {
-                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                            EXPECTED_BUT_FOUND.format(requiredParameterType, invocationParameterType),
+                if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                    var errorMessage = new StringBuilder();
+                    errorMessage.append("Expected any of ");
+                    for (Type allowedType : requiredParameter.getAllowedTypes()) {
+                        errorMessage.append(allowedType);
+                    }
+                    errorMessage.append(" but found ").append(invocationParameterType);
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
                             invocationParameter.get());
                 }
 
@@ -95,12 +99,16 @@ public abstract class AbstractBMLType implements Type {
             } else {
                 // We can assume that parameter is present, so we expect the correct type
                 optionalParameter.get().setExprCtx(invocationParameter.expr);
-                var optionalParameterType = optionalParameter.get().getType();
                 var invocationParameterType = invocationParameter.expr.type;
-                if (!optionalParameterType.equals(invocationParameterType)) {
-                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                            EXPECTED_BUT_FOUND.format(optionalParameterType, invocationParameterType),
-                            invocationParameter.expression());
+                if (optionalParameter.get().getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                    var errorMessage = new StringBuilder();
+                    errorMessage.append("Expected any of ");
+                    for (Type allowedType : optionalParameter.get().getAllowedTypes()) {
+                        errorMessage.append("´").append(allowedType).append("´");
+                    }
+                    errorMessage.append(" but found ").append("´").append(invocationParameterType).append("´");
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
+                            invocationParameter.expr);
                 }
             }
         }

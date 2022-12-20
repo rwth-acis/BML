@@ -204,25 +204,28 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
-        // Check: path is specified
+//        // Check: path is specified
+//        var pathParameter = functionCallCtx.elementExpressionPairList().elementExpressionPair().stream()
+//                .filter(p -> p.name.getText().equals("path"))
+//                .findAny();
+//
+//        if (pathParameter.isEmpty()) {
+//            Diagnostics.addDiagnostic(diagnostics, MISSING_PARAM.format("path"), functionCallCtx);
+//            return TypeRegistry.resolveType(BuiltinType.OBJECT);
+//        }
+//
+//        // Check: path parameter has correct type
+//        var pathParameterType = pathParameter.get().expression().type;
+//        if (!pathParameterType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
+//            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.STRING, pathParameterType),
+//                    pathParameter.get().expression());
+//            return TypeRegistry.resolveType(BuiltinType.OBJECT);
+//        }
+
+        // Check: route is valid
         var pathParameter = functionCallCtx.elementExpressionPairList().elementExpressionPair().stream()
                 .filter(p -> p.name.getText().equals("path"))
                 .findAny();
-
-        if (pathParameter.isEmpty()) {
-            Diagnostics.addDiagnostic(diagnostics, MISSING_PARAM.format("path"), functionCallCtx);
-            return TypeRegistry.resolveType(BuiltinType.OBJECT);
-        }
-
-        // Check: path parameter has correct type
-        var pathParameterType = pathParameter.get().expression().type;
-        if (!pathParameterType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
-            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.STRING, pathParameterType),
-                    pathParameter.get().expression());
-            return TypeRegistry.resolveType(BuiltinType.OBJECT);
-        }
-
-        // Check: route is valid
         var path = pathParameter.get().expression().getText();
         path = path.substring(1, path.length() - 1);
 

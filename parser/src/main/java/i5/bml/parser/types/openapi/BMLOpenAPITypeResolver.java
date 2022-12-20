@@ -73,8 +73,7 @@ public class BMLOpenAPITypeResolver {
         if (schema.getType() == null) {
             if (schema.get$ref() == null) {
                 // TODO
-                throw new IllegalStateException("%s %s does not have a type"
-                        .formatted(object, objectName));
+                throw new IllegalStateException("%s %s does not have a type".formatted(object, objectName));
             }
 
             var refParts = schema.get$ref().split("/");

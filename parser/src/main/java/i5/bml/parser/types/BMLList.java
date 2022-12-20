@@ -31,6 +31,6 @@ public class BMLList extends AbstractBMLType implements Summable {
 
     @Override
     public String encodeToString() {
-        return "%s{itemType=%s}".formatted(getName(), itemType);
+        return "%s{itemType=%s}".formatted(super.getName(), itemType);
     }
 }

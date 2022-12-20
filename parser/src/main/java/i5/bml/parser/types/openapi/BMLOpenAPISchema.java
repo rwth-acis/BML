@@ -3,6 +3,7 @@ package i5.bml.parser.types.openapi;
 import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -30,6 +31,6 @@ public class BMLOpenAPISchema extends AbstractBMLType {
 
     @Override
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
-        return supportedAccesses.get(ctx.getText());
+        return ctx.getText().equals("code") ? TypeRegistry.resolveType(BuiltinType.NUMBER) : supportedAccesses.get(ctx.getText());
     }
 }
