@@ -34,22 +34,22 @@ component returns [Type type] : typeName=Identifier name=Identifier LPAREN param
 /*
  * Function Definition (Event Listener or Action)
  */
-functionDefinition returns [Scope scope] : AT annotation+ head=functionHead body=block ;
+functionDefinition returns [Scope scope] : annotation+ head=functionHead body=block ;
 
-annotation returns [Type type] : name=Identifier (LPAREN params=elementExpressionPairList? RPAREN)? ;
+annotation returns [Type type] : AT name=Identifier (LPAREN params=elementExpressionPairList? RPAREN)? ;
 
 functionHead : functionName=Identifier LPAREN parameterName=Identifier RPAREN ;
 
 /*
  * Statement blocks
  */
+block : LBRACE statement* RBRACE ;
+
 statement returns [Scope scope] : block
                                 | ifStatement
                                 | forEachStatement
                                 | expr=expression
                                 | assignment ;
-
-block : LBRACE statement* RBRACE ;
 
 ifStatement : IF expr=expression thenStmt=statement (ELSE elseStmt=statement)? ;
 
