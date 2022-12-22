@@ -17,9 +17,9 @@ Bot(host="localhost", port=8080) {
     Number someCounter()
 
     @UserSentMessage // Uses all messenger components
-    collectPetId(data) {
-        if data.intent == "id" {
-            id = int(data.entity)
+    collectPetId(context) {
+        if context.intent == "id" {
+            id = int(context.entity)
             pet = petStore.get(path="/pet/{petId}", petId=id)
 
             someCounter += pet.id
@@ -28,7 +28,7 @@ Bot(host="localhost", port=8080) {
                 // If not specified otherwise, send back to user that message was received from
                 // send uses all "registered" messengers (see @UserSentMessage)
                 send(message="Thank you, I'll keep you posted about {pet.name} with id {pet.id}")
-                subscribedUsers.add(key=data.user, value=data.entity)
+                subscribedUsers.add(key=context.user, value=context.entity)
             } else if pet.code == 400 {
                 send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a valid number.")
             } else { // code == 404
@@ -40,7 +40,7 @@ Bot(host="localhost", port=8080) {
     }
 
     @TelegramUserStartedChat // Only allows "registration" on Telegram, alternatively @UserStartedChat uses all messengers
-    welcomeUser(data) {
+    welcomeUser(context) {
         // Only sends to telegram, as specified by @TelegramUserStartedChat
         // Implicitly sends to user that started chat
         send(message="Hi there!")
@@ -49,10 +49,10 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(frequency="1h")
-    reportPetStatus(data) {
+    reportPetStatus(context) {
         forEach user, petId in subscribed {
             pet = petStore.get(resource="/pet/" + petId)
-            msg = "{data.timeStamp}:\n {pet.name} is **{pet.status}**!"
+            msg = "{context.timeStamp}:\n {pet.name} is **{pet.status}**!"
 
             // If no @ for a chat event is specified, we use all messengers from components
             send(receiver=user, message=msg)

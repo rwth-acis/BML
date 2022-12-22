@@ -24,49 +24,48 @@ Bot(host="localhost", port=8080) {
         stop = sink(intent="stop", action="Until next time!")
 
         response = {text = "Please provide your receipt ID. You can find it lorem ipsum ...", file = example.jpg}
-        addReview = initial(intent="review", response)
-
+        addReview = initial(intent="review", action=response)
         giveRating = state(action="How many stars would you like to give?")
-
         repeat = state(action="Would you like to make another review?")
 
         addReview -> [
             state(intent="receiptId", action=verifyReceiptId) -> giveRating,
-            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpToState(addReview))
+            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpTo(state=addReview))
         ]
 
         giveRating -> [
             state(intent="stars", action=postReview) -> [
-                state(intent="yes", action=jumpToState(addReview)),
+                state(intent="yes", action=jumpTo(state=addReview)),
                 state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
             ],
             state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
         ]
 
         @Action
-        postReview(data) {
-            review = {stars = number(data.entity), auth = authKey.file}
+        postReview(context) {
+            review = {stars = number(string=context.entity), auth = authKey.file}
 
             response = pizzaScarf.post(path="/addReview/", body=review)
 
             if response.code == 200 {
-                send("Your review was successfully processed!")
+                send(text="Your review was successfully processed!")
             } else {
-                send("I'm sorry, it seems like there is a problem on our side. Please try again later.")
+                send(text="I'm sorry, it seems like there is a problem on our side. Please try again later.")
             }
         }
 
         @Action
-        verifyReceiptId(data) {
-            response = pizzaScarf.get(path="/checkReceiptId/", id=data.entity)
+        verifyReceiptId(context) {
+            response = pizzaScarf.get(path="/checkReceiptId/", id=context.entity)
             if response.code != 200 {
-                send("I'm sorry, you didn't provide a valid receipt id.")
+                send(text="I'm sorry, you didn't provide a valid receipt id.")
             }
         }
     }
 
-    @Compose(UserSentMessage, UserStartedChat)
-    messageHandler(data) {
-        pizzaScarfReview.step(data);
+    @UserSentMessage
+    @UserStartedChat
+    messageHandler(context) {
+        pizzaScarfReview.step(context=context);
     }
 }
