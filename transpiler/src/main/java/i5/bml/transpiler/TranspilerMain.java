@@ -55,7 +55,9 @@ public class TranspilerMain {
 
         var containsError = false;
         for (Diagnostic diagnostic : diagnostics) {
-            System.err.printf("%s: %s%n", diagnostic.getSeverity().name().toUpperCase(), diagnostic.getMessage());
+            System.err.printf("%s line %s: %s%n", diagnostic.getSeverity().name().toUpperCase(),
+                    diagnostic.getRange().getStart().getLine(),
+                    diagnostic.getMessage());
 
             if (diagnostic.getSeverity() == DiagnosticSeverity.Error) {
                 containsError = true;

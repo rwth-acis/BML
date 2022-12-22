@@ -1,6 +1,7 @@
 package i5.bml.transpiler.generators;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import generatedParser.BMLBaseVisitor;

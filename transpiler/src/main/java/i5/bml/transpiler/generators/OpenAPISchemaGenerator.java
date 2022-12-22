@@ -3,9 +3,8 @@ package i5.bml.transpiler.generators;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.SimpleName;
-import generatedParser.BMLBaseVisitor;
-import generatedParser.BMLParser;
 import i5.bml.parser.types.openapi.BMLOpenAPISchema;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -22,6 +21,10 @@ public class OpenAPISchemaGenerator implements Generator {
 
     @Override
     public Node generateFieldAccess(Expression object, TerminalNode field) {
-        return new MethodCallExpr(object, new SimpleName("get" + StringUtils.capitalize(field.getText())));
+        if (field.getText().equals("code")) {
+            return new NameExpr(object.asNameExpr() + "Code");
+        } else {
+            return new MethodCallExpr(object, new SimpleName("get" + StringUtils.capitalize(field.getText())));
+        }
     }
 }

@@ -1,15 +1,19 @@
 package i5.bml.transpiler.generators;
 
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
+import com.github.javaparser.ast.stmt.TryStmt;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.BMLFunction;
+import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.openapi.BMLOpenAPIComponent;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
@@ -52,13 +56,11 @@ public class OpenAPIGenerator implements Generator {
 
     @Override
     public Node generateFunctionCall(BMLParser.FunctionCallContext ctx, BMLBaseVisitor<Node> visitor) {
-        var params = new ArrayList<>(((BMLFunction) ctx.type).getRequiredParameters());
+        var params = new ArrayList<>(((BMLFunctionType) ctx.type).getRequiredParameters());
 
         var pathParameter = params.stream()
                 .filter(p -> p.getName().equals("path"))
                 .findAny();
-
-        System.out.println(pathParameter);
 
         //noinspection OptionalGetWithoutIsPresent -> Semantic analysis guarantees us presence of `path` parameter
         params.remove(pathParameter.get());
@@ -69,11 +71,15 @@ public class OpenAPIGenerator implements Generator {
         var operationId = tagOperationIdPair.getRight();
         String methodCall = "ComponentRegistry.get%sApi().%s".formatted(tag, operationId);
 
-        params.addAll(((BMLFunction) ctx.type).getOptionalParameters());
+        params.addAll(((BMLFunctionType) ctx.type).getOptionalParameters());
         var args = params.stream()
                 .map(p -> p.getExprCtx() == null ? new NullLiteralExpr() : (Expression) visitor.visit(p.getExprCtx()))
                 .toArray(Expression[]::new);
 
-        return new MethodCallExpr(methodCall, args);
+        var catchClause = new CatchClause(new Parameter(StaticJavaParser.parseType("ApiException"), "e"), new BlockStmt());
+
+        var tryBlock = new BlockStmt().addStatement(new MethodCallExpr(methodCall, args));
+
+        return new TryStmt(tryBlock, new NodeList<>(catchClause), null);
     }
 }
