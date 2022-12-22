@@ -5,10 +5,12 @@ import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
+import i5.bml.parser.types.functions.BMLFunction;
+import i5.bml.parser.types.functions.BMLFunctionScope;
+import i5.bml.parser.types.functions.FunctionRegistry;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.eclipse.lsp4j.Diagnostic;
 
 import java.util.ArrayList;
@@ -51,15 +53,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void enterElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
-        Scope s = new BlockScope(currentScope);
-        ctx.scope = s;
-        pushScope(s);
-    }
-
-    @Override
-    public void exitElementExpressionPairList(BMLParser.ElementExpressionPairListContext ctx) {
-        popScope();
+    public void enterBotBody(BMLParser.BotBodyContext ctx) {
+        for (var bmlFunction : FunctionRegistry.getFunctionsForScope(BMLFunctionScope.GLOBAL)) {
+            bmlFunction.defineFunction(currentScope);
+        }
     }
 
     @Override
@@ -94,7 +91,17 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void enterFunctionHead(BMLParser.FunctionHeadContext ctx) {
-        checkAlreadyDefinedElseDefine(ctx.parameterName);
+        // TODO: Cache type
+        // We aggregate all the allowed accesses from the annotations into
+        var contextType = ((AbstractBMLType) TypeRegistry.resolveComplexType(BuiltinType.CONTEXT));
+        var supportedAccesses = contextType.getSupportedAccesses();
+        for (var annotationContext : ((BMLParser.FunctionDefinitionContext) ctx.parent).annotation()) {
+            supportedAccesses.putAll(((AbstractBMLType) annotationContext.type).getSupportedAccesses());
+        }
+
+        var contextSymbol = new VariableSymbol("context");
+        contextSymbol.setType(contextType);
+        currentScope.define(contextSymbol);
     }
 
     @Override
@@ -137,32 +144,28 @@ public class DiagnosticsCollector extends BMLBaseListener {
         ctx.scope = s;
         pushScope(s);
 
-        // TODO: Add dialogue specific functions
-        var stateType = TypeRegistry.resolveType(BuiltinType.STATE);
-
-        var intentParameter = new BMLFunctionParameter("intent");
-        intentParameter.setType(TypeRegistry.resolveType(BuiltinType.STRING));
-
-        var actionParameter = new BMLFunctionParameter("action");
-        actionParameter.addType(TypeRegistry.resolveType(BuiltinType.STRING));
-        var stringListType = TypeRegistry.resolveType("List{itemType=String}");
-        if (stringListType != null) {
-            actionParameter.addType(TypeRegistry.resolveType(stringListType));
-        } else {
-            stringListType = new BMLList(TypeRegistry.resolveType(BuiltinType.STRING));
-            TypeRegistry.registerType(stringListType);
-            actionParameter.addType(stringListType);
+        for (var bmlFunction : FunctionRegistry.getFunctionsForScope(BMLFunctionScope.DIALOGUE)) {
+            bmlFunction.defineFunction(currentScope);
         }
-        actionParameter.addType(TypeRegistry.resolveType(BuiltinType.FUNCTION));
-
-        var optionalParameters = new ArrayList<>(List.of(intentParameter, actionParameter));
-        var symbol = new VariableSymbol("state");
-        symbol.setType(new BMLFunction(stateType, new ArrayList<>(), optionalParameters));
-        currentScope.define(symbol);
     }
 
     @Override
     public void exitDialogueAutomaton(BMLParser.DialogueAutomatonContext ctx) {
+        var typeName = ctx.head.typeName.getText();
+        var dialogueName = ctx.head.name.getText();
+
+        // Check whether type is "allowed"
+        if (!TypeRegistry.isTypeBuiltin(typeName)) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, UNKNOWN_TYPE.format(typeName), ctx.head.typeName);
+            return;
+        }
+
+        var resolvedType = typeCheckQualifiedName(typeName, ctx, ctx.head.params);
+
+        // Lastly, we set the type of the corresponding symbol
+        var symbol = currentScope.resolve(dialogueName);
+        ((VariableSymbol) symbol).setType(resolvedType);
+
         popScope();
     }
 
@@ -385,11 +388,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     } else {
                         // In case of a function call, we need to unwrap the BMLFunction type to get the return type
                         if (ctx.functionCall() != null) {
-                            if (resolvedType instanceof BMLFunction) {
+                            if (resolvedType instanceof BMLFunctionType) {
                                 // If method: check parameters -> delegate check to BMLFunction
                                 resolvedType.checkParameters(this, ctx.functionCall().elementExpressionPairList());
                                 ctx.functionCall().type = resolvedType;
-                                yield ((BMLFunction) resolvedType).getReturnType();
+                                yield ((BMLFunctionType) resolvedType).getReturnType();
                             } else {
                                 yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                             }
@@ -533,12 +536,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
             } else {
                 // Perform type checks for function calls
-                var functionType = ((BMLFunction) ((TypedSymbol) symbol).getType());
+                var functionType = ((BMLFunctionType) ((TypedSymbol) symbol).getType());
                 functionType.checkParameters(this, ctx.functionCall().params);
                 functionType.initializeType(ctx.functionCall());
 
                 ctx.functionCall().type = ((TypedSymbol) symbol).getType();
-                ctx.type = ((BMLFunction) ctx.functionCall().type).getReturnType();
+                ctx.type = ((BMLFunctionType) ctx.functionCall().type).getReturnType();
             }
         } else { // Initializers
             ctx.type = ctx.initializer().type;
@@ -599,31 +602,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
             return typeToCheck;
         } else {
             return resolvedType;
-        }
-    }
-
-    /*
-     * URL Checker
-     */
-    @Override
-    public void exitElementExpressionPair(BMLParser.ElementExpressionPairContext ctx) {
-        urlCheck(ctx);
-        // TODO: This could be removed once we have implemented parameter checks for annotation, Bot head, etc.
-        //       Map initializers could be checked separately
-        checkAlreadyDefinedElseDefine(ctx.name);
-    }
-
-    private void urlCheck(BMLParser.ElementExpressionPairContext ctx) {
-        var parameterName = ctx.name.getText();
-        if (parameterName.equals("url")) {
-            var url = ctx.expr.getText();
-            if (url.length() > 1 && ctx.expr.atom() != null && ctx.expr.atom().StringLiteral() != null) {
-                url = url.substring(1, url.length() - 1);
-                UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
-                if (!urlValidator.isValid(url)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, URL_NOT_VALID.format(url), ctx);
-                }
-            }
         }
     }
 }
