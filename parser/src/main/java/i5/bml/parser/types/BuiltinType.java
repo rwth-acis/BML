@@ -13,7 +13,13 @@ public enum BuiltinType {
      * Generic types
      */
     OBJECT("Object", true),
+
+    /*
+     * Functions
+     */
     FUNCTION("Function", true),
+    CONTEXT("Context", true),
+    VOID("Void", true),
 
     /*
      * Annotations
@@ -36,12 +42,18 @@ public enum BuiltinType {
     ROCKET_CHAT("RocketChat"),
     HANGOUTS("Hangouts"),
     DISCORD("Discord"),
+    USER("User", true),
 
     /*
      * Dialogue automaton
      */
     DIALOGUE("Dialogue"),
     STATE("State", true),
+
+    /*
+     * NLU
+     */
+    RASA("Rasa"),
 
     /*
      * Social Networks

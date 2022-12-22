@@ -8,14 +8,14 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import java.util.List;
 
 @BMLType(name = BuiltinType.FUNCTION, isComplex = false)
-public class BMLFunction extends AbstractBMLType {
+public class BMLFunctionType extends AbstractBMLType {
 
     private Type returnType;
 
-    public BMLFunction() {
+    public BMLFunctionType() {
     }
 
-    public BMLFunction(Type returnType, List<BMLFunctionParameter> requiredParameters, List<BMLFunctionParameter> optionalParameters) {
+    public BMLFunctionType(Type returnType, List<BMLFunctionParameter> requiredParameters, List<BMLFunctionParameter> optionalParameters) {
         this.returnType = returnType;
         super.requiredParameters = requiredParameters;
         super.optionalParameters = optionalParameters;

@@ -37,9 +37,12 @@ public class TypeRegistry {
         return registeredTypes.get(typeName.toString().toLowerCase());
     }
 
+    public static Type resolveComplexType(BuiltinType typeName) {
+        return resolveComplexType(typeName.name());
+    }
+
     public static Type resolveComplexType(String typeName) {
-        typeName = typeName.toLowerCase();
-        var clazz = complexTypeBlueprints.get(typeName);
+        var clazz = complexTypeBlueprints.get(typeName.toLowerCase());
         if (clazz == null) {
             return null;
         }

@@ -70,9 +70,11 @@ public abstract class AbstractBMLType implements Type {
                     var errorMessage = new StringBuilder();
                     errorMessage.append("Expected any of ");
                     for (Type allowedType : requiredParameter.getAllowedTypes()) {
-                        errorMessage.append(allowedType);
+                        errorMessage.append("´").append(allowedType).append("´, ");
                     }
-                    errorMessage.append(" but found ").append(invocationParameterType);
+                    var i = errorMessage.lastIndexOf(", ");
+                    errorMessage.delete(i, i + 2);
+                    errorMessage.append(" but found ´").append(invocationParameterType).append("`");
                     Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
                             invocationParameter.get());
                 }
@@ -84,7 +86,7 @@ public abstract class AbstractBMLType implements Type {
         checkOptionalParameters(diagnosticsCollector, parameterListMutable);
     }
 
-    private void checkOptionalParameters(DiagnosticsCollector diagnosticsCollector,
+    protected void checkOptionalParameters(DiagnosticsCollector diagnosticsCollector,
                                          Set<BMLParser.ElementExpressionPairContext> remainingParameters) {
         for (var invocationParameter : remainingParameters) {
             // Name
@@ -104,8 +106,10 @@ public abstract class AbstractBMLType implements Type {
                     var errorMessage = new StringBuilder();
                     errorMessage.append("Expected any of ");
                     for (Type allowedType : optionalParameter.get().getAllowedTypes()) {
-                        errorMessage.append("´").append(allowedType).append("´");
+                        errorMessage.append("´").append(allowedType).append("´, ");
                     }
+                    var i = errorMessage.lastIndexOf(", ");
+                    errorMessage.delete(i, i + 2);
                     errorMessage.append(" but found ").append("´").append(invocationParameterType).append("´");
                     Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
                             invocationParameter.expr);
@@ -121,7 +125,11 @@ public abstract class AbstractBMLType implements Type {
     }
 
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
-        return null;
+        if (ctx instanceof BMLParser.FunctionCallContext functionCallContext) {
+            return supportedAccesses.get(functionCallContext.functionName.getText());
+        } else {
+            return supportedAccesses.get(ctx.getText());
+        }
     }
 
     public List<Diagnostic> getCachedDiagnostics() {
@@ -140,6 +148,10 @@ public abstract class AbstractBMLType implements Type {
     @Override
     public int getTypeIndex() {
         return typeIndex;
+    }
+
+    public Map<String, Type> getSupportedAccesses() {
+        return supportedAccesses;
     }
 
     @Override

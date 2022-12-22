@@ -40,6 +40,50 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     private final Map<String, Pair<String, String>> tagOperationIdPairs = new HashMap<>();
 
     @Override
+    public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+
+        var parameterListMutable = new HashSet<>(ctx.elementExpressionPair());
+
+        for (var requiredParameter : requiredParameters) {
+            var name = requiredParameter.getName();
+
+            var invocationParameter = parameterListMutable.stream()
+                    .filter(p -> p.name.getText().equals(name))
+                    .findAny();
+
+            if (invocationParameter.isEmpty()) {
+                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format(name), ctx);
+            } else {
+                requiredParameter.setExprCtx(invocationParameter.get().expr);
+                var invocationParameterType = invocationParameter.get().expr.type;
+                if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                    if (invocationParameterType instanceof BMLOpenAPISchema schema) {
+
+                    } else {
+                        var errorMessage = new StringBuilder();
+                        errorMessage.append("Expected any of ");
+                        for (Type allowedType : requiredParameter.getAllowedTypes()) {
+                            errorMessage.append("´").append(allowedType).append("´, ");
+                        }
+                        var i = errorMessage.lastIndexOf(", ");
+                        errorMessage.delete(i, i + 2);
+                        errorMessage.append(" but found ´").append(invocationParameterType).append("`");
+                        Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
+                                invocationParameter.get());
+                    }
+                }
+
+                parameterListMutable.remove(invocationParameter.get());
+            }
+        }
+
+        super.checkOptionalParameters(diagnosticsCollector, parameterListMutable);
+    }
+
+    @Override
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
         // Missing parameters, but it has been reported by `checkParameters`
         if (ctx == null) {
@@ -97,7 +141,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             p.setType(TypeRegistry.resolveType(BuiltinType.STRING));
             requiredParameters.add(p);
 
-            var function = new BMLFunction(returnType, requiredParameters, optionalParameters);
+            var function = new BMLFunctionType(returnType, requiredParameters, optionalParameters);
             supportedAccesses.put(httpMethod.name().toLowerCase() + route, function);
             httpMethods.add(httpMethod.name().toLowerCase());
 
@@ -203,24 +247,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             Diagnostics.addDiagnostic(diagnostics, NOT_DEFINED.format(httpMethod), functionCallCtx.functionName);
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
-
-//        // Check: path is specified
-//        var pathParameter = functionCallCtx.elementExpressionPairList().elementExpressionPair().stream()
-//                .filter(p -> p.name.getText().equals("path"))
-//                .findAny();
-//
-//        if (pathParameter.isEmpty()) {
-//            Diagnostics.addDiagnostic(diagnostics, MISSING_PARAM.format("path"), functionCallCtx);
-//            return TypeRegistry.resolveType(BuiltinType.OBJECT);
-//        }
-//
-//        // Check: path parameter has correct type
-//        var pathParameterType = pathParameter.get().expression().type;
-//        if (!pathParameterType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
-//            Diagnostics.addDiagnostic(diagnostics, EXPECTED_BUT_FOUND.format(BuiltinType.STRING, pathParameterType),
-//                    pathParameter.get().expression());
-//            return TypeRegistry.resolveType(BuiltinType.OBJECT);
-//        }
 
         // Check: route is valid
         var pathParameter = functionCallCtx.elementExpressionPairList().elementExpressionPair().stream()

@@ -17,6 +17,11 @@ public class BMLFunctionParameter extends ParameterSymbol {
         super(name);
     }
 
+    public BMLFunctionParameter(String name, Type type) {
+        super(name);
+        setType(type);
+    }
+
     @Override
     public void setType(Type type) {
         super.setType(type);
