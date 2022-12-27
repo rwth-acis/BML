@@ -57,6 +57,7 @@ generated-src
 .swagger-codegen/
 transpiler/gradle/
 .swagger-codegen-ignore
+transpiler/src/main/java/i5/bml/transpiler/bot/openapi/
 
 # Bot code gen
 generated-bot
