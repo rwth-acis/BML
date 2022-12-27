@@ -13,7 +13,7 @@ Bot(host="localhost", port=8080) {
         postReview(context) {
             review = {name = context.entity, photoUrls = ["someUrl"]}
 
-            response = petStore.post(path="/pet", body=review)
+            response = petStore.post(path="/pet/{petId}", petId=1, name="test")
 
             if response.code == 200 {
                 send(text="Your review was successfully processed!")
@@ -24,10 +24,10 @@ Bot(host="localhost", port=8080) {
 
         @Action
         verifyReceiptId(context) {
-            response = petStore.get(path="/pet/{petId}", petId=number(string=context.entity))
-            if response.code != 200 {
+            response = petStore.get(path="/pet/{petId}", petId=number(string=context.entity)).id + 4
+            /*if response.code != 200 {
                 send(text="I'm sorry, you didn't provide a valid receipt id.")
-            }
+            }*/
         }
 
         greetings = ["Hi there, fellow human!", "Hi, nice to meet you!", "Hello, a pleasure to meet you!"]
@@ -62,5 +62,11 @@ Bot(host="localhost", port=8080) {
     @UserStartedChat
     messageHandler(context) {
         pizzaScarfReview.step(context=context);
+    }
+
+    @Routine(rate="1h")
+    reportPetStatus(context) {
+        pet = petStore.get(path="/pet/{petId}", petId=2)
+        send(text="Pet " + string(number=pet.id))
     }
 }
