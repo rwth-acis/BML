@@ -4,61 +4,47 @@ Bot(host="localhost", port=8080) {
 
     Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
 
-    Telegram telegram(token="myTelegramToken")
+    Telegram telegram(token="myTelegramToken", botName="TestBMLBot")
 
     Slack slack(token="mySlackToken")
 
-    Discord discord(token="myDiscordToken")
-
-    RocketChat rocketChat(token="myRocketChatToken")
-
     Map subscribedUsers()
-
-    Number someCounter()
 
     @UserSentMessage // Uses all messenger components
     collectPetId(context) {
         if context.intent == "id" {
-            id = int(context.entity)
-            pet = petStore.get(path="/pet/{petId}", petId=id)
+            pet = petStore.get(path="/pet/{petId}", petId=number(string=context.entity))
 
-            someCounter += pet.id
+            test = 2
 
             if pet.code == 200 { // The code field is provided by the transpiler
                 // If not specified otherwise, send back to user that message was received from
                 // send uses all "registered" messengers (see @UserSentMessage)
-                send(message="Thank you, I'll keep you posted about {pet.name} with id {pet.id}")
-                subscribedUsers.add(key=context.user, value=context.entity)
+                send(text="Thank you, I'll keep you posted about " + pet.name + " with id " + string(number=pet.id))
+                subscribedUsers.add(key=context.user, value=pet.id)
             } else if pet.code == 400 {
-                send(message="I'm sorry, it seems like you provided an invalid id. Please make sure that you are providing a valid number.")
+                send(text="I'm sorry, it seems like " + context.entity + " is an invalid id. Please make sure that you are providing a valid number.")
             } else { // code == 404
-                send(message="I'm sorry, it seems there is no pet with id {pet.id}.")
+                send(text="I'm sorry, it seems there is no pet with id " + context.entity)
             }
         } else {
-           /* Do some dialogue to help user send a pet id */
+            send(text="I'm sorry, it seems like you didn't provide a pet id. The id has to be a positive integer.")
         }
     }
 
-    @TelegramUserStartedChat // Only allows "registration" on Telegram, alternatively @UserStartedChat uses all messengers
+    @UserStartedChat
     welcomeUser(context) {
         // Only sends to telegram, as specified by @TelegramUserStartedChat
         // Implicitly sends to user that started chat
-        send(message="Hi there!")
-
-        /* Explain bot & tell user to pick a pet (aka id) */
+        send(text="Hi there!")
     }
 
-    @Routine(frequency="1h")
+    @Routine(rate="1h")
     reportPetStatus(context) {
-        forEach user, petId in subscribed {
-            pet = petStore.get(resource="/pet/" + petId)
-            msg = "{context.timeStamp}:\n {pet.name} is **{pet.status}**!"
-
-            // If no @ for a chat event is specified, we use all messengers from components
-            send(receiver=user, message=msg)
-
-            // Alternatively for a specific messenger:
-            //telegram.send(receiver=user, message=msg)
+        forEach user, petId in subscribedUsers {
+            pet = petStore.get(path="/pet/{petId}", petId=petId)
+            msg = pet.name + " is **" + pet.status + "**!"
+            send(receiver=user, text=msg)
         }
     }
 }
