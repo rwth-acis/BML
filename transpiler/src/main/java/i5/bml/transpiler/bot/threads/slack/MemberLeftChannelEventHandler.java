@@ -25,7 +25,7 @@ public class MemberLeftChannelEventHandler extends AbstractSlackHandler implemen
         slackEvent.setMessageEventType(MessageEventType.USER_LEFT_CHANNEL);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getUser()));
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
 
         slackBotThread.getEventQueue().put(slackEvent);
         return context.ack();

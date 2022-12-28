@@ -5,11 +5,9 @@ import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class TelegramThread implements Runnable {
+public class TelegramBotThread implements Runnable {
 
     private final PriorityBlockingQueue<Event> eventQueue;
 
@@ -17,7 +15,7 @@ public class TelegramThread implements Runnable {
 
     private final String token;
 
-    public TelegramThread(PriorityBlockingQueue<Event> eventQueue, String username, String token) {
+    public TelegramBotThread(PriorityBlockingQueue<Event> eventQueue, String username, String token) {
         this.eventQueue = eventQueue;
         this.username = username;
         this.token = token;

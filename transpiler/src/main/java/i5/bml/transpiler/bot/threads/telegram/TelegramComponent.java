@@ -1,6 +1,6 @@
 package i5.bml.transpiler.bot.threads.telegram;
 
-import i5.bml.transpiler.bot.Session;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventSource;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 

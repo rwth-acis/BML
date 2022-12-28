@@ -6,16 +6,12 @@ import com.slack.api.bolt.handler.BoltEventHandler;
 import com.slack.api.bolt.response.Response;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.event.ChannelLeftEvent;
-import i5.bml.transpiler.bot.Session;
-import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventSource;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class ChannelLeftEventHandler extends AbstractSlackHandler implements BoltEventHandler<ChannelLeftEvent> {
 
@@ -30,7 +26,7 @@ public class ChannelLeftEventHandler extends AbstractSlackHandler implements Bol
         slackEvent.setMessageEventType(MessageEventType.BOT_REMOVED);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getActorId()));
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
 
         slackBotThread.getEventQueue().put(slackEvent);
         return context.ack();

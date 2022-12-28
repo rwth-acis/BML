@@ -7,23 +7,23 @@ import com.slack.api.model.event.ChannelLeftEvent;
 import com.slack.api.model.event.MemberJoinedChannelEvent;
 import com.slack.api.model.event.MemberLeftChannelEvent;
 import com.slack.api.socket_mode.SocketModeClient;
-import i5.bml.transpiler.bot.Session;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class SlackBotThread implements Callable<SocketModeClient> {
+public class SlackBotThread implements Runnable {
 
     private final PriorityBlockingQueue<Event> eventQueue;
 
     private String botId;
     
     private final String botToken;
+
+    private SocketModeClient client;
 
     private final Map<String, Session> activeSessions = new HashMap<>();
 
@@ -33,7 +33,7 @@ public class SlackBotThread implements Callable<SocketModeClient> {
     }
 
     @Override
-    public SocketModeClient call() {
+    public void run() {
         // App expects an env variable: SLACK_BOT_TOKEN
         App app = new App();
         try {
@@ -64,14 +64,11 @@ public class SlackBotThread implements Callable<SocketModeClient> {
             // SocketModeApp expects an env variable: SLACK_APP_TOKEN
             var socketModeApp = new SocketModeApp(app);
             socketModeApp.startAsync();
-            return socketModeApp.getClient();
+            client = socketModeApp.getClient();
         } catch (Exception e) {
             // TODO: Proper error handling
             e.printStackTrace();
         }
-
-        // TODO: Proper error handling
-        return null;
     }
 
     public PriorityBlockingQueue<Event> getEventQueue() {
@@ -84,6 +81,10 @@ public class SlackBotThread implements Callable<SocketModeClient> {
 
     public String getBotToken() {
         return botToken;
+    }
+
+    public SocketModeClient getClient() {
+        return client;
     }
 
     public Map<String, Session> getActiveSessions() {

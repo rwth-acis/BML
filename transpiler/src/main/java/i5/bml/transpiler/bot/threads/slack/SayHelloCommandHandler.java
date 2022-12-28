@@ -26,11 +26,10 @@ public class SayHelloCommandHandler extends AbstractSlackHandler implements Slas
         var slackEvent = new MessageEvent(EventSource.SLACK, System.currentTimeMillis() / 1_000);
         slackEvent.setMessageEventType(MessageEventType.BOT_COMMAND);
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), context.getRequestUserId()));
-        slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), context.getChannelId()));
+        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), context.getChannelId()));
         slackEvent.setCommandArguments(Arrays.stream(slashCommandRequest.getPayload().getText().split(" ")).toList());
         slackEvent.setText(slashCommandRequest.getPayload().getCommand());
         slackEvent.setSession(slackBotThread.getActiveSessions().get(context.getChannelId()));
-        slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), context.getChannelId()));
         slackBotThread.getEventQueue().put(slackEvent);
 
         JsonObject responseType = new JsonObject();

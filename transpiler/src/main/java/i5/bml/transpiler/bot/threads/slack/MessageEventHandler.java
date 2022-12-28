@@ -5,16 +5,13 @@ import com.slack.api.bolt.context.builtin.EventContext;
 import com.slack.api.bolt.handler.BoltEventHandler;
 import com.slack.api.bolt.response.Response;
 import com.slack.api.methods.SlackApiException;
-import i5.bml.transpiler.bot.Session;
-import i5.bml.transpiler.bot.events.Event;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.EventSource;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class MessageEventHandler extends AbstractSlackHandler implements BoltEventHandler<com.slack.api.model.event.MessageEvent> {
 
@@ -42,7 +39,7 @@ public class MessageEventHandler extends AbstractSlackHandler implements BoltEve
         slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getUser()));
         slackEvent.setText(event.getEvent().getText());
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
 
         slackBotThread.getEventQueue().put(slackEvent);
         return context.ack();

@@ -1,9 +1,11 @@
-package i5.bml.transpiler.bot;
+package i5.bml.transpiler.bot.threads;
+
+import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 
 public class Session {
 
     // TODO: Change to automaton state
-    private Object state;
+    private DialogueAutomaton dialogue;
 
     private final Object chatId;
 
@@ -12,12 +14,16 @@ public class Session {
         // Construct automaton
     }
 
+    public DialogueAutomaton getDialogue() {
+        return dialogue;
+    }
+
     public Object getChatId() {
         return chatId;
     }
 
     @Override
     public String toString() {
-        return "Session{state=%s, chatId=%s}".formatted(state, chatId);
+        return "Session{dialogue=%s, chatId=%s}".formatted(dialogue, chatId);
     }
 }
