@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -25,6 +26,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
     private final List<Diagnostic> collectedDiagnostics = new ArrayList<>();
 
     protected Scope currentScope;
+
+    private Scope globalScope;
 
     public List<Diagnostic> getCollectedDiagnostics() {
         return collectedDiagnostics;
@@ -37,6 +40,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     public void enterBotDeclaration(BMLParser.BotDeclarationContext ctx) {
         GlobalScope g = new GlobalScope(null);
         ctx.scope = g;
+        globalScope = g;
         pushScope(g);
     }
 
@@ -73,7 +77,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             Diagnostics.addDiagnostic(collectedDiagnostics, ALREADY_DEFINED.format(name), ctx.head.functionName);
         } else {
             var symbol = new VariableSymbol(name);
-            symbol.setType(TypeRegistry.resolveType(BuiltinType.FUNCTION));
+            symbol.setType(TypeRegistry.resolveComplexType(BuiltinType.FUNCTION));
             currentScope.define(symbol);
         }
 
@@ -94,6 +98,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         // TODO: Cache type
         // We aggregate all the allowed accesses from the annotations into
         var contextType = ((AbstractBMLType) TypeRegistry.resolveComplexType(BuiltinType.CONTEXT));
+        TypeRegistry.registerType(contextType);
         var supportedAccesses = contextType.getSupportedAccesses();
         for (var annotationContext : ((BMLParser.FunctionDefinitionContext) ctx.parent).annotation()) {
             supportedAccesses.putAll(((AbstractBMLType) annotationContext.type).getSupportedAccesses());
@@ -296,15 +301,26 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
+        if (ctx.expr.type.equals(TypeRegistry.resolveType(BuiltinType.VOID))) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, "Can't assign expression returning `void`", ctx.name);
+            return;
+        }
+
         // When exiting an assignment, we can assume that the right-hand side type was computed already,
         // since it is an expression
         if (ctx.op.getType() == BMLParser.ASSIGN) {
             var name = ctx.name.getText();
 
+            var symbol = globalScope.getSymbol(name);
+            if (symbol != null) {
+                Diagnostics.addDiagnostic(collectedDiagnostics, "Can't assign a global variable", ctx.name);
+                return;
+            }
+
             // NOTE: getSymbol() only checks the current scope. Hence, we might shadow a variable
             //       from an outer scope. This is WANTED. We only locally shadow the variable, since
             //       resolve() starts and the current scope and recursively searches parent scopes
-            var symbol = currentScope.getSymbol(name);
+            symbol = currentScope.getSymbol(name);
             if (symbol != null) {
                 // We simply redefine the type of the variable, when the variable already exists
                 ((VariableSymbol) symbol).setType(ctx.expr.type);
@@ -380,8 +396,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                                     CANT_RESOLVE_IN.format(currentCtx.getText(), prevType), ctx.Identifier().getSymbol());
                         } else {
                             Diagnostics.addDiagnostic(collectedDiagnostics,
-                                    CANT_RESOLVE_IN.format(currentCtx.getText(), prevType),
-                                    ctx.functionCall());
+                                    CANT_RESOLVE_IN.format(currentCtx.getText(), prevType), ctx.functionCall());
                         }
 
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
@@ -534,17 +549,38 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionCall().functionName);
                 ctx.functionCall().type = TypeRegistry.resolveType(BuiltinType.OBJECT);
                 ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-            } else {
-                // Perform type checks for function calls
-                var functionType = ((BMLFunctionType) ((TypedSymbol) symbol).getType());
-                functionType.checkParameters(this, ctx.functionCall().params);
-                functionType.initializeType(ctx.functionCall());
-
-                ctx.functionCall().type = ((TypedSymbol) symbol).getType();
-                ctx.type = ((BMLFunctionType) ctx.functionCall().type).getReturnType();
+                return;
             }
+
+            // Perform type checks for function calls
+            var functionType = new BMLFunctionType(((BMLFunctionType) ((TypedSymbol) symbol).getType()));
+            functionType.checkParameters(this, ctx.functionCall().params);
+            functionType.initializeType(ctx.functionCall());
+
+            ctx.functionCall().type = functionType;
+            ctx.type = functionType.getReturnType();
         } else { // Initializers
             ctx.type = ctx.initializer().type;
+        }
+    }
+
+    @Override
+    public void exitAutomatonTransitions(BMLParser.AutomatonTransitionsContext ctx) {
+        for (var functionCallContext : ctx.functionCall()) {
+            var name = functionCallContext.functionName.getText();
+            var symbol = currentScope.resolve(name);
+            if (symbol == null) {
+                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), functionCallContext.functionName);
+                functionCallContext.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+                return;
+            }
+
+            // Perform type checks for function calls
+            var functionType = ((BMLFunctionType) ((TypedSymbol) symbol).getType());
+            functionType.checkParameters(this, functionCallContext.params);
+            functionType.initializeType(functionCallContext);
+
+            functionCallContext.type = functionType;
         }
     }
 
@@ -561,15 +597,32 @@ public class DiagnosticsCollector extends BMLBaseListener {
     public void exitMapInitializer(BMLParser.MapInitializerContext ctx) {
         var params = ctx.params;
         if (params == null) {
-            ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.OBJECT)));
+            var map = new BMLMap();
+            map.initializeType(null);
+            ctx.type = tryToResolveElseRegister(map);
         } else {
             var elementExpressionPairs = params.elementExpressionPair();
             Map<String, Type> supportedAccesses = new HashMap<>();
+
+            Type firstType = null;
+            if (elementExpressionPairs.size() > 0) {
+                firstType = elementExpressionPairs.get(0).expr.type;
+            }
+
+            var sameValueType = true;
+
             for (var elementExpressionPair : elementExpressionPairs) {
+                if (!elementExpressionPair.expr.type.equals(firstType)) {
+                    sameValueType = false;
+                }
+
                 supportedAccesses.put(elementExpressionPair.name.getText(), elementExpressionPair.expr.type);
             }
 
-            ctx.type = tryToResolveElseRegister(new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), supportedAccesses));
+            var valueType = sameValueType ? firstType : TypeRegistry.resolveType(BuiltinType.OBJECT);
+            var map = new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), valueType, supportedAccesses);
+            map.initializeType(null);
+            ctx.type = tryToResolveElseRegister(map);
         }
     }
 

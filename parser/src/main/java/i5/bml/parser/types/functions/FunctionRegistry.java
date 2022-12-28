@@ -42,4 +42,8 @@ public class FunctionRegistry {
     public static Set<BMLFunction> getFunctionsForScope(BMLFunctionScope bmlFunctionScope) {
         return registeredFunctionsInScope.get(bmlFunctionScope);
     }
+
+    public static Map<String, BMLFunction> getRegisteredFunctions() {
+        return registeredFunctions;
+    }
 }

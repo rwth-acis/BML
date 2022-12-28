@@ -36,6 +36,7 @@ public abstract class AbstractBMLDialogueFunction implements BMLFunction {
         }
         actionParameter.addType(TypeRegistry.resolveType(stringListType));
         actionParameter.addType(TypeRegistry.resolveType(BuiltinType.FUNCTION));
+        actionParameter.addType(TypeRegistry.resolveType(BuiltinType.STATE));
 
         optionalParameters = List.of(intentParameter, actionParameter);
 

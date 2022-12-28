@@ -5,6 +5,7 @@ public enum BuiltinType {
      * Primitives
      */
     NUMBER("Number"),
+    LONG_NUMBER("Long Number"),
     FLOAT_NUMBER("Float Number", true),
     BOOLEAN("Boolean"),
     STRING("String"),

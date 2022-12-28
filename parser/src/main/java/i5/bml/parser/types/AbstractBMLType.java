@@ -67,16 +67,7 @@ public abstract class AbstractBMLType implements Type {
                 requiredParameter.setExprCtx(invocationParameter.get().expr);
                 var invocationParameterType = invocationParameter.get().expr.type;
                 if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
-                    var errorMessage = new StringBuilder();
-                    errorMessage.append("Expected any of ");
-                    for (Type allowedType : requiredParameter.getAllowedTypes()) {
-                        errorMessage.append("´").append(allowedType).append("´, ");
-                    }
-                    var i = errorMessage.lastIndexOf(", ");
-                    errorMessage.delete(i, i + 2);
-                    errorMessage.append(" but found ´").append(invocationParameterType).append("`");
-                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
-                            invocationParameter.get());
+                    addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
                 }
 
                 parameterListMutable.remove(invocationParameter.get());
@@ -103,19 +94,24 @@ public abstract class AbstractBMLType implements Type {
                 optionalParameter.get().setExprCtx(invocationParameter.expr);
                 var invocationParameterType = invocationParameter.expr.type;
                 if (optionalParameter.get().getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
-                    var errorMessage = new StringBuilder();
-                    errorMessage.append("Expected any of ");
-                    for (Type allowedType : optionalParameter.get().getAllowedTypes()) {
-                        errorMessage.append("´").append(allowedType).append("´, ");
-                    }
-                    var i = errorMessage.lastIndexOf(", ");
-                    errorMessage.delete(i, i + 2);
-                    errorMessage.append(" but found ").append("´").append(invocationParameterType).append("´");
-                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
-                            invocationParameter.expr);
+                    addTypeErrorMessage(diagnosticsCollector, invocationParameter, optionalParameter.get());
                 }
             }
         }
+    }
+
+    private void addTypeErrorMessage(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairContext invocationParameter,
+                                     BMLFunctionParameter parameter) {
+        var errorMessage = new StringBuilder();
+        errorMessage.append("Expected any of ");
+        for (Type allowedType : parameter.getAllowedTypes()) {
+            errorMessage.append("`").append(allowedType).append("`, ");
+        }
+        var i = errorMessage.lastIndexOf(", ");
+        errorMessage.delete(i, i + 2);
+        errorMessage.append(" but found ").append("`").append(invocationParameter.expr.type).append("`");
+        Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
+                invocationParameter.expr);
     }
 
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -60,20 +61,17 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 requiredParameter.setExprCtx(invocationParameter.get().expr);
                 var invocationParameterType = invocationParameter.get().expr.type;
                 if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
-                    if (invocationParameterType instanceof BMLOpenAPISchema schema) {
-
-                    } else {
-                        var errorMessage = new StringBuilder();
-                        errorMessage.append("Expected any of ");
-                        for (Type allowedType : requiredParameter.getAllowedTypes()) {
-                            errorMessage.append("´").append(allowedType).append("´, ");
-                        }
-                        var i = errorMessage.lastIndexOf(", ");
-                        errorMessage.delete(i, i + 2);
-                        errorMessage.append(" but found ´").append(invocationParameterType).append("`");
-                        Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
-                                invocationParameter.get());
+                    // TODO: Convert to map object
+                    var errorMessage = new StringBuilder();
+                    errorMessage.append("Expected any of ");
+                    for (Type allowedType : requiredParameter.getAllowedTypes()) {
+                        errorMessage.append("´").append(allowedType).append("´, ");
                     }
+                    var i = errorMessage.lastIndexOf(", ");
+                    errorMessage.delete(i, i + 2);
+                    errorMessage.append(" but found ´").append(invocationParameterType).append("`");
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
+                            invocationParameter.get());
                 }
 
                 parameterListMutable.remove(invocationParameter.get());
@@ -159,24 +157,36 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
     }
 
     private Type computeRouteReturnTypes(String route, String httpMethod, Operation operation) {
-        final Type[] returnType = new Type[]{null};
-        operation.getResponses().forEach((responseCode, response) -> {
-            if (response.getContent() != null) {
-                // TODO: ATM we only support application/json
-                var mediaType = response.getContent().get("application/json");
-                if (mediaType == null) {
-                    var msg = "`%s %s` has no application/json media type for response code `%s`\n";
-                    super.cacheDiagnostic(msg.formatted(httpMethod.toUpperCase(), route, responseCode), DiagnosticSeverity.Warning);
-                } else {
-                    var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
-                            "Operation", operation.getOperationId());
-                    returnType[0] = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
-                }
-            }
-        });
+        var entry = operation.getResponses().entrySet().stream()
+                .filter(e -> e.getValue().getContent() != null)
+                .findAny();
 
-        // TODO: We need a void type for, e.g., POST /pet/{petId}
-        return returnType[0];
+        if (entry.isPresent()) {
+            // TODO: ATM we only support application/json
+            var mediaType = entry.get().getValue().getContent().get("application/json");
+            if (mediaType == null) {
+                var msg = "`%s %s` has no application/json media type for response code `%s`\n";
+                super.cacheDiagnostic(msg.formatted(httpMethod.toUpperCase(), route, entry.get().getKey()), DiagnosticSeverity.Warning);
+                return null;
+            } else {
+                var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
+                        "Operation", operation.getOperationId());
+                return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
+            }
+        } else {
+            var resolvedOpenAPIType = TypeRegistry.resolveType("empty");
+            if (resolvedOpenAPIType == null) {
+                Map<String, Type> supportedFields = new HashMap<>();
+                supportedFields.put("code", TypeRegistry.resolveType(BuiltinType.NUMBER));
+
+                // Add to type registry
+                var newType = new BMLOpenAPISchema("empty", supportedFields);
+                TypeRegistry.registerType(newType);
+                return newType;
+            } else {
+                return resolvedOpenAPIType;
+            }
+        }
     }
 
     private void computeArgumentTypes(List<BMLFunctionParameter> arguments, Schema<?> schema, String parameterName) {
@@ -252,6 +262,12 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var pathParameter = functionCallCtx.elementExpressionPairList().elementExpressionPair().stream()
                 .filter(p -> p.name.getText().equals("path"))
                 .findAny();
+
+        // Covered by parameter checks
+        if (pathParameter.isEmpty()) {
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
+        }
+
         var path = pathParameter.get().expression().getText();
         path = path.substring(1, path.length() - 1);
 
@@ -271,7 +287,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
         var end = System.nanoTime();
         Measurements.add("Resolve & check call `%s`".formatted(functionCallCtx.functionName.getText()), end - start);
-        return functionType;
+        return new BMLFunctionType((BMLFunctionType) functionType);
     }
 
     public String getUrl() {

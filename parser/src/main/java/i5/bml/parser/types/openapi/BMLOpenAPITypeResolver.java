@@ -46,7 +46,8 @@ public class BMLOpenAPITypeResolver {
         } else {
             return switch (type) {
                 case "string", "boolean" -> TypeRegistry.resolveType(type);
-                case "integer" -> TypeRegistry.resolveType(BuiltinType.NUMBER);
+                case "int32" -> TypeRegistry.resolveType(BuiltinType.NUMBER);
+                case "int64" -> TypeRegistry.resolveType(BuiltinType.LONG_NUMBER);
                 case "number" -> TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER);
                 default -> {
                     var resolvedOpenAPIType = TypeRegistry.resolveType(type);
@@ -80,6 +81,11 @@ public class BMLOpenAPITypeResolver {
             type = refParts[refParts.length - 1];
         } else {
             type = schema.getType();
+
+            // Check for format
+            if (schema.getFormat() != null && type.equals("integer")) {
+                type = schema.getFormat();
+            }
         }
 
         // If we have an array, we similarly try to resolve its type

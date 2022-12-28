@@ -8,6 +8,8 @@ import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
+import java.util.concurrent.TimeUnit;
+
 import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 @BMLType(name = BuiltinType.ROUTINE_ANNOTATION, isComplex = true)
@@ -15,6 +17,10 @@ public class BMLRoutineAnnotation extends AbstractBMLType {
 
     @BMLComponentParameter(name = "rate", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String rate;
+
+    private String period;
+
+    private TimeUnit timeUnit;
 
     @Override
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
@@ -28,8 +34,39 @@ public class BMLRoutineAnnotation extends AbstractBMLType {
         if (atom == null || atom.StringLiteral() == null) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                     PARAM_REQUIRES_CONSTANT.format("rate", BuiltinType.STRING), expr);
-        } else {
-            rate = atom.getText().substring(1, atom.getText().length() - 1);
+            return;
         }
+
+        rate = atom.getText().substring(1, atom.getText().length() - 1);
+        rate = rate.replaceAll(" ", "");
+        if (!rate.matches("[0-9]+[a-zA-Z]+")) {
+            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                    "Can't recognize format, required format is <number><timeUnit>", expr);
+            return;
+        }
+
+        period = rate.split("[a-zA-Z]+")[0];
+        timeUnit = switch (rate.split("[0-9]+")[1]) {
+            case "ns" -> TimeUnit.NANOSECONDS;
+            case "µs" -> TimeUnit.MICROSECONDS;
+            case "ms" -> TimeUnit.MILLISECONDS;
+            case "s" -> TimeUnit.SECONDS;
+            case "m" -> TimeUnit.MINUTES;
+            case "h" -> TimeUnit.HOURS;
+            case "d" -> TimeUnit.DAYS;
+            default -> {
+                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                        "Can't recognize time unit, allowed time units are: ns, µs, ms, s, m, h, d", expr);
+                yield TimeUnit.HOURS;
+            }
+        };
+    }
+
+    public String getPeriod() {
+        return period;
+    }
+
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
     }
 }

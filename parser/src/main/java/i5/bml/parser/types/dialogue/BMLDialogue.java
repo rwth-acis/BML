@@ -13,7 +13,9 @@ public class BMLDialogue extends AbstractBMLType {
 
     @Override
     public void initializeType(ParserRuleContext ctx) {
-        var contextParameter = new BMLFunctionParameter("context", TypeRegistry.resolveComplexType(BuiltinType.CONTEXT));
+        var contextType = TypeRegistry.resolveComplexType(BuiltinType.CONTEXT);
+        TypeRegistry.registerType(contextType);
+        var contextParameter = new BMLFunctionParameter("context", contextType);
         var stepFunctionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), List.of(contextParameter), new ArrayList<>());
         supportedAccesses.put("step", stepFunctionType);
     }

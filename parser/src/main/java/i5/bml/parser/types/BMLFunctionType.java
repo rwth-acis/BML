@@ -5,9 +5,10 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@BMLType(name = BuiltinType.FUNCTION, isComplex = false)
+@BMLType(name = BuiltinType.FUNCTION, isComplex = true)
 public class BMLFunctionType extends AbstractBMLType {
 
     private Type returnType;
@@ -19,6 +20,34 @@ public class BMLFunctionType extends AbstractBMLType {
         this.returnType = returnType;
         super.requiredParameters = requiredParameters;
         super.optionalParameters = optionalParameters;
+    }
+
+    public BMLFunctionType(BMLFunctionType functionType) {
+        this.returnType = functionType.getReturnType();
+
+        functionType.getRequiredParameters().forEach(p -> {
+            var typeAnnotation = p.getType().getClass().getAnnotation(BMLType.class);
+            Type type;
+            if (typeAnnotation.isComplex()) {
+                type = TypeRegistry.resolveComplexType(typeAnnotation.name());
+            } else {
+                type = p.getType();
+            }
+
+            super.requiredParameters.add(new BMLFunctionParameter(p.getName(), type));
+        });
+
+        functionType.getOptionalParameters().forEach(p -> {
+            var typeAnnotation = p.getType().getClass().getAnnotation(BMLType.class);
+            Type type;
+            if (typeAnnotation.isComplex()) {
+                type = TypeRegistry.resolveComplexType(typeAnnotation.name());
+            } else {
+                type = p.getType();
+            }
+
+            super.optionalParameters.add(new BMLFunctionParameter(p.getName(), type));
+        });
     }
 
     @Override

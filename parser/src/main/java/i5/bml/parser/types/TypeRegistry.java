@@ -120,6 +120,11 @@ public class TypeRegistry {
         BMLNumber type = new BMLNumber(true);
         type.setTypeIndex(typeIndex++);
         registeredTypes.put(BuiltinType.FLOAT_NUMBER.toString().toLowerCase(), type);
+
+        // Explicitly add BuiltinTypes.FLOAT_NUMBER.toString() as Type
+        type = new BMLNumber(false, true);
+        type.setTypeIndex(typeIndex++);
+        registeredTypes.put(BuiltinType.LONG_NUMBER.toString().toLowerCase(), type);
     }
 
     public static void clear() {
