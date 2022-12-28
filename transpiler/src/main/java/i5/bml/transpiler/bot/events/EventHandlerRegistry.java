@@ -19,7 +19,7 @@ public class EventHandlerRegistry {
     public static void registerEventHandler(Class<?> eventHandlerClazz) {
         Arrays.stream(eventHandlerClazz.getDeclaredMethods())
                 .forEach(m -> {
-                    var eventHandlers = m.getAnnotationsByType(EventHandler.class);
+                    var eventHandlers = m.getAnnotationsByType(MessageEventHandlerMethod.class);
                     for (var eventHandler : eventHandlers) {
                         messageEventHandler.put(eventHandler.messageEventType(), m);
                     }
@@ -28,7 +28,8 @@ public class EventHandlerRegistry {
 
     public static void dispatchEventHandler(Event event) {
         switch (event.getEventSource()) {
-            case TELEGRAM, SLACK -> {
+            case SLACK:
+            case TELEGRAM: {
                 // TODO: Invoke rasa with text from event and set entities and intents
 
                 MessageEventContext messageEventContext = new MessageEventContext((MessageEvent) event);
