@@ -9,7 +9,16 @@ public class BMLTypeResolver {
 
     public static Type resolveBMLTypeToJavaType(org.antlr.symtab.Type type) {
         return switch (type.getName()) {
-            case "Number" -> ((BMLNumber) type).isFloatingPoint() ? PrimitiveType.doubleType() : PrimitiveType.longType();
+            case "Number" -> {
+                var number = (BMLNumber) type;
+                if (number.isFloatingPoint()) {
+                    yield PrimitiveType.floatType();
+                } else if (number.isLong()) {
+                    yield PrimitiveType.longType();
+                } else {
+                    yield PrimitiveType.intType();
+                }
+            }
             default -> StaticJavaParser.parseClassOrInterfaceType(type.getName());
         };
     }
