@@ -1,7 +1,7 @@
 package i5.bml.transpiler.bot.events.messenger;
 
 import com.slack.api.methods.SlackApiException;
-import i5.bml.transpiler.bot.ComponentRegistry;
+import com.slack.api.socket_mode.SocketModeClient;
 import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
 import i5.bml.transpiler.bot.events.messenger.telegram.TelegramUser;
 import i5.bml.transpiler.bot.threads.telegram.TelegramComponent;
@@ -13,19 +13,24 @@ import java.io.IOException;
 public class MessageHelper {
 
     public static void replyToMessenger(User user, String msg) {
-        if (user instanceof TelegramUser telegramUser) {
+        if (user instanceof TelegramUser) {
+            var telegramUser = (TelegramUser) user;
             sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg);
-        } else if (user instanceof SlackUser slackUser) {
-            sendSlackMessage(slackUser.botToken(), slackUser.channelId(), msg);
+        } else if (user instanceof SlackUser) {
+            var slackUser = (SlackUser) user;
+            sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg);
         } else {
             // TODO: Throw exception
         }
     }
+
     public static void replyToMessenger(MessageEventContext context, String msg) {
-        if (context.getEvent().getUser() instanceof TelegramUser telegramUser) {
+        if (context.getEvent().getUser() instanceof TelegramUser) {
+            var telegramUser = (TelegramUser) context.getEvent().getUser();
             sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg);
-        } else if (context.getEvent().getUser() instanceof SlackUser slackUser) {
-            sendSlackMessage(slackUser.botToken(), slackUser.channelId(), msg);
+        } else if (context.getEvent().getUser() instanceof SlackUser) {
+            var slackUser = (SlackUser) context.getEvent().getUser();
+            sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg);
         } else {
             // TODO: Throw exception
         }
@@ -43,15 +48,9 @@ public class MessageHelper {
         }
     }
 
-    private static void sendSlackMessage(String botToken, String channelId, String msg) {
+    private static void sendSlackMessage(SocketModeClient slackClient, String botToken, String channelId, String msg) {
         try {
-            ComponentRegistry.getSlackComponent()
-                    .getSlack()
-                    .methods()
-                    .chatPostMessage(r -> r.token(botToken)
-                            .channel(channelId)
-                            .text(msg)
-                    );
+            slackClient.getSlack().methods().chatPostMessage(r -> r.token(botToken).channel(channelId).text(msg));
         } catch (IOException | SlackApiException e) {
             // TODO: Throw new exception
             e.printStackTrace();

@@ -1,6 +1,6 @@
 package i5.bml.transpiler.bot.events.messenger;
 
-import i5.bml.transpiler.bot.Session;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventSource;
 
@@ -20,6 +20,10 @@ public class MessageEvent implements Event {
      * Contents of the received message.
      */
     protected String text = "";
+
+    private String intent;
+
+    private String entity;
 
     /**
      *
@@ -65,6 +69,14 @@ public class MessageEvent implements Event {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getIntent() {
+        return intent;
+    }
+
+    public String getEntity() {
+        return entity;
     }
 
     public List<String> getCommandArguments() {

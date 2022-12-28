@@ -1,6 +1,8 @@
 package i5.bml.transpiler.bot.events.messenger;
 
-public class MessageEventContext {
+import i5.bml.transpiler.bot.events.Context;
+
+public class MessageEventContext implements Context {
 
     private final MessageEvent event;
 
@@ -8,15 +10,23 @@ public class MessageEventContext {
         this.event = event;
     }
 
+
+    @Override
     public MessageEvent getEvent() {
         return event;
     }
 
+    @Override
     public String getIntent() {
-        return "";
+        return event.getIntent();
     }
 
+    @Override
     public String getEntity() {
-        return "";
+        return event.getEntity();
+    }
+
+    public User getUser() {
+        return event.getUser();
     }
 }
