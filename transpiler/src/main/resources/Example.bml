@@ -2,71 +2,55 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
-    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de/")
+    Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
 
-    Telegram telegram(botName="TestBMLBot", token="myTelegramToken")
+    Telegram telegram(token="myTelegramToken", botName="TestBMLBot")
 
     Slack slack(token="mySlackToken")
 
-    Dialogue pizzaScarfReview() {
-        @Action
-        postReview(context) {
-            review = {name = context.entity, photoUrls = ["someUrl"]}
+    Map subscribedUsers()
 
-            response = petStore.post(path="/pet/{petId}", petId=1, name="test")
+    Number someCounter()
 
-            if response.code == 200 {
-                send(text="Your review was successfully processed!")
-            } else {
-                send(text="I'm sorry, it seems like there is a problem on our side. Please try again later.")
+    String someString()
+
+    @UserSentMessage // Uses all messenger components
+    collectPetId(context) {
+        if context.intent == "id" {
+            pet = petStore.get(path="/pet/{petId}", petId=number(string=context.entity))
+
+            test = 2
+
+            if pet.code == 200 { // The code field is provided by the transpiler
+                someCounter -= pet.id + test
+                someString += pet.name
+                // If not specified otherwise, send back to user that message was received from
+                // send uses all "registered" messengers (see @UserSentMessage)
+                send(text="Thank you, I'll keep you posted about " + pet.name + " with id " + string(number=pet.id))
+                subscribedUsers.add(key=context.user, value=pet.id)
+            } else if pet.code == 400 {
+                send(text="I'm sorry, it seems like " + context.entity + " is an invalid id. Please make sure that you are providing a valid number.")
+            } else { // code == 404
+                send(text="I'm sorry, it seems there is no pet with id " + context.entity)
             }
+        } else {
+            send(text="I'm sorry, it seems like you didn't provide a pet id. The id has to be a positive integer.")
         }
-
-        @Action
-        verifyReceiptId(context) {
-            response = petStore.get(path="/pet/{petId}", petId=number(string=context.entity)).id + 4
-            /*if response.code != 200 {
-                send(text="I'm sorry, you didn't provide a valid receipt id.")
-            }*/
-        }
-
-        greetings = ["Hi there, fellow human!", "Hi, nice to meet you!", "Hello, a pleasure to meet you!"]
-
-        notUnderstood = default(intent="_", action="I’m sorry, I didn't understand that, come again please.")
-
-        greet = initial(intent="hello, greet", action=greetings)
-        options = initial(intent="functions, options", action="I'm a simple rating bot, I can submit ratings for you.")
-
-        bye = sink(intent="bye", action="Until next time!")
-        stop = sink(intent="stop", action="Until next time!")
-
-        addReview = initial(intent="review", action="Please provide your receipt ID. You can find it lorem ipsum ...")
-        giveRating = state(action="How many stars would you like to give?")
-        repeat = state(action="Would you like to make another review?")
-
-        addReview -> [
-            state(intent="receiptId", action=verifyReceiptId) -> giveRating,
-            state(intent="reject", action="Sorry , I didn't get that. Please specify your receipt ID.") -> state(action=jumpTo(state=addReview))
-        ]
-
-        giveRating -> [
-            state(intent="stars", action=postReview) -> [
-                state(intent="yes", action=jumpTo(state=addReview)),
-                state(intent="no", action="Okay, thank you. We're looking forward to your next visit!")
-            ],
-            state(intent="reject", action="Sorry , I didn't get that. Please specify how many stars you would like to give.") -> giveRating
-        ]
     }
 
-    @UserSentMessage
     @UserStartedChat
-    messageHandler(context) {
-        pizzaScarfReview.step(context=context);
+    welcomeUser(context) {
+        // Only sends to telegram, as specified by @TelegramUserStartedChat
+        // Implicitly sends to user that started chat
+        send(text="Hi there!")
     }
 
     @Routine(rate="1h")
     reportPetStatus(context) {
-        pet = petStore.get(path="/pet/{petId}", petId=2)
-        send(text="Pet " + string(number=pet.id))
+        forEach user, petId in subscribedUsers {
+            pet = petStore.get(path="/pet/{petId}", petId=petId)
+            msg = pet.name + " is **" + pet.status + "**!"
+            send(receiver=user, text=msg)
+        }
     }
 }
