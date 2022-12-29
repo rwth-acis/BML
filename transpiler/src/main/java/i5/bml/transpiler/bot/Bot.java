@@ -27,10 +27,10 @@ public class Bot {
     private final Map<Object, CompletableFuture<Void>> previousEventCompletableFuture = new HashMap<>();
 
     public Bot() {
-        // Register event handlers
+        // Register message event handlers
         EventHandlerRegistry.registerEventHandler(MessageEventHandler.class);
 
-        // External event sources
+        // Components (external event sources)
         ComponentRegistry.initComponents(threadPool, eventQueue);
 
         // Routines (internal event sources)
