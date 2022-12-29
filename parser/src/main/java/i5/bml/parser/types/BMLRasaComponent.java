@@ -27,4 +27,8 @@ public class BMLRasaComponent extends AbstractBMLType {
     public String encodeToString() {
         return "%s{url='%s'}".formatted(getName(), url);
     }
+
+    public String getUrl() {
+        return url;
+    }
 }
