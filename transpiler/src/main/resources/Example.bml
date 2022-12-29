@@ -2,7 +2,7 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
-    Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de/") // Automatically used by messengers
 
     Telegram telegram(botToken="", botName="TestBMLBot")
 
