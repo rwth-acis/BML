@@ -18,7 +18,11 @@ import java.util.concurrent.ExecutorService;
 @CodeGenerator(typeClass = BMLSlackComponent.class)
 public class SlackGenerator implements Generator {
 
-    public SlackGenerator(Type slackComponent) {}
+    private final BMLSlackComponent slackComponent;
+
+    public SlackGenerator(Type slackComponent) {
+        this.slackComponent = (BMLSlackComponent) slackComponent;
+    }
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
@@ -30,8 +34,11 @@ public class SlackGenerator implements Generator {
         method.addParameter(ExecutorService.class, "threadPool");
         method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
         var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType("SlackBotThread"),
-                new NodeList<>(new NameExpr("eventQueue")));
-        // TODO: Add botToken
+                new NodeList<>(
+                        new NameExpr("eventQueue"),
+                        new StringLiteralExpr(slackComponent.getBotToken()),
+                        new StringLiteralExpr(slackComponent.getAppToken())
+                ));
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("threadPool"), "execute", new NodeList<>(threadInstance))));
 
         // Add import for `SlackBotThread`

@@ -23,13 +23,16 @@ public class SlackBotThread implements Runnable {
     
     private final String botToken;
 
+    private final String appToken;
+
     private SocketModeClient client;
 
     private final Map<String, Session> activeSessions = new HashMap<>();
 
-    public SlackBotThread(PriorityBlockingQueue<Event> eventQueue) {
+    public SlackBotThread(PriorityBlockingQueue<Event> eventQueue, String botToken, String appToken) {
         this.eventQueue = eventQueue;
-        botToken = System.getenv("SLACK_BOT_TOKEN");
+        this.botToken = botToken;
+        this.appToken = appToken;
     }
 
     @Override
@@ -61,8 +64,7 @@ public class SlackBotThread implements Runnable {
         app.command("/sayhello", new SayHelloCommandHandler(this));
 
         try {
-            // SocketModeApp expects an env variable: SLACK_APP_TOKEN
-            var socketModeApp = new SocketModeApp(app);
+            var socketModeApp = new SocketModeApp(appToken, app);
             socketModeApp.startAsync();
             client = socketModeApp.getClient();
         } catch (Exception e) {
