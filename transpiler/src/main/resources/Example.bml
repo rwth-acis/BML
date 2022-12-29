@@ -4,9 +4,9 @@ Bot(host="localhost", port=8080) {
 
     Rasa rasa(url="rasa.com/rasaToken:8000") // Automatically used by messengers
 
-    Telegram telegram(token="myTelegramToken", botName="TestBMLBot")
+    Telegram telegram(botToken="", botName="TestBMLBot")
 
-    Slack slack(token="mySlackToken")
+    Slack slack(botToken="", appToken="")
 
     Map subscribedUsers()
 
@@ -42,7 +42,7 @@ Bot(host="localhost", port=8080) {
     welcomeUser(context) {
         // Only sends to telegram, as specified by @TelegramUserStartedChat
         // Implicitly sends to user that started chat
-        send(text="Hi there!")
+        send(text="Hi there! 👋")
     }
 
     @Routine(rate="1h")
