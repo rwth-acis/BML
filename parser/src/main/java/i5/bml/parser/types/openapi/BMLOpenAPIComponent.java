@@ -4,6 +4,7 @@ import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.types.*;
 import i5.bml.parser.utils.Measurements;
+import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -88,14 +89,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             return;
         }
 
-        var expr = ctx.elementExpressionPair(0).expr;
-        var atom = expr.atom();
-        if (atom == null || atom.StringLiteral() == null) {
-            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING), expr);
-        } else {
-            url = atom.getText().substring(1, atom.getText().length() - 1);
-        }
+        url = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "url");
     }
 
     @Override
