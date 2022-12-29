@@ -158,12 +158,17 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             Utils.readAndWriteClass(botOutputPath + "/threads", "Session", clazz -> {
                 //noinspection OptionalGetWithoutIsPresent
                 clazz.findCompilationUnit().get().getImports().clear();
+                //noinspection OptionalGetWithoutIsPresent
                 clazz.getFieldByName("dialogue").get().remove();
                 clazz.getMethodsByName("getDialogue").get(0).remove();
+                clazz.getMethodsByName("toString").get(0).remove();
 
+                var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);
+                toStringMethod.addAnnotation(Override.class);
+                toStringMethod.setType(String.class);
+                toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod("Session", clazz.getFields())));
             });
         }
-
 
         // Function definitions
         var routineCount = 0;
