@@ -1,4 +1,4 @@
-package i5.bml.transpiler.generators.types;
+package i5.bml.transpiler.generators.types.components;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;

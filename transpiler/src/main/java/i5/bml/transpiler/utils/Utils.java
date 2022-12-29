@@ -96,17 +96,6 @@ public class Utils {
         readAndWriteClass(path, className, className, c);
     }
 
-    public static ClassOrInterfaceDeclaration readClass(String path, String className) {
-        var javaFilePath = "%s/%s.java".formatted(path, className);
-        try {
-            CompilationUnit compilationUnit = StaticJavaParser.parse(new File(javaFilePath));
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
-            return compilationUnit.getClassByName(className).get();
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath));
-        }
-    }
-
     public static ReturnStmt generateToStringMethod(String className, List<FieldDeclaration> fields) {
         StringBuilder stringBuilder = new StringBuilder(StringUtils.capitalize(className));
         stringBuilder.append("{");
