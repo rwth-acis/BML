@@ -1,0 +1,8 @@
+version: "3.1"
+
+nlu:
+  - intent: id
+    examples: |
+      - My pet's id is [123](id)
+      - The id is [123](id)
+      - [123](id)
