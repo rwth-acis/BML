@@ -2,6 +2,7 @@ package i5.bml.parser.types;
 
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
+import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
 import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
@@ -19,14 +20,7 @@ public class BMLRasaComponent extends AbstractBMLType {
             return;
         }
 
-        var expr = ctx.elementExpressionPair(0).expr;
-        var atom = expr.atom();
-        if (atom == null || atom.StringLiteral() == null) {
-            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING), expr);
-        } else {
-            url = atom.getText().substring(1, atom.getText().length() - 1);
-        }
+        url = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "url");
     }
 
     @Override
