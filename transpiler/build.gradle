@@ -31,8 +31,8 @@ dependencies {
 
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.7'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
 
     implementation 'org.threeten:threetenbp:1.6.4'
 
