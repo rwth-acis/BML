@@ -242,10 +242,16 @@ public class DiagnosticsCollector extends BMLBaseListener {
         resolvedType.collectParameters();
 
         // 2.1 Check parameter types
+        var diagnosticsCountBefore = collectedDiagnostics.size();
         resolvedType.checkParameters(this, params);
+        var diagnosticsCountAfter = collectedDiagnostics.size();
 
         // 2.2 Populate annotated fields with parameters (required vs optional)
-        resolvedType.populateParameters(this, params);
+        if (diagnosticsCountBefore == diagnosticsCountAfter) {
+            resolvedType.populateParameters(this, params);
+        } else {
+            resolvedType.populateParameters(this, null);
+        }
 
         var registeredType = (AbstractBMLType) TypeRegistry.resolveType(resolvedType);
         if (registeredType == null) {
