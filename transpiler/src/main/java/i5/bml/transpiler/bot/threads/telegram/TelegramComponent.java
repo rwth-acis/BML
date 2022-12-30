@@ -77,7 +77,6 @@ public class TelegramComponent extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         try {
             MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());
-            System.out.println(telegramEvent);
             if (filterUpdates(telegramEvent, update)) {
                 eventQueue.put(telegramEvent);
             }
@@ -92,11 +91,9 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
             if (update.getMyChatMember().getNewChatMember().getStatus().equals("left")) {
                 telegramEvent.messageEventType(MessageEventType.BOT_REMOVED);
-
                 activeSessions.remove(chatId);
             } else if (update.getMyChatMember().getNewChatMember().getStatus().equals("member")) {
                 telegramEvent.messageEventType(MessageEventType.BOT_ADDED);
-
                 activeSessions.put(chatId, new Session(chatId));
             } else {
                 // myChatMember can be one of
@@ -137,6 +134,9 @@ public class TelegramComponent extends TelegramLongPollingBot {
                         // This means that using "/start" in a chat, RESETS the current conversation status
                         var session = new Session(chatId);
                         activeSessions.put(chatId, session);
+                    } else if (entity.getText().equals("/stop")) {
+                        telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
+                        activeSessions.remove(chatId);
                     } else if (entity.getType().equals("bot_command")) {
                         telegramEvent.messageEventType(MessageEventType.BOT_COMMAND);
                         telegramEvent.text(update.getMessage().getEntities().get(0).getText());
