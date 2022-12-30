@@ -96,6 +96,11 @@ public class Utils {
         readAndWriteClass(path, className, className, c);
     }
 
+    public static void readAndWriteClass(String botOutputPath, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
+        var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
+        readAndWriteClass(botOutputPath + packageName, clazz.getSimpleName(), clazz.getSimpleName(), c);
+    }
+
     public static ReturnStmt generateToStringMethod(String className, List<FieldDeclaration> fields) {
         StringBuilder stringBuilder = new StringBuilder(StringUtils.capitalize(className));
         stringBuilder.append("{");
