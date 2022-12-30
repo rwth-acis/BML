@@ -109,13 +109,13 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
             if (update.getMessage().getLeftChatMember() != null
                     && !update.getMessage().getLeftChatMember().getUserName().equals(username)) {
-                telegramEvent.setMessageEventType(MessageEventType.USER_LEFT_CHANNEL);
+                telegramEvent.setMessageEventType(MessageEventType.USER_LEFT_CHAT);
                 telegramEvent.setUsername(update.getMessage().getLeftChatMember().getUserName());
             } else if (!update.getMessage().getNewChatMembers().isEmpty()) {
                 var newChatMembers = update.getMessage().getNewChatMembers();
                 var botWasAdded = newChatMembers.stream().anyMatch(u -> u.getUserName().equals(username));
                 if (!botWasAdded) {
-                    telegramEvent.setMessageEventType(MessageEventType.USER_JOINED_CHANNEL);
+                    telegramEvent.setMessageEventType(MessageEventType.USER_JOINED_CHAT);
                     telegramEvent.setUsername(newChatMembers.get(0).getUserName());
                 } else {
                     // There is an explicit message with "newChatMembers", but we use the service message about change

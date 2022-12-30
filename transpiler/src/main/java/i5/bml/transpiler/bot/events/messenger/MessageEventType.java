@@ -6,9 +6,9 @@ public enum MessageEventType {
 
     USER_SENT_MESSAGE,
 
-    USER_JOINED_CHANNEL,
+    USER_JOINED_CHAT,
 
-    USER_LEFT_CHANNEL,
+    USER_LEFT_CHAT,
 
     BOT_ADDED,
 
