@@ -202,10 +202,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
-        if (ctx.parent instanceof BMLParser.DialogueFunctionDefinitionContext) {
-            return super.visitFunctionDefinition(ctx);
-        }
-
         pushScope(ctx.scope);
         var result = super.visitFunctionDefinition(ctx);
         popScope();
@@ -476,11 +472,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitDialogueHead(BMLParser.DialogueHeadContext ctx) {
-        return super.visitDialogueHead(ctx);
-    }
-
-    @Override
     public Node visitDialogueBody(BMLParser.DialogueBodyContext ctx) {
         var dialogueHeadContext = ((BMLParser.DialogueAutomatonContext) ctx.parent).head;
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
@@ -496,7 +487,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                     //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
                     var compilationUnit = clazz.findCompilationUnit().get();
                     compilationUnit.addImport(Utils.renameImport(Context.class, outputPackage), false, false);
-                    actionMethod.setBody((BlockStmt) visit(c.functionDefinition().body));
+                    actionMethod.setBody((BlockStmt) visit(c.functionDefinition()));
                 }
                 classStack.pop();
             });
@@ -506,14 +497,16 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             Utils.readAndWriteClass(botOutputPath + "dialogue", newDialogueClassName, clazz -> {
                 classStack.push(clazz);
                 ctx.dialogueAssignment().forEach(c -> {
-                    if (c.assignment().expr.type.equals(TypeRegistry.resolveType(BuiltinType.STATE))) {
+                    if (c.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
                         visit(c);
                     } else {
                         var field = clazz.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(c.assignment().expr.type),
                                 c.assignment().name.getText(), (Expression) visit(c.assignment().expr),
                                 Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
 
-                        field.createGetter();
+                        var getter = field.createGetter();
+                        // Remove "get" prefix
+                        getter.setName(getter.getNameAsString().substring(3));
                     }
                 });
                 classStack.pop();
@@ -531,7 +524,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     public Node visitDialogueAssignment(BMLParser.DialogueAssignmentContext ctx) {
         var childNode = super.visitDialogueAssignment(ctx);
 
-        if (ctx.assignment().expr.type.equals(TypeRegistry.resolveType(BuiltinType.STATE))) {
+        if (ctx.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
             // Create a class
             CompilationUnit c = new CompilationUnit();
             var className = StringUtils.capitalize(ctx.assignment().name.getText()) + "State";
