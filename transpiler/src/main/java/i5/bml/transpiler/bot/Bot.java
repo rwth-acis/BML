@@ -58,6 +58,13 @@ public class Bot {
                                 EventHandlerRegistry.dispatchEventHandler(event), threadPool);
                     }
 
+                    // Add exception handling
+                    newCompletableFuture.exceptionally(e -> {
+                        System.err.println(e.getMessage());
+                        e.printStackTrace();
+                        return null;
+                    });
+
                     previousEventCompletableFuture.put(currentChatId, newCompletableFuture);
                 } else {
                     threadPool.execute(() -> EventHandlerRegistry.dispatchEventHandler(event));
