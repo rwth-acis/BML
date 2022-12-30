@@ -1,8 +1,22 @@
 version: "3.1"
 
 nlu:
+  - intent: greet
+    examples: |
+      - Hey
+      - Hi
+      - hey there [Sara](name)
+      - Hi [Tom](name)
+      - Hey [Lucas](name)
+
+  - intent: faq/language
+    examples: |
+      - What language do you speak?
+      - Do you only handle english?
+
   - intent: id
     examples: |
-      - My pet's id is [123](id)
-      - The id is [123](id)
-      - [123](id)
+      - My pet's id is [93](id)
+      - The id is [2](id)
+      - [3](id)
+      - Pet with id [1](id)

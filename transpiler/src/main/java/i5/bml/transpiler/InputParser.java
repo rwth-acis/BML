@@ -108,6 +108,8 @@ public class InputParser {
 
             // Copy build file template
             var gradleTemplate = Files.readString(new File("transpiler/src/main/resources/build_template").toPath(), Charset.defaultCharset());
+            FileUtils.copyFile(new File("transpiler/src/main/resources/example_training_data.yml"),
+                    new File(outputDir + "/src/main/resources/example_training_data.yml"));
 
             // Replace templates in build.gradle template
             ST gradleFile = new ST(gradleTemplate);
