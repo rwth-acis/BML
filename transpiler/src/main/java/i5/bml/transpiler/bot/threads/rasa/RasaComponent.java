@@ -28,6 +28,18 @@ public class RasaComponent {
     }
 
     public void init() {
+        var fileName = trainModel();
+
+        // Training failed -> we can't load the model, hence, just return
+        if (fileName == null) {
+            return;
+        }
+
+        loadModel(fileName);
+    }
+
+    private String trainModel() {
+        // TODO: Load this from somewhere?
         var ymlFile = new File("src/main/resources/example_training_data.yml");
         var ymlContent = "";
         try {
@@ -36,43 +48,40 @@ public class RasaComponent {
             throw new RuntimeException(e);
         }
 
-        var body = RequestBody.create(ymlContent, MediaType.parse("application/yml"));
         var request = new Request.Builder()
                 .url(url + "/model/train")
-                .post(body)
+                .post(RequestBody.create(ymlContent, MediaType.parse("application/yml")))
                 .build();
 
         System.out.println("Starting model training...");
 
         final String[] fileName = {null};
         handleResponse(request, response -> {
-            fileName[0] = response.headers().get("filename");
-            if (fileName[0] == null) {
-                System.out.printf("Rasa model training for file %s failed%n", ymlFile);
-            }
-        }, response -> System.err.println("Callback URLs are not supported"),
+                    fileName[0] = response.headers().get("filename");
+                    if (fileName[0] == null) {
+                        System.out.printf("Rasa model training for file %s failed%n", ymlFile);
+                    } else {
+                        System.out.println("Model training done!");
+                    }
+                }, response -> System.err.println("Callback URLs are not supported"),
                 "Rasa model training for file %s failed: ".formatted(ymlFile));
 
-        if (fileName[0] == null) {
-            return;
-        }
+        return fileName[0];
+    }
 
-        System.out.println("Model training done!");
-
+    private void loadModel(String fileName) {
         var content = new JsonObject();
-        content.addProperty("model_file", "models/" + fileName[0]);
-        body = RequestBody.create(content.toString(), MediaType.parse("application/json"));
-        request = new Request.Builder()
+        content.addProperty("model_file", "models/" + fileName);
+        var request = new Request.Builder()
                 .url(url + "/model")
-                .put(body)
+                .put(RequestBody.create(content.toString(), MediaType.parse("application/json")))
                 .build();
 
         System.out.println("Starting model loading...");
-        handleResponse(request, r -> {}, r -> {}, "Rasa loading model for file %s failed: ".formatted(ymlFile));
-        System.out.println("Model loading done!");
+        handleResponse(request, r -> {}, r -> System.out.println("Model loading done!"), "Rasa loading model failed: ");
     }
 
-    public void parseMessage(MessageEvent messageEvent) {
+    public void invokeModel(MessageEvent messageEvent) {
         if (messageEvent.getText().isEmpty()) {
             // TODO: Add dummy intent and entity or send error message?
             return;
@@ -80,10 +89,9 @@ public class RasaComponent {
 
         var content = new JsonObject();
         content.addProperty("text", messageEvent.getText());
-        var body = RequestBody.create(content.toString(), MediaType.parse("application/json"));
         var request = new Request.Builder()
                 .url(url + "/model/parse")
-                .post(body)
+                .post(RequestBody.create(content.toString(), MediaType.parse("application/json")))
                 .build();
 
         handleResponse(request, response -> {
