@@ -24,16 +24,16 @@ public class MemberJoinedChannelEventHandler extends AbstractSlackHandler implem
     public Response apply(EventsApiPayload<MemberJoinedChannelEvent> event, EventContext context) throws SlackApiException, IOException {
         var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
         if (event.getEvent().getUser().equals(slackBotThread.botId())) {
-            slackEvent.setMessageEventType(MessageEventType.BOT_ADDED);
-            slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getInviter()));
+            slackEvent.messageEventType(MessageEventType.BOT_ADDED);
+            slackEvent.username(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getInviter()));
             slackBotThread.activeSessions().put(event.getEvent().getChannel(),
                     new Session(event.getEvent().getChannel()));
         } else {
-            slackEvent.setMessageEventType(MessageEventType.USER_JOINED_CHAT);
-            slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getUser()));
+            slackEvent.messageEventType(MessageEventType.USER_JOINED_CHAT);
+            slackEvent.username(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getUser()));
         }
 
-        slackEvent.setUser(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), event.getEvent().getChannel()));
+        slackEvent.user(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), event.getEvent().getChannel()));
 
         slackBotThread.eventQueue().put(slackEvent);
         return context.ack();

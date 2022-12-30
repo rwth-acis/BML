@@ -77,7 +77,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         try {
             MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());
-            System.out.println(update);
+            System.out.println(telegramEvent);
             if (filterUpdates(telegramEvent, update)) {
                 eventQueue.put(telegramEvent);
             }
@@ -91,11 +91,11 @@ public class TelegramComponent extends TelegramLongPollingBot {
             long chatId = update.getMyChatMember().getChat().getId();
 
             if (update.getMyChatMember().getNewChatMember().getStatus().equals("left")) {
-                telegramEvent.setMessageEventType(MessageEventType.BOT_REMOVED);
+                telegramEvent.messageEventType(MessageEventType.BOT_REMOVED);
 
                 activeSessions.remove(chatId);
             } else if (update.getMyChatMember().getNewChatMember().getStatus().equals("member")) {
-                telegramEvent.setMessageEventType(MessageEventType.BOT_ADDED);
+                telegramEvent.messageEventType(MessageEventType.BOT_ADDED);
 
                 activeSessions.put(chatId, new Session(chatId));
             } else {
@@ -107,21 +107,21 @@ public class TelegramComponent extends TelegramLongPollingBot {
                 return false;
             }
 
-            telegramEvent.setUsername(update.getMyChatMember().getFrom().getUserName());
-            telegramEvent.setUser(new TelegramUser(this, chatId));
+            telegramEvent.username(update.getMyChatMember().getFrom().getUserName());
+            telegramEvent.user(new TelegramUser(this, chatId));
         } else if (update.getMessage() != null) {
             long chatId = update.getMessage().getChatId();
 
             if (update.getMessage().getLeftChatMember() != null
                     && !update.getMessage().getLeftChatMember().getUserName().equals(botName)) {
-                telegramEvent.setMessageEventType(MessageEventType.USER_LEFT_CHAT);
-                telegramEvent.setUsername(update.getMessage().getLeftChatMember().getUserName());
+                telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
+                telegramEvent.username(update.getMessage().getLeftChatMember().getUserName());
             } else if (!update.getMessage().getNewChatMembers().isEmpty()) {
                 var newChatMembers = update.getMessage().getNewChatMembers();
                 var botWasAdded = newChatMembers.stream().anyMatch(u -> u.getUserName().equals(botName));
                 if (!botWasAdded) {
-                    telegramEvent.setMessageEventType(MessageEventType.USER_JOINED_CHAT);
-                    telegramEvent.setUsername(newChatMembers.get(0).getUserName());
+                    telegramEvent.messageEventType(MessageEventType.USER_JOINED_CHAT);
+                    telegramEvent.username(newChatMembers.get(0).getUserName());
                 } else {
                     // There is an explicit message with "newChatMembers", but we use the service message about change
                     // of member status to find out whether a bot was added to a group
@@ -131,42 +131,40 @@ public class TelegramComponent extends TelegramLongPollingBot {
                 if (update.getMessage().getEntities() != null) {
                     var entity = update.getMessage().getEntities().get(0);
                     if (entity.getText().equals("/start")) {
-                        telegramEvent.setMessageEventType(MessageEventType.USER_STARTED_CHAT);
+                        telegramEvent.messageEventType(MessageEventType.USER_STARTED_CHAT);
 
                         // Create Session
                         // This means that using "/start" in a chat, RESETS the current conversation status
                         var session = new Session(chatId);
                         activeSessions.put(chatId, session);
                     } else if (entity.getType().equals("bot_command")) {
-                        telegramEvent.setMessageEventType(MessageEventType.BOT_COMMAND);
-                        telegramEvent.setText(update.getMessage().getEntities().get(0).getText());
+                        telegramEvent.messageEventType(MessageEventType.BOT_COMMAND);
+                        telegramEvent.text(update.getMessage().getEntities().get(0).getText());
                         var args = update.getMessage().getText().split(" ");
-                        telegramEvent.setCommandArguments(Arrays.stream(args).toList().subList(1, args.length));
+                        telegramEvent.commandArguments(Arrays.stream(args).toList().subList(1, args.length));
                     } else {
                         return false;
                     }
                 } else if (!update.getMessage().getText().isEmpty()) {
-                    telegramEvent.setMessageEventType(MessageEventType.USER_SENT_MESSAGE);
-                    telegramEvent.setText(update.getMessage().getText());
+                    telegramEvent.messageEventType(MessageEventType.USER_SENT_MESSAGE);
+                    telegramEvent.text(update.getMessage().getText());
                 } else {
                     return false;
                 }
 
-                telegramEvent.setSession(activeSessions.get(chatId));
-                telegramEvent.setUsername(update.getMessage().getFrom().getUserName());
+                telegramEvent.session(activeSessions.get(chatId));
+                telegramEvent.username(update.getMessage().getFrom().getUserName());
             } else {
                 return false;
             }
 
-            telegramEvent.setUser(new TelegramUser(this, chatId));
+            telegramEvent.user(new TelegramUser(this, chatId));
         } else {
             return false;
         }
 
         return true;
     }
-
-
 
     @Override
     public String toString() {

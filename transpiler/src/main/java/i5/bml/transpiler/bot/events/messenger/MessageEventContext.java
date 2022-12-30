@@ -12,21 +12,21 @@ public class MessageEventContext implements Context {
 
 
     @Override
-    public MessageEvent getEvent() {
+    public MessageEvent event() {
         return event;
     }
 
     @Override
-    public String getIntent() {
-        return event.getIntent();
+    public String intent() {
+        return event.intent();
     }
 
     @Override
-    public String getEntity() {
-        return event.getEntity();
+    public String entity() {
+        return event.entity();
     }
 
-    public User getUser() {
-        return event.getUser();
+    public User user() {
+        return event.user();
     }
 }

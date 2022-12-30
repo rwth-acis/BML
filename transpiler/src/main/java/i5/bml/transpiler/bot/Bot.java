@@ -15,7 +15,7 @@ import java.util.concurrent.*;
 public class Bot {
 
     private final PriorityBlockingQueue<Event> eventQueue = new PriorityBlockingQueue<>(100,
-            Comparator.comparingLong(Event::getArrivalTime));
+            Comparator.comparingLong(Event::arrivalTime));
 
     /**
      * This pool offers threads for the components that are external event resources.
@@ -45,9 +45,9 @@ public class Bot {
                 System.out.println("CURR EVENT: " + event);
 
                 if (event instanceof MessageEvent
-                        && ((MessageEvent) event).getSession() != null) {
+                        && ((MessageEvent) event).session() != null) {
                     var messageEvent = (MessageEvent) event;
-                    var currentChatId = messageEvent.getSession().getChatId();
+                    var currentChatId = messageEvent.session().chatId();
                     var prevFuture = previousEventCompletableFuture.get(currentChatId);
                     CompletableFuture<Void> newCompletableFuture;
                     if (prevFuture != null) {

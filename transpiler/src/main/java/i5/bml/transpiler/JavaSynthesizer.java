@@ -160,7 +160,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 clazz.findCompilationUnit().get().getImports().clear();
                 //noinspection OptionalGetWithoutIsPresent
                 clazz.getFieldByName("dialogue").get().remove();
-                clazz.getMethodsByName("getDialogue").get(0).remove();
+                clazz.getMethodsByName("dialogue").get(0).remove();
                 clazz.getMethodsByName("toString").get(0).remove();
 
                 var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);

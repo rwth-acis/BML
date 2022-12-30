@@ -16,7 +16,7 @@ public class State {
         action.accept(context);
     }
 
-    public State getNextState(String intent) {
+    public State nextState(String intent) {
         return transitions.get(intent);
     }
 

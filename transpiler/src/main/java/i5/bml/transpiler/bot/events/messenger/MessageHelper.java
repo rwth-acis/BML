@@ -25,11 +25,11 @@ public class MessageHelper {
     }
 
     public static void replyToMessenger(MessageEventContext context, String msg) {
-        if (context.getEvent().getUser() instanceof TelegramUser) {
-            var telegramUser = (TelegramUser) context.getEvent().getUser();
+        if (context.event().user() instanceof TelegramUser) {
+            var telegramUser = (TelegramUser) context.event().user();
             sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg);
-        } else if (context.getEvent().getUser() instanceof SlackUser) {
-            var slackUser = (SlackUser) context.getEvent().getUser();
+        } else if (context.event().user() instanceof SlackUser) {
+            var slackUser = (SlackUser) context.event().user();
             sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg);
         } else {
             // TODO: Throw exception

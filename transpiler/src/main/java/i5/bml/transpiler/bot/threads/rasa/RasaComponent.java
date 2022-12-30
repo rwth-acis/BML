@@ -6,7 +6,6 @@ import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 
 import java.io.File;
 import java.io.IOException;
@@ -87,13 +86,13 @@ public class RasaComponent {
     }
 
     public void invokeModel(MessageEvent messageEvent) {
-        if (messageEvent.getText().isEmpty()) {
+        if (messageEvent.text().isEmpty()) {
             // TODO: Add dummy intent and entity or send error message?
             return;
         }
 
         var content = new JsonObject();
-        content.addProperty("text", messageEvent.getText());
+        content.addProperty("text", messageEvent.text());
         var request = new Request.Builder()
                 .url(url + "/model/parse")
                 .post(RequestBody.create(content.toString(), MediaType.parse("application/json")))
@@ -107,8 +106,8 @@ public class RasaComponent {
             try {
                 var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
                 LOGGER.debug(responseSchema.toString());
-                messageEvent.setEntity(responseSchema.entities()[0].value());
-                messageEvent.setIntent(responseSchema.intent().name());
+                messageEvent.entity(responseSchema.entities()[0].value());
+                messageEvent.intent(responseSchema.intent().name());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

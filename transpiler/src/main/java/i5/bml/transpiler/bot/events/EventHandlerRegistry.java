@@ -28,7 +28,7 @@ public class EventHandlerRegistry {
     }
 
     public static void dispatchEventHandler(Event event) {
-        switch (event.getEventSource()) {
+        switch (event.eventSource()) {
             case SLACK:
             case TELEGRAM: {
                 var messageEvent = (MessageEvent) event;
@@ -37,9 +37,9 @@ public class EventHandlerRegistry {
                 DialogueHandler.handleMessageEvent(messageEvent);
 
                 try {
-                    messageEventHandler.get(messageEvent.getMessageEventType()).invoke(null, new MessageEventContext(messageEvent));
+                    messageEventHandler.get(messageEvent.messageEventType()).invoke(null, new MessageEventContext(messageEvent));
                 } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.getMessageEventType()));
+                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.messageEventType()));
                 }
             }
         }

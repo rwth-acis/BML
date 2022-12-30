@@ -22,7 +22,7 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     @Override
     public void step(MessageEventContext context) {
-        currentState = currentState.getNextState(context.getIntent());
+        currentState = currentState.nextState(context.intent());
         currentState.action(context);
     }
 

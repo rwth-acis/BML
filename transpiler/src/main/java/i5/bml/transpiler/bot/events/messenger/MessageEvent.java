@@ -3,6 +3,7 @@ package i5.bml.transpiler.bot.events.messenger;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventSource;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,77 +56,77 @@ public class MessageEvent implements Event {
         this.arrivalTime = arrivalTime;
     }
 
-    public MessageEventType getMessageEventType() {
+    public MessageEventType messageEventType() {
         return messageEventType;
     }
 
-    public void setMessageEventType(MessageEventType messageEventType) {
+    public void messageEventType(MessageEventType messageEventType) {
         this.messageEventType = messageEventType;
     }
 
-    public String getText() {
+    public String text() {
         return text;
     }
 
-    public void setText(String text) {
+    public void text(String text) {
         this.text = text;
     }
 
-    public String getIntent() {
+    public String intent() {
         return intent;
     }
 
-    public void setIntent(String intent) {
+    public void intent(String intent) {
         this.intent = intent;
     }
 
-    public String getEntity() {
+    public String entity() {
         return entity;
     }
 
-    public void setEntity(String entity) {
+    public void entity(String entity) {
         this.entity = entity;
     }
 
-    public List<String> getCommandArguments() {
+    public List<String> commandArguments() {
         return commandArguments;
     }
 
-    public void setCommandArguments(List<String> commandArguments) {
+    public void commandArguments(List<String> commandArguments) {
         this.commandArguments = commandArguments;
     }
 
-    public Session getSession() {
+    public Session session() {
         return session;
     }
 
-    public void setSession(Session session) {
+    public void session(Session session) {
         this.session = session;
     }
 
-    public User getUser() {
+    public User user() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void user(User user) {
         this.user = user;
     }
 
-    public String getUsername() {
+    public String username() {
         return username;
     }
 
-    public void setUsername(String username) {
+    public void username(String username) {
         this.username = username;
     }
 
     @Override
-    public EventSource getEventSource() {
+    public EventSource eventSource() {
         return eventSource;
     }
 
     @Override
-    public long getArrivalTime() {
+    public long arrivalTime() {
         return arrivalTime;
     }
 

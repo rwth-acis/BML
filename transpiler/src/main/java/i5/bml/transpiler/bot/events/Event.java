@@ -2,9 +2,9 @@ package i5.bml.transpiler.bot.events;
 
 public interface Event {
 
-    EventSource getEventSource();
+    EventSource eventSource();
 
-    long getArrivalTime();
+    long arrivalTime();
 
     String toString();
 }

@@ -14,11 +14,11 @@ public class Session {
         // Construct automaton
     }
 
-    public DialogueAutomaton getDialogue() {
+    public DialogueAutomaton dialogue() {
         return dialogue;
     }
 
-    public Object getChatId() {
+    public Object chatId() {
         return chatId;
     }
 

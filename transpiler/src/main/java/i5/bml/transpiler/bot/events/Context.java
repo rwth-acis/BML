@@ -4,9 +4,9 @@ import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 
 public interface Context {
 
-    MessageEvent getEvent();
+    MessageEvent event();
 
-    String getIntent();
+    String intent();
 
-    String getEntity();
+    String entity();
 }
