@@ -6,6 +6,7 @@ import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.BMLComponentParameter;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
 import java.util.concurrent.TimeUnit;
@@ -30,15 +31,7 @@ public class BMLRoutineAnnotation extends AbstractBMLType {
         }
 
         var expr = ctx.elementExpressionPair(0).expr;
-        var atom = expr.atom();
-        if (atom == null || atom.StringLiteral() == null) {
-            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    PARAM_REQUIRES_CONSTANT.format("rate", BuiltinType.STRING), expr);
-            return;
-        }
-
-        rate = atom.getText().substring(1, atom.getText().length() - 1);
-        rate = rate.replaceAll(" ", "");
+        rate = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "rate").replaceAll(" ", "");
         if (!rate.matches("[0-9]+[a-zA-Z]+")) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                     "Can't recognize format, required format is <number><timeUnit>", expr);
