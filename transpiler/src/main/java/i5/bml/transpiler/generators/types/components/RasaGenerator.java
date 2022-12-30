@@ -9,7 +9,9 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLRasaComponent;
 import i5.bml.transpiler.JavaSynthesizer;
-import i5.bml.transpiler.bot.dialogue.rasa.RasaHandler;
+import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.dialogue.DialogueHandler;
+import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.utils.Utils;
@@ -49,8 +51,21 @@ public class RasaGenerator implements Generator {
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(fieldName), "init")));
 
         // Add import for `RasaHandler`
-        var rasaHandlerImport = Utils.renameImport(RasaHandler.class, visitor.getOutputPackage());
+        var rasaHandlerImport = Utils.renameImport(RasaComponent.class, visitor.getOutputPackage());
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
         currentClass.findCompilationUnit().get().addImport(rasaHandlerImport, false, false);
+
+        // Register to `DialogueHandler`
+        Utils.readAndWriteClass(visitor.getBotOutputPath(), DialogueHandler.class, clazz -> {
+            var m = clazz.getMethodsByName("handleMessageEvent").get(0);
+            var block = new BlockStmt();
+            block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().parseMessage", new NameExpr("messageEvent")));
+            m.setBody(block);
+
+            // Add import for `ComponentRegistry`
+            //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
+            var compilationUnit = clazz.findCompilationUnit().get();
+            compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.getOutputPackage()), false, false);
+        });
     }
 }

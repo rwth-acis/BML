@@ -1,5 +1,6 @@
 package i5.bml.transpiler.bot.events;
 
+import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
@@ -30,15 +31,15 @@ public class EventHandlerRegistry {
         switch (event.getEventSource()) {
             case SLACK:
             case TELEGRAM: {
-                // TODO: Invoke rasa with text from event and set entities and intents
+                var messageEvent = (MessageEvent) event;
 
-                MessageEventContext messageEventContext = new MessageEventContext((MessageEvent) event);
+                // We send the message to the desired NLU to infer intent and entity/entities
+                DialogueHandler.handleMessageEvent(messageEvent);
 
                 try {
-                    messageEventHandler.get(((MessageEvent) event).getMessageEventType()).invoke(null, messageEventContext);
+                    messageEventHandler.get(messageEvent.getMessageEventType()).invoke(null, new MessageEventContext(messageEvent));
                 } catch (IllegalAccessException | InvocationTargetException e) {
-                    // TODO: Proper error handling
-                    e.printStackTrace();
+                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.getMessageEventType()));
                 }
             }
         }

@@ -75,8 +75,16 @@ public class MessageEvent implements Event {
         return intent;
     }
 
+    public void setIntent(String intent) {
+        this.intent = intent;
+    }
+
     public String getEntity() {
         return entity;
+    }
+
+    public void setEntity(String entity) {
+        this.entity = entity;
     }
 
     public List<String> getCommandArguments() {
