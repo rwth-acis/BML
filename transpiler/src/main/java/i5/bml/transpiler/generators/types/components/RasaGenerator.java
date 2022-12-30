@@ -33,7 +33,7 @@ public class RasaGenerator implements Generator {
         var currentClass = visitor.getCurrentClass();
 
         // Add field
-        var type = StaticJavaParser.parseClassOrInterfaceType("RasaHandler");
+        var type = StaticJavaParser.parseClassOrInterfaceType("RasaComponent");
         var fieldName = ctx.name.getText();
         var initializer = new ObjectCreationExpr(null, type, new NodeList<>(new StringLiteralExpr(rasaComponent.getUrl())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName,
@@ -59,7 +59,7 @@ public class RasaGenerator implements Generator {
         Utils.readAndWriteClass(visitor.getBotOutputPath(), DialogueHandler.class, clazz -> {
             var m = clazz.getMethodsByName("handleMessageEvent").get(0);
             var block = new BlockStmt();
-            block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().parseMessage", new NameExpr("messageEvent")));
+            block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().invokeModel", new NameExpr("messageEvent")));
             m.setBody(block);
 
             // Add import for `ComponentRegistry`

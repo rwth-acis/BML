@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import okhttp3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class RasaComponent {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RasaComponent.class);
 
     private final String url;
 
@@ -53,17 +58,17 @@ public class RasaComponent {
                 .post(RequestBody.create(ymlContent, MediaType.parse("application/yml")))
                 .build();
 
-        System.out.println("Starting model training...");
+        LOGGER.info("Starting model training...");
 
         final String[] fileName = {null};
         handleResponse(request, response -> {
                     fileName[0] = response.headers().get("filename");
                     if (fileName[0] == null) {
-                        System.out.printf("Rasa model training for file %s failed%n", ymlFile);
+                        LOGGER.error("Rasa model training for file {} failed", ymlFile);
                     } else {
-                        System.out.println("Model training done!");
+                        LOGGER.info("Model training done!");
                     }
-                }, response -> System.err.println("Callback URLs are not supported"),
+                }, response -> LOGGER.error("Callback URLs are not supported"),
                 "Rasa model training for file %s failed: ".formatted(ymlFile));
 
         return fileName[0];
@@ -77,8 +82,8 @@ public class RasaComponent {
                 .put(RequestBody.create(content.toString(), MediaType.parse("application/json")))
                 .build();
 
-        System.out.println("Starting model loading...");
-        handleResponse(request, r -> {}, r -> System.out.println("Model loading done!"), "Rasa loading model failed: ");
+        LOGGER.info("Starting model loading...");
+        handleResponse(request, r -> {}, r -> LOGGER.info("Model loading done!"), "Rasa loading model failed: ");
     }
 
     public void invokeModel(MessageEvent messageEvent) {
@@ -96,12 +101,12 @@ public class RasaComponent {
 
         handleResponse(request, response -> {
             if (response.body() == null) {
-                System.err.println("Rasa parsing message failed because response body is null");
+                LOGGER.error("Rasa parsing message failed because response body is null");
             }
 
             try {
                 var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
-                System.out.println(responseSchema);
+                LOGGER.debug(responseSchema.toString());
                 messageEvent.setEntity(responseSchema.entities()[0].value());
                 messageEvent.setIntent(responseSchema.intent().name());
             } catch (IOException e) {
@@ -125,17 +130,17 @@ public class RasaComponent {
                 case 409:
                 case 500:
                     if (response.body() == null) {
-                        System.err.println("Parsing Rasa response body failed because response body is null");
+                        LOGGER.error("Parsing Rasa response body failed because response body is null");
                     }
 
                     RasaErrorResponseSchema responseSchema = new Gson().fromJson(response.body().string(), RasaErrorResponseSchema.class);
-                    System.err.printf("Rasa request failed:\n%s%n", responseSchema);
+                    LOGGER.error("Rasa request failed:\n{}", responseSchema);
                     break;
                 default:
-                    System.err.printf("Unexpected code %s with response: %s%n", response.code(), response);
+                    LOGGER.error("Unexpected code {} with response:\n{}", response.code(), response);
             }
         } catch (IOException e) {
-            System.err.println(errorMessage + e.getMessage());
+            LOGGER.error(errorMessage + e.getMessage());
         }
     }
 }

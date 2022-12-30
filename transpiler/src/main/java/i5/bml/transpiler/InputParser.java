@@ -121,6 +121,9 @@ public class InputParser {
             // Copy gitignore
             FileUtils.copyFile(new File("transpiler/src/main/resources/gitignore_template"), new File(outputDir + "/.gitignore"));
 
+            // Copy SLF4J SimpleLogger config
+            FileUtils.copyFile(new File("transpiler/src/main/resources/simplelogger.properties"), new File(outputDir + "/src/main/resources/simplelogger.properties"));
+
             // Emit code into output directory
             new JavaSynthesizer(outputDir + "/src/main/java/", outputPackage).visit(tree);
 
