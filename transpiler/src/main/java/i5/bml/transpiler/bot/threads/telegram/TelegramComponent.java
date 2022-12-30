@@ -24,16 +24,16 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
     private final PriorityBlockingQueue<Event> eventQueue;
 
-    private final String username;
+    private final String botName;
 
-    private final String token;
+    private final String botToken;
 
     private final Map<Long, Session> activeSessions = new HashMap<>();
 
-    public TelegramComponent(PriorityBlockingQueue<Event> eventQueue, String username, String token) {
+    public TelegramComponent(PriorityBlockingQueue<Event> eventQueue, String botName, String botToken) {
         this.eventQueue = eventQueue;
-        this.username = username;
-        this.token = token;
+        this.botName = botName;
+        this.botToken = botToken;
 
         // We check for inactive sessions every day
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
@@ -56,12 +56,12 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return username;
+        return botName;
     }
 
     @Override
     public String getBotToken() {
-        return token;
+        return botToken;
     }
 
     @Override
@@ -108,12 +108,12 @@ public class TelegramComponent extends TelegramLongPollingBot {
             long chatId = update.getMessage().getChatId();
 
             if (update.getMessage().getLeftChatMember() != null
-                    && !update.getMessage().getLeftChatMember().getUserName().equals(username)) {
+                    && !update.getMessage().getLeftChatMember().getUserName().equals(botName)) {
                 telegramEvent.setMessageEventType(MessageEventType.USER_LEFT_CHAT);
                 telegramEvent.setUsername(update.getMessage().getLeftChatMember().getUserName());
             } else if (!update.getMessage().getNewChatMembers().isEmpty()) {
                 var newChatMembers = update.getMessage().getNewChatMembers();
-                var botWasAdded = newChatMembers.stream().anyMatch(u -> u.getUserName().equals(username));
+                var botWasAdded = newChatMembers.stream().anyMatch(u -> u.getUserName().equals(botName));
                 if (!botWasAdded) {
                     telegramEvent.setMessageEventType(MessageEventType.USER_JOINED_CHAT);
                     telegramEvent.setUsername(newChatMembers.get(0).getUserName());
@@ -163,6 +163,6 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
     @Override
     public String toString() {
-        return "TelegramComponent{, username='%s', activeSessions=%s}".formatted(username, activeSessions);
+        return "TelegramComponent{username='%s', token='%s', activeSessions=%s}".formatted(botName, botToken, activeSessions);
     }
 }

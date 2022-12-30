@@ -9,6 +9,9 @@ import com.slack.api.model.event.MemberLeftChannelEvent;
 import com.slack.api.socket_mode.SocketModeClient;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
+import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,6 +19,8 @@ import java.util.Map;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class SlackBotThread implements Runnable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SlackBotThread.class);
 
     private final PriorityBlockingQueue<Event> eventQueue;
 
@@ -68,8 +73,11 @@ public class SlackBotThread implements Runnable {
             socketModeApp.startAsync();
             client = socketModeApp.getClient();
         } catch (Exception e) {
-            throw new IllegalStateException("Connecting with Slack failed", e);
+            LOGGER.error("Connecting with Slack failed", e);
+            return;
         }
+
+        LOGGER.info("Successfully initialized Slack bot");
     }
 
     public PriorityBlockingQueue<Event> getEventQueue() {
