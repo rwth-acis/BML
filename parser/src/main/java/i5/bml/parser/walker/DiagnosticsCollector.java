@@ -95,15 +95,17 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void enterFunctionHead(BMLParser.FunctionHeadContext ctx) {
-        // TODO: Cache type
-        // We aggregate all the allowed accesses from the annotations into
+        // We aggregate all the allowed accesses from the annotations into the type of the `context` variable
         var contextType = ((AbstractBMLType) TypeRegistry.resolveComplexType(BuiltinType.CONTEXT));
         TypeRegistry.registerType(contextType);
-        var supportedAccesses = contextType.getSupportedAccesses();
-        for (var annotationContext : ((BMLParser.FunctionDefinitionContext) ctx.parent).annotation()) {
-            supportedAccesses.putAll(((AbstractBMLType) annotationContext.type).getSupportedAccesses());
-        }
 
+        // Collect supported accesses from annotations
+        var supportedAccesses = contextType.getSupportedAccesses();
+        ((BMLParser.FunctionDefinitionContext) ctx.parent).annotation().stream()
+                .filter(a -> a.type != null)
+                .forEach(a -> supportedAccesses.putAll(((AbstractBMLType) a.type).getSupportedAccesses()));
+
+        // Create symbol for context variable (with supported accesses included)
         var contextSymbol = new VariableSymbol("context");
         contextSymbol.setType(contextType);
         currentScope.define(contextSymbol);
@@ -221,7 +223,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         var annotationType = TypeRegistry.getBuiltinAnnotation(annotationName);
 
         if (annotationType == null) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, UNKNOWN_TYPE.format(annotationName), ctx.name);
+            Diagnostics.addDiagnostic(collectedDiagnostics, UNKNOWN_ANNOTATION.format(annotationName), ctx.name);
             return;
         }
 

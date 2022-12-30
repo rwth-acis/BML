@@ -6,9 +6,9 @@ public enum BuiltinAnnotation {
 
     USER_SENT_MESSAGE(BMLAnnotationType.MESSENGER),
 
-    USER_JOINED_CHANNEL(BMLAnnotationType.MESSENGER),
+    USER_JOINED_CHAT(BMLAnnotationType.MESSENGER),
 
-    USER_LEFT_CHANNEL(BMLAnnotationType.MESSENGER),
+    USER_LEFT_CHAT(BMLAnnotationType.MESSENGER),
 
     BOT_ADDED(BMLAnnotationType.MESSENGER),
 

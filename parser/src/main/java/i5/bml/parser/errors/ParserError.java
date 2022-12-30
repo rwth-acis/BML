@@ -19,7 +19,8 @@ public enum ParserError {
     CONNECT_FAILED("Could not connect to url `%s`"),
     NO_PATH_FOR_API("Path `%s` is not defined for API:\n`%s`"),
     METHOD_NOT_SUPPORTED("Path `%s` does not support HTTP method `%s` for API:\n`%s`"),
-    PARAM_REQUIRES_CONSTANT("Parameter `%s` requires a constant `%s`");
+    PARAM_REQUIRES_CONSTANT("Parameter `%s` requires a constant `%s`"),
+    UNKNOWN_ANNOTATION("Unknown annotation `%s`");
 
     public final String message;
 
