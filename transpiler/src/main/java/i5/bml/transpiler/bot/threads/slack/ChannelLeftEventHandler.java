@@ -22,13 +22,13 @@ public class ChannelLeftEventHandler extends AbstractSlackHandler implements Bol
     @Override
     public Response apply(EventsApiPayload<ChannelLeftEvent> event, EventContext context) throws IOException, SlackApiException {
         var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
-        slackBotThread.getActiveSessions().remove(event.getEvent().getChannel());
+        slackBotThread.activeSessions().remove(event.getEvent().getChannel());
         slackEvent.setMessageEventType(MessageEventType.BOT_REMOVED);
-        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getActorId()));
+        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getActorId()));
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), event.getEvent().getChannel()));
 
-        slackBotThread.getEventQueue().put(slackEvent);
+        slackBotThread.eventQueue().put(slackEvent);
         return context.ack();
     }
 }

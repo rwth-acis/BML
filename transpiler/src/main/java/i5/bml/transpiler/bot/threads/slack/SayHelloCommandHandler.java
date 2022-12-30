@@ -25,12 +25,12 @@ public class SayHelloCommandHandler extends AbstractSlackHandler implements Slas
         // We use the arrival time in seconds such that is matches the unix time unit used by Slack, Telegram, etc.
         var slackEvent = new MessageEvent(EventSource.SLACK, System.currentTimeMillis() / 1_000);
         slackEvent.setMessageEventType(MessageEventType.BOT_COMMAND);
-        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), context.getRequestUserId()));
-        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), context.getChannelId()));
+        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), context.getRequestUserId()));
+        slackEvent.setUser(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), context.getChannelId()));
         slackEvent.setCommandArguments(Arrays.stream(slashCommandRequest.getPayload().getText().split(" ")).toList());
         slackEvent.setText(slashCommandRequest.getPayload().getCommand());
-        slackEvent.setSession(slackBotThread.getActiveSessions().get(context.getChannelId()));
-        slackBotThread.getEventQueue().put(slackEvent);
+        slackEvent.setSession(slackBotThread.activeSessions().get(context.getChannelId()));
+        slackBotThread.eventQueue().put(slackEvent);
 
         JsonObject responseType = new JsonObject();
         responseType.addProperty("response_type", "in_channel");

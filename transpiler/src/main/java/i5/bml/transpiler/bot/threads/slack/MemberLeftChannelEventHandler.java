@@ -23,11 +23,11 @@ public class MemberLeftChannelEventHandler extends AbstractSlackHandler implemen
     public Response apply(EventsApiPayload<MemberLeftChannelEvent> event, EventContext context) throws IOException, SlackApiException {
         var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
         slackEvent.setMessageEventType(MessageEventType.USER_LEFT_CHAT);
-        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getUser()));
+        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getUser()));
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), event.getEvent().getChannel()));
 
-        slackBotThread.getEventQueue().put(slackEvent);
+        slackBotThread.eventQueue().put(slackEvent);
         return context.ack();
     }
 }

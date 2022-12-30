@@ -26,22 +26,22 @@ public class MessageEventHandler extends AbstractSlackHandler implements BoltEve
         }
 
         var slackEvent = new MessageEvent(EventSource.SLACK, event.getEventTime());
-        var session = slackBotThread.getActiveSessions().get(event.getEvent().getChannel());
+        var session = slackBotThread.activeSessions().get(event.getEvent().getChannel());
         if (session == null) {
             session = new Session(event.getEvent().getChannel());
-            slackBotThread.getActiveSessions().put(event.getEvent().getChannel(), session);
+            slackBotThread.activeSessions().put(event.getEvent().getChannel(), session);
             slackEvent.setMessageEventType(MessageEventType.USER_STARTED_CHAT);
         } else {
             slackEvent.setMessageEventType(MessageEventType.USER_SENT_MESSAGE);
         }
 
         slackEvent.setSession(session);
-        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.getBotToken(), event.getEvent().getUser()));
+        slackEvent.setUsername(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getUser()));
         slackEvent.setText(event.getEvent().getText());
 
-        slackEvent.setUser(new SlackUser(slackBotThread.getClient(), slackBotThread.getBotToken(), event.getEvent().getChannel()));
+        slackEvent.setUser(new SlackUser(slackBotThread.client(), slackBotThread.botToken(), event.getEvent().getChannel()));
 
-        slackBotThread.getEventQueue().put(slackEvent);
+        slackBotThread.eventQueue().put(slackEvent);
         return context.ack();
     }
 }

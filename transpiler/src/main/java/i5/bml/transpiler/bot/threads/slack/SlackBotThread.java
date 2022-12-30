@@ -9,7 +9,6 @@ import com.slack.api.model.event.MemberLeftChannelEvent;
 import com.slack.api.socket_mode.SocketModeClient;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
-import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +41,14 @@ public class SlackBotThread implements Runnable {
 
     @Override
     public void run() {
-        // App expects an env variable: SLACK_BOT_TOKEN
-        App app = new App();
+        var app = new App();
         try {
             var authTestResponse = app.getClient().authTest(r -> r.token(botToken));
             botId = authTestResponse.getBotId();
         } catch (IOException | SlackApiException e) {
-            // TODO: Proper error handling
-            e.printStackTrace();
+            LOGGER.error("Failed to retrieve `botId` via `authTest`", e);
+            // We cannot run the bot without the botId
+            return;
         }
 
         /*
@@ -72,31 +71,29 @@ public class SlackBotThread implements Runnable {
             var socketModeApp = new SocketModeApp(appToken, app);
             socketModeApp.startAsync();
             client = socketModeApp.getClient();
+            LOGGER.info("Successfully initialized Slack bot");
         } catch (Exception e) {
             LOGGER.error("Connecting with Slack failed", e);
-            return;
         }
-
-        LOGGER.info("Successfully initialized Slack bot");
     }
 
-    public PriorityBlockingQueue<Event> getEventQueue() {
-        return eventQueue;
-    }
-
-    public String getBotId() {
+    public String botId() {
         return botId;
     }
 
-    public String getBotToken() {
+    public PriorityBlockingQueue<Event> eventQueue() {
+        return eventQueue;
+    }
+
+    public String botToken() {
         return botToken;
     }
 
-    public SocketModeClient getClient() {
+    public SocketModeClient client() {
         return client;
     }
 
-    public Map<String, Session> getActiveSessions() {
+    public Map<String, Session> activeSessions() {
         return activeSessions;
     }
 }
