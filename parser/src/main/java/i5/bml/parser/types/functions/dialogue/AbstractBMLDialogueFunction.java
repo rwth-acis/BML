@@ -13,7 +13,7 @@ import java.util.List;
 
 public abstract class AbstractBMLDialogueFunction implements BMLFunction {
 
-    protected Type stateType;
+    protected Type stateReturnType;
 
     protected List<BMLFunctionParameter> optionalParameters;
 
@@ -21,7 +21,7 @@ public abstract class AbstractBMLDialogueFunction implements BMLFunction {
 
     @Override
     public void defineFunction(Scope scope) {
-        stateType = TypeRegistry.resolveType(BuiltinType.STATE);
+        stateReturnType = TypeRegistry.resolveComplexType(BuiltinType.STATE);
 
         var intentParameter = new BMLFunctionParameter("intent");
         intentParameter.setType(TypeRegistry.resolveType(BuiltinType.STRING));
@@ -35,8 +35,8 @@ public abstract class AbstractBMLDialogueFunction implements BMLFunction {
             actionParameter.addType(stringListType);
         }
         actionParameter.addType(TypeRegistry.resolveType(stringListType));
-        actionParameter.addType(TypeRegistry.resolveType(BuiltinType.FUNCTION));
-        actionParameter.addType(TypeRegistry.resolveType(BuiltinType.STATE));
+        actionParameter.addType(TypeRegistry.resolveComplexType(BuiltinType.FUNCTION));
+        actionParameter.addType(TypeRegistry.resolveComplexType(BuiltinType.STATE));
 
         optionalParameters = List.of(intentParameter, actionParameter);
 

@@ -14,7 +14,7 @@ public class BMLDialogueSinkFunction extends AbstractBMLDialogueFunction {
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);
 
-        symbol.setType(new BMLFunctionType(stateType, new ArrayList<>(), optionalParameters));
+        symbol.setType(new BMLFunctionType(stateReturnType, new ArrayList<>(), optionalParameters));
         scope.define(symbol);
     }
 }

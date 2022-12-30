@@ -23,31 +23,24 @@ public class BMLFunctionType extends AbstractBMLType {
     }
 
     public BMLFunctionType(BMLFunctionType functionType) {
-        this.returnType = functionType.getReturnType();
+        this.returnType = ((AbstractBMLType) functionType.getReturnType()).deepCopy();
+        functionType.getRequiredParameters().forEach(p -> deepCopyParameters(p, super.requiredParameters));
+        functionType.getOptionalParameters().forEach(p -> deepCopyParameters(p, super.optionalParameters));
+    }
 
-        functionType.getRequiredParameters().forEach(p -> {
-            var typeAnnotation = p.getType().getClass().getAnnotation(BMLType.class);
-            Type type;
-            if (typeAnnotation.isComplex()) {
-                type = TypeRegistry.resolveComplexType(typeAnnotation.name());
-            } else {
-                type = p.getType();
-            }
+    private void deepCopyParameters(BMLFunctionParameter p, List<BMLFunctionParameter> parameters) {
+        BMLFunctionParameter newParameter;
+        if (p.getType() != null) {
+            newParameter = new BMLFunctionParameter(p.getName(), ((AbstractBMLType) p.getType()).deepCopy());
+        } else {
+            newParameter = new BMLFunctionParameter(p.getName());
+        }
 
-            super.requiredParameters.add(new BMLFunctionParameter(p.getName(), type));
-        });
+        for (Type allowedType : p.getAllowedTypes()) {
+            newParameter.addType(allowedType);
+        }
 
-        functionType.getOptionalParameters().forEach(p -> {
-            var typeAnnotation = p.getType().getClass().getAnnotation(BMLType.class);
-            Type type;
-            if (typeAnnotation.isComplex()) {
-                type = TypeRegistry.resolveComplexType(typeAnnotation.name());
-            } else {
-                type = p.getType();
-            }
-
-            super.optionalParameters.add(new BMLFunctionParameter(p.getName(), type));
-        });
+        parameters.add(newParameter);
     }
 
     @Override

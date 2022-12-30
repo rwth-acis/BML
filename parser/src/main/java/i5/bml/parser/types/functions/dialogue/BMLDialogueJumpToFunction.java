@@ -16,7 +16,7 @@ public class BMLDialogueJumpToFunction extends AbstractBMLDialogueFunction {
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);
 
-        symbol.setType(new BMLFunctionType(stateType, new ArrayList<>(), List.of(new BMLFunctionParameter("state", stateType))));
+        symbol.setType(new BMLFunctionType(stateReturnType, new ArrayList<>(), List.of(new BMLFunctionParameter("state", stateReturnType))));
         scope.define(symbol);
     }
 }

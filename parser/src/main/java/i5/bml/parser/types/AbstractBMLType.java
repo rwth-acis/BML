@@ -128,6 +128,10 @@ public abstract class AbstractBMLType implements Type {
         }
     }
 
+    public Type deepCopy() {
+        return this;
+    }
+
     public List<Diagnostic> getCachedDiagnostics() {
         return cachedDiagnostics;
     }

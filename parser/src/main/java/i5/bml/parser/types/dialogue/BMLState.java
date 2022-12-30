@@ -7,7 +7,7 @@ import i5.bml.parser.types.BuiltinType;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 
-@BMLType(name = BuiltinType.STATE, isComplex = false)
+@BMLType(name = BuiltinType.STATE, isComplex = true)
 public class BMLState extends AbstractBMLType {
 
     private String intent;
@@ -31,6 +31,11 @@ public class BMLState extends AbstractBMLType {
                 }
             }
         }
+    }
+
+    @Override
+    public Type deepCopy() {
+        return new BMLState();
     }
 
     public String getIntent() {

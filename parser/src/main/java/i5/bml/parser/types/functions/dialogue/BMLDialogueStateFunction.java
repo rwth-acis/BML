@@ -4,7 +4,6 @@ import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLFunctionAnnotation;
 import i5.bml.parser.types.functions.BMLFunctionScope;
 import org.antlr.symtab.Scope;
-import org.antlr.symtab.VariableSymbol;
 
 import java.util.ArrayList;
 
@@ -15,7 +14,7 @@ public class BMLDialogueStateFunction extends AbstractBMLDialogueFunction {
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);
 
-        symbol.setType(new BMLFunctionType(stateType, new ArrayList<>(), optionalParameters));
+        symbol.setType(new BMLFunctionType(stateReturnType, new ArrayList<>(), optionalParameters));
         scope.define(symbol);
     }
 }

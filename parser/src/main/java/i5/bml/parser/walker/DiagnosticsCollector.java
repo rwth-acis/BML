@@ -548,7 +548,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     }
                 }
                 // This should never happen
-                default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op.getText(), ctx.getText()));
+                default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op.getText(), ctx.parent.parent.getText()));
             };
         } else if (ctx.functionCall() != null) {
             var name = ctx.functionCall().functionName.getText();
@@ -584,7 +584,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             }
 
             // Perform type checks for function calls
-            var functionType = ((BMLFunctionType) ((TypedSymbol) symbol).getType());
+            var functionType = new BMLFunctionType(((BMLFunctionType) ((TypedSymbol) symbol).getType()));
             functionType.checkParameters(this, functionCallContext.params);
             functionType.initializeType(functionCallContext);
 
