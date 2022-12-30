@@ -28,8 +28,7 @@ public class TelegramBotThread implements Runnable {
             var telegramBot = new TelegramComponent(eventQueue, username, token);
             telegramBotsApi.registerBot(telegramBot);
         } catch (TelegramApiException e) {
-            // TODO: Proper error handling
-            e.printStackTrace();
+            throw new IllegalStateException("Connecting with Telegram failed", e);
         }
     }
 }
