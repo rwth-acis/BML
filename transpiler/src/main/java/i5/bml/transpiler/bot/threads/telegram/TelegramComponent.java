@@ -6,6 +6,8 @@ import i5.bml.transpiler.bot.events.EventSource;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import i5.bml.transpiler.bot.events.messenger.telegram.TelegramUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
@@ -21,6 +23,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class TelegramComponent extends TelegramLongPollingBot {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TelegramComponent.class);
 
     private final PriorityBlockingQueue<Event> eventQueue;
 
@@ -73,11 +77,12 @@ public class TelegramComponent extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         try {
             MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());
+            System.out.println(update);
             if (filterUpdates(telegramEvent, update)) {
                 eventQueue.put(telegramEvent);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("Error while receiving update from Telegram server", e);
         }
     }
 
@@ -160,6 +165,8 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
         return true;
     }
+
+
 
     @Override
     public String toString() {

@@ -32,11 +32,9 @@ public class TelegramBotThread implements Runnable {
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             var telegramBot = new TelegramComponent(eventQueue, botName, botToken);
             telegramBotsApi.registerBot(telegramBot);
+            LOGGER.info("Successfully initialized Telegram bot");
         } catch (TelegramApiException e) {
             LOGGER.error("Connecting with Telegram failed", e);
-            return;
         }
-
-        LOGGER.info("Successfully initialized Telegram bot");
     }
 }
