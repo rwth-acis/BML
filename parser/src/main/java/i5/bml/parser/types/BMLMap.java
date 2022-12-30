@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +44,8 @@ public class BMLMap extends AbstractBMLType {
     public void initializeType(ParserRuleContext ctx) {
         var addFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), new ArrayList<>(), new ArrayList<>());
         supportedAccesses.put("add", addFunction);
+        var removeFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), new ArrayList<>(), new ArrayList<>());
+        supportedAccesses.put("remove", removeFunction);
     }
 
     @Override
@@ -82,11 +85,24 @@ public class BMLMap extends AbstractBMLType {
                 if (keyType == null) {
                     keyType = invocationKeyParameter.expr.type;
                     functionType.getRequiredParameters().add(new BMLFunctionParameter("key", keyType));
+                } else if (functionType.getRequiredParameters().stream().noneMatch(p -> p.getName().equals("key"))) {
+                    functionType.getRequiredParameters().add(new BMLFunctionParameter("key", keyType));
                 }
 
                 if (valueType == null) {
                     valueType = invocationValueParameter.expr.type;
                     functionType.getRequiredParameters().add(new BMLFunctionParameter("value", valueType));
+                } else if (functionType.getRequiredParameters().stream().noneMatch(p -> p.getName().equals("value"))) {
+                    functionType.getRequiredParameters().add(new BMLFunctionParameter("value", valueType));
+                }
+            } else if (functionName.equals("remove")) {
+                var invocationKeyParameter = functionCallCtx.params.elementExpressionPair().get(0);
+
+                if (keyType == null) {
+                    keyType = invocationKeyParameter.expr.type;
+                    functionType.getRequiredParameters().add(new BMLFunctionParameter("key", keyType));
+                } else if (functionType.getRequiredParameters().stream().noneMatch(p -> p.getName().equals("key"))) {
+                    functionType.getRequiredParameters().add(new BMLFunctionParameter("key", keyType));
                 }
             }
 
