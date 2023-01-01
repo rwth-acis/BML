@@ -14,9 +14,13 @@ import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
 import i5.bml.parser.types.dialogue.BMLState;
+import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.Context;
+import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
+import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
 import i5.bml.transpiler.utils.Utils;
@@ -448,6 +452,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     @Override
     public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
         // TODO: These calls can only be STDLIB calls
+        System.out.println(ctx.getText());
         return new MethodCallExpr(ctx.functionName.getText());
     }
 
@@ -506,7 +511,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
                         var getter = field.createGetter();
                         // Remove "get" prefix
-                        getter.setName(getter.getNameAsString().substring(3));
+                        getter.setName(StringUtils.uncapitalize(getter.getNameAsString().substring(3)));
                     }
                 });
                 classStack.pop();
@@ -527,34 +532,50 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         if (ctx.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
             // Create a class
             CompilationUnit c = new CompilationUnit();
+
+            // Add package declaration
+            c.setPackageDeclaration(outputPackage + "dialogue.states");
+
+            // Set class name and extends
             var className = StringUtils.capitalize(ctx.assignment().name.getText()) + "State";
             var clazz = c.addClass(className);
-            clazz.addExtendedType(State.class);
+            clazz.addExtendedType(State.class.getSimpleName());
+
+            // Make import for extends
+            c.addImport(Utils.renameImport(State.class, outputPackage), false, false);
 
             var stateType = (BMLState) ctx.assignment().expr.type;
 
             // Add field to store & set intent
-            clazz.addField(DialogueAutomatonTemplate.class, "dialogueAutomaton", Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
-            var constructorBody = new BlockStmt().addStatement(new FieldAccessExpr(new NameExpr("this"), "dialogueAutomaton"))
-                    .addStatement(new AssignExpr(new FieldAccessExpr(new NameExpr("super"), "intent"),
-                            new StringLiteralExpr(stateType.getIntent()), AssignExpr.Operator.ASSIGN));
+            clazz.addField(DialogueAutomaton.class, "dialogueAutomaton", Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
+
+            // Add constructor
+            var dialogueAutomatonField = new AssignExpr(new FieldAccessExpr(new NameExpr("this"), "dialogueAutomaton"),
+                    new NameExpr("dialogueAutomaton"), AssignExpr.Operator.ASSIGN);
+            var constructorBody = new BlockStmt().addStatement(dialogueAutomatonField);
             clazz.addConstructor()
                     .setParameters(new NodeList<>(new Parameter(StaticJavaParser.parseType(DialogueAutomatonTemplate.class.getSimpleName()), "dialogueAutomaton")))
+                    .setModifiers(Modifier.Keyword.PUBLIC)
                     .setBody(constructorBody);
 
             // Set action
             var actionMethod = clazz.addMethod("action", Modifier.Keyword.PUBLIC);
-            actionMethod.addAnnotation(Override.class);
-            actionMethod.addParameter("Context", "context");
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-            var compilationUnit = clazz.findCompilationUnit().get();
-            compilationUnit.addImport(Utils.renameImport(Context.class, outputPackage), false, false);
+            actionMethod.addMarkerAnnotation(Override.class);
+            actionMethod.addParameter("MessageEventContext", "context");
+
+            // Add import for action parameter
+            c.addImport(Utils.renameImport(MessageEventContext.class, outputPackage), false, false);
 
             var block = switch (stateType.getActionType().getClass().getAnnotation(BMLType.class).name()) {
-                case STRING ->
-                        new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                                new NodeList<>(new NameExpr("context"), (StringLiteralExpr) visit(stateType.getAction()))));
+                case STRING -> {
+                    c.addImport(Utils.renameImport(MessageHelper.class, outputPackage), false, false);
+                    yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
+                            new NodeList<>(new NameExpr("context"), (StringLiteralExpr) visit(stateType.getAction()))));
+                }
                 case LIST -> {
+                    // Add import for `Random`
+                    c.addImport(Utils.renameImport(Random.class, outputPackage), false, false);
+
                     var randomType = StaticJavaParser.parseClassOrInterfaceType("Random");
                     clazz.addFieldWithInitializer(Random.class, "random",
                             new ObjectCreationExpr(null, randomType, new NodeList<>()), Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
@@ -582,7 +603,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             actionMethod.setBody(block);
 
             // Create file at desired destination
-            writeClass("dialogue/states", className);
+            Utils.writeClass(botOutputPath + "dialogue/states", className, c);
         }
 
         return childNode;
@@ -650,9 +671,5 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     @Override
     public Node visitTransitionInitializer(BMLParser.TransitionInitializerContext ctx) {
         return super.visitTransitionInitializer(ctx);
-    }
-
-    private void writeClass(String path, String fileName) {
-
     }
 }

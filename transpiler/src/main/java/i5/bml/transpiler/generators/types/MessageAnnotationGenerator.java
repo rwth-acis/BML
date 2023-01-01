@@ -14,13 +14,13 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLMessengerAnnotation.class)
-public class MessengerAnnotationGenerator implements Generator {
+public class MessageAnnotationGenerator implements Generator {
 
     private static final String PATH = "events/messenger";
 
     private static final String CLASS_NAME = "MessageEventHandler";
 
-    public MessengerAnnotationGenerator(Type bmlMessengerAnnotation) {}
+    public MessageAnnotationGenerator(Type bmlMessengerAnnotation) {}
 
     @Override
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,

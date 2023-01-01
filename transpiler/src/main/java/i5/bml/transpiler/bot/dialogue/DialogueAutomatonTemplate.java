@@ -26,7 +26,9 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
         currentState.action(context);
     }
 
-    public void jumpTo(State state) {
+    @Override
+    public void jumpTo(State state, MessageEventContext context) {
         currentState = state;
+        currentState.action(context);
     }
 }

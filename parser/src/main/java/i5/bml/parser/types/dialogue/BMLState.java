@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 @BMLType(name = BuiltinType.STATE, isComplex = true)
 public class BMLState extends AbstractBMLType {
 
-    private String intent;
+    private String intent = "";
 
     private BMLParser.ExpressionContext action;
 
