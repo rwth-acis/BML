@@ -11,6 +11,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -49,6 +50,17 @@ public class Utils {
             packageName = "%s.%s".formatted(outputPackage, packageName);
         }
         return packageName;
+    }
+
+    public static void writeClass(String path, String fileName, CompilationUnit compilationUnit) {
+        var filePath = "%s/%s.java".formatted(path, fileName);
+        try {
+            var javaFile = new File(filePath);
+            var javaFilePath = javaFile.toPath();
+            Files.write(javaFilePath, compilationUnit.toString().getBytes());
+        } catch (IOException e) {
+            throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
+        }
     }
 
     public static void readAndWriteJavaFile(File file, String className, Consumer<TypeDeclaration<?>> c) {
