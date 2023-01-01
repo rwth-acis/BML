@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -57,7 +58,11 @@ public class Utils {
         try {
             var javaFile = new File(filePath);
             var javaFilePath = javaFile.toPath();
+            Files.createDirectories(javaFilePath.getParent());
+            Files.createFile(javaFilePath);
             Files.write(javaFilePath, compilationUnit.toString().getBytes());
+        } catch (NoSuchFileException | FileNotFoundException e) {
+            throw new IllegalStateException("Could not find %s".formatted(filePath));
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
         }
