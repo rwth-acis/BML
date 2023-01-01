@@ -20,9 +20,9 @@ public class DialogueGenerator implements Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
-        var getEvent = new MethodCallExpr(new NameExpr("context"), "getEvent", new NodeList<>());
-        var getSession = new MethodCallExpr(getEvent, "getSession", new NodeList<>());
-        var getDialogue = new MethodCallExpr(getSession, "getDialogue", new NodeList<>());
+        var getEvent = new MethodCallExpr(new NameExpr("context"), "event");
+        var getSession = new MethodCallExpr(getEvent, "session");
+        var getDialogue = new MethodCallExpr(getSession, "dialogue");
         return new MethodCallExpr(getDialogue, "step", new NodeList<>(new NameExpr("context")));
     }
 }
