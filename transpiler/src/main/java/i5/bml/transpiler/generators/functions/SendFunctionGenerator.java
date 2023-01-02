@@ -37,8 +37,8 @@ public class SendFunctionGenerator implements Generator {
 
         // Add import for `MessageHelper`
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        var compilationUnit = visitor.getCurrentClass().findCompilationUnit().get();
-        compilationUnit.addImport(Utils.renameImport(MessageHelper.class, visitor.getOutputPackage()), false, false);
+        var compilationUnit = visitor.currentClass().findCompilationUnit().get();
+        compilationUnit.addImport(Utils.renameImport(MessageHelper.class, visitor.outputPackage()), false, false);
 
         return methodCallExpr;
     }

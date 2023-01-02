@@ -21,7 +21,7 @@ public class StringGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
 
         var type = StaticJavaParser.parseClassOrInterfaceType("StringBuffer");
         var initializer = new ObjectCreationExpr(null, type, new NodeList<>());

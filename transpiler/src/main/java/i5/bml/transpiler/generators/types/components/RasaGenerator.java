@@ -30,7 +30,7 @@ public class RasaGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
 
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType("RasaComponent");
@@ -51,12 +51,12 @@ public class RasaGenerator implements Generator {
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(fieldName), "init")));
 
         // Add import for `RasaHandler`
-        var rasaHandlerImport = Utils.renameImport(RasaComponent.class, visitor.getOutputPackage());
+        var rasaHandlerImport = Utils.renameImport(RasaComponent.class, visitor.outputPackage());
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
         currentClass.findCompilationUnit().get().addImport(rasaHandlerImport, false, false);
 
         // Register to `DialogueHandler`
-        Utils.readAndWriteClass(visitor.getBotOutputPath(), DialogueHandler.class, clazz -> {
+        Utils.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {
             var m = clazz.getMethodsByName("handleMessageEvent").get(0);
             var block = new BlockStmt();
             block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().invokeModel", new NameExpr("messageEvent")));
@@ -65,7 +65,7 @@ public class RasaGenerator implements Generator {
             // Add import for `ComponentRegistry`
             //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
             var compilationUnit = clazz.findCompilationUnit().get();
-            compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.getOutputPackage()), false, false);
+            compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
         });
     }
 }

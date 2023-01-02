@@ -5,16 +5,12 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.type.PrimitiveType;
-import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.*;
 import i5.bml.transpiler.BMLTypeResolver;
 import i5.bml.transpiler.JavaSynthesizer;
-import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
@@ -22,11 +18,9 @@ import i5.bml.transpiler.generators.HasBotClass;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -39,7 +33,7 @@ public class MapGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
         //noinspection OptionalGetWithoutIsPresent -> We can assume the presence
         var compilationUnit = currentClass.findCompilationUnit().get();
 
@@ -64,8 +58,8 @@ public class MapGenerator implements Generator {
         compilationUnit.addImport(ConcurrentHashMap.class);
 
         // Add import for key and value types
-        addImportForClass(bmlMapType.getKeyType(), compilationUnit, visitor.getOutputPackage());
-        addImportForClass(bmlMapType.getValueType(), compilationUnit, visitor.getOutputPackage());
+        addImportForClass(bmlMapType.getKeyType(), compilationUnit, visitor.outputPackage());
+        addImportForClass(bmlMapType.getValueType(), compilationUnit, visitor.outputPackage());
 
         // Add getter & setter
         var getter = field.createGetter();
@@ -83,7 +77,7 @@ public class MapGenerator implements Generator {
     public Node generateInitializer(ParserRuleContext ctx, JavaSynthesizer visitor) {
         var params = ((BMLParser.MapInitializerContext) ctx).params;
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-        visitor.getCurrentClass().findCompilationUnit().get().addImport(Map.class);
+        visitor.currentClass().findCompilationUnit().get().addImport(Map.class);
         if (params != null) {
             var arguments = params.elementExpressionPair().stream()
                     .flatMap(p -> Stream.of(new StringLiteralExpr(p.name.getText()), (Expression) visitor.visit(p.expr)))

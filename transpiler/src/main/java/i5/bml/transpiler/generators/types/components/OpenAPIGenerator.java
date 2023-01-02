@@ -39,7 +39,7 @@ public class OpenAPIGenerator implements Generator {
         apiName = ctx.name.getText() + "client";
 
         // Generate swagger client code
-        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.getUrl(), visitor.getOutputPackage(), apiName, visitor.getBotOutputPath());
+        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.getUrl(), visitor.outputPackage(), apiName, visitor.botOutputPath());
 
         // Generate fields with getters in `ComponentRegistry`
         openAPIComponent.getTagOperationIdPairs().values().stream().map(Pair::getLeft).distinct().forEach(tag -> {
@@ -49,13 +49,13 @@ public class OpenAPIGenerator implements Generator {
             var type = "ThreadLocal<%s>".formatted(clientClassName);
             var initializer = new MethodCallExpr(new NameExpr("ThreadLocal"), "withInitial",
                     new NodeList<>(new MethodReferenceExpr(new NameExpr(clientClassName), new NodeList<>(), "new")));
-            FieldDeclaration field = visitor.getCurrentClass().addFieldWithInitializer(type, StringUtils.uncapitalize(clientClassName),
+            FieldDeclaration field = visitor.currentClass().addFieldWithInitializer(type, StringUtils.uncapitalize(clientClassName),
                     initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
             // Add import for %sApi
             var packageName = getAPIImport(visitor, clientClassName);
             //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-            visitor.getCurrentClass().findCompilationUnit().get().addImport(packageName, false, false);
+            visitor.currentClass().findCompilationUnit().get().addImport(packageName, false, false);
 
             // Add getter
             var getter = field.createGetter();
@@ -71,8 +71,8 @@ public class OpenAPIGenerator implements Generator {
 
     private String getAPIImport(JavaSynthesizer visitor, String clientClassName) {
         // Add import for %sApi
-        if (!visitor.getOutputPackage().isEmpty()) {
-            return visitor.getOutputPackage() + ".openapi." + apiName + ".apis." + clientClassName;
+        if (!visitor.outputPackage().isEmpty()) {
+            return visitor.outputPackage() + ".openapi." + apiName + ".apis." + clientClassName;
         } else {
             return "openapi." + apiName + ".apis." + clientClassName;
         }
@@ -113,37 +113,37 @@ public class OpenAPIGenerator implements Generator {
 
         // Import for `ComponentRegistry`
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        var compilationUnit = visitor.getCurrentClass().findCompilationUnit().get();
-        compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.getOutputPackage()), false, false);
+        var compilationUnit = visitor.currentClass().findCompilationUnit().get();
+        compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
 
         // Import for `ApiException`
         var packageName = getOpenAPIImport(visitor, "ApiException");
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        visitor.getCurrentClass().findCompilationUnit().get().addImport(packageName, false, false);
+        visitor.currentClass().findCompilationUnit().get().addImport(packageName, false, false);
 
         // Inform assignment visitor about try stmt wrapping
-        visitor.setWrapAssignmentInTryStmt(true);
+        visitor.wrapAssignmentInTryStmt(true);
 
         // Import for `tag`
         packageName = getModelImport(visitor, tag);
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        visitor.getCurrentClass().findCompilationUnit().get().addImport(packageName, false, false);
+        visitor.currentClass().findCompilationUnit().get().addImport(packageName, false, false);
 
         return methodCallExpr;
     }
 
     private String getOpenAPIImport(JavaSynthesizer visitor, String clientClassName) {
         // Add import for %sApi
-        if (!visitor.getOutputPackage().isEmpty()) {
-            return visitor.getOutputPackage() + ".openapi." + apiName + "." + clientClassName;
+        if (!visitor.outputPackage().isEmpty()) {
+            return visitor.outputPackage() + ".openapi." + apiName + "." + clientClassName;
         } else {
             return "openapi." + apiName + "." + clientClassName;
         }
     }
 
     private String getModelImport(JavaSynthesizer visitor, String clientClassName) {
-        if (!visitor.getOutputPackage().isEmpty()) {
-            return visitor.getOutputPackage() + ".openapi." + apiName + ".models." + clientClassName;
+        if (!visitor.outputPackage().isEmpty()) {
+            return visitor.outputPackage() + ".openapi." + apiName + ".models." + clientClassName;
         } else {
             return "openapi." + apiName + ".models." + clientClassName;
         }

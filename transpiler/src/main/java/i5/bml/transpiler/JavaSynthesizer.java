@@ -14,17 +14,9 @@ import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
 import i5.bml.parser.types.dialogue.BMLState;
-import i5.bml.transpiler.bot.components.ComponentRegistry;
-import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
-import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
-import i5.bml.transpiler.bot.dialogue.State;
-import i5.bml.transpiler.bot.events.Context;
-import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
-import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
 import i5.bml.transpiler.utils.Utils;
-import jdk.jshell.execution.Util;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -34,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +41,8 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     private Scope globalScope;
 
     private Scope dialogueScope = new BlockScope(null);
+
+    private DialogueAutomatonSynthesizer dialogueAutomatonSynthesizer;
 
     private final Stack<ClassOrInterfaceDeclaration> classStack = new Stack<>();
 
@@ -68,23 +61,23 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
         currentScope = currentScope.getEnclosingScope();
     }
 
-    public String getBotOutputPath() {
+    public String botOutputPath() {
         return botOutputPath;
     }
 
-    public String getOutputPackage() {
+    public String outputPackage() {
         return outputPackage;
     }
 
-    public Stack<ClassOrInterfaceDeclaration> getClassStack() {
+    public Stack<ClassOrInterfaceDeclaration> classStack() {
         return classStack;
     }
 
-    public ClassOrInterfaceDeclaration getCurrentClass() {
+    public ClassOrInterfaceDeclaration currentClass() {
         return classStack.peek();
     }
 
-    public void setWrapAssignmentInTryStmt(boolean wrapAssignmentInTryStmt) {
+    public void wrapAssignmentInTryStmt(boolean wrapAssignmentInTryStmt) {
         this.wrapAssignmentInTryStmt = wrapAssignmentInTryStmt;
     }
 
@@ -450,13 +443,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
-        // TODO: These calls can only be STDLIB calls
-        System.out.println(ctx.getText());
-        return new MethodCallExpr(ctx.functionName.getText());
-    }
-
-    @Override
     public Node visitMapInitializer(BMLParser.MapInitializerContext ctx) {
         return GeneratorRegistry.getGeneratorForType(ctx.type).generateInitializer(ctx, this);
     }
@@ -470,6 +456,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     public Node visitDialogueAutomaton(BMLParser.DialogueAutomatonContext ctx) {
         dialogueScope = ctx.scope;
         pushScope(dialogueScope);
+        dialogueAutomatonSynthesizer = new DialogueAutomatonSynthesizer(this);
         var childNode = super.visitDialogueAutomaton(ctx);
         popScope();
         dialogueScope = new BlockScope(null);
@@ -478,198 +465,22 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitDialogueBody(BMLParser.DialogueBodyContext ctx) {
-        var dialogueHeadContext = ((BMLParser.DialogueAutomatonContext) ctx.parent).head;
-        var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
-        var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
-
-        if (!ctx.dialogueFunctionDefinition().isEmpty()) {
-            Utils.readAndWriteClass(botOutputPath + "dialogue", newActionsClassName, clazz -> {
-                classStack.push(clazz);
-                for (var c : ctx.dialogueFunctionDefinition()) {
-                    var actionMethod = clazz.addMethod(c.functionDefinition().head.functionName.getText(),
-                            Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-                    actionMethod.addParameter("Context", "context");
-                    //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-                    var compilationUnit = clazz.findCompilationUnit().get();
-                    compilationUnit.addImport(Utils.renameImport(Context.class, outputPackage), false, false);
-                    actionMethod.setBody((BlockStmt) visit(c.functionDefinition()));
-                }
-                classStack.pop();
-            });
-        }
-
-        if (!ctx.dialogueAssignment().isEmpty()) {
-            Utils.readAndWriteClass(botOutputPath + "dialogue", newDialogueClassName, clazz -> {
-                classStack.push(clazz);
-                ctx.dialogueAssignment().forEach(c -> {
-                    if (c.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
-                        visit(c);
-                    } else {
-                        var field = clazz.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(c.assignment().expr.type),
-                                c.assignment().name.getText(), (Expression) visit(c.assignment().expr),
-                                Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
-
-                        var getter = field.createGetter();
-                        // Remove "get" prefix
-                        getter.setName(StringUtils.uncapitalize(getter.getNameAsString().substring(3)));
-                    }
-                });
-                classStack.pop();
-            });
-        }
-
-        for (var automatonTransition : ctx.automatonTransitions()) {
-            visit(automatonTransition);
-        }
-
+        dialogueAutomatonSynthesizer.visitDialogueBody(ctx);
         return null;
     }
 
     @Override
     public Node visitDialogueAssignment(BMLParser.DialogueAssignmentContext ctx) {
-        var childNode = super.visitDialogueAssignment(ctx);
-
-        if (ctx.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
-            // Create a class
-            CompilationUnit c = new CompilationUnit();
-
-            // Add package declaration
-            c.setPackageDeclaration(outputPackage + "dialogue.states");
-
-            // Set class name and extends
-            var className = StringUtils.capitalize(ctx.assignment().name.getText()) + "State";
-            var clazz = c.addClass(className);
-            clazz.addExtendedType(State.class.getSimpleName());
-
-            // Make import for extends
-            c.addImport(Utils.renameImport(State.class, outputPackage), false, false);
-
-            var stateType = (BMLState) ctx.assignment().expr.type;
-
-            // Add field to store & set intent
-            clazz.addField(DialogueAutomaton.class, "dialogueAutomaton", Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
-
-            // Add constructor
-            var dialogueAutomatonField = new AssignExpr(new FieldAccessExpr(new NameExpr("this"), "dialogueAutomaton"),
-                    new NameExpr("dialogueAutomaton"), AssignExpr.Operator.ASSIGN);
-            var constructorBody = new BlockStmt().addStatement(dialogueAutomatonField);
-            clazz.addConstructor()
-                    .setParameters(new NodeList<>(new Parameter(StaticJavaParser.parseType(DialogueAutomatonTemplate.class.getSimpleName()), "dialogueAutomaton")))
-                    .setModifiers(Modifier.Keyword.PUBLIC)
-                    .setBody(constructorBody);
-
-            // Set action
-            var actionMethod = clazz.addMethod("action", Modifier.Keyword.PUBLIC);
-            actionMethod.addMarkerAnnotation(Override.class);
-            actionMethod.addParameter("MessageEventContext", "context");
-
-            // Add import for action parameter
-            c.addImport(Utils.renameImport(MessageEventContext.class, outputPackage), false, false);
-
-            var block = switch (stateType.getActionType().getClass().getAnnotation(BMLType.class).name()) {
-                case STRING -> {
-                    c.addImport(Utils.renameImport(MessageHelper.class, outputPackage), false, false);
-                    yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                            new NodeList<>(new NameExpr("context"), (StringLiteralExpr) visit(stateType.getAction()))));
-                }
-                case LIST -> {
-                    // Add import for `Random`
-                    c.addImport(Utils.renameImport(Random.class, outputPackage), false, false);
-
-                    var randomType = StaticJavaParser.parseClassOrInterfaceType("Random");
-                    clazz.addFieldWithInitializer(Random.class, "random",
-                            new ObjectCreationExpr(null, randomType, new NodeList<>()), Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
-
-                    var getRandomIntStmt = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "nextMessage",
-                            new MethodCallExpr(new NameExpr("random"), "nextInt", new NodeList<>(new IntegerLiteralExpr("3")))));
-
-                    var getRandomListEntry = new MethodCallExpr((Expression) visit(stateType.getAction()), "get",
-                            new NodeList<>(new NameExpr("nextMessage")));
-
-                    var sendMessageStmt = new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                            new NodeList<>(new NameExpr("context"), getRandomListEntry));
-
-                    yield new BlockStmt().addStatement(getRandomIntStmt).addStatement(sendMessageStmt);
-                }
-                case FUNCTION -> {
-                    //((String) stateType.getAction()); // Function name
-                    // TODO
-                    yield null;
-
-                }
-                default -> new BlockStmt();
-            };
-
-            actionMethod.setBody(block);
-
-            // Create file at desired destination
-            Utils.writeClass(botOutputPath + "dialogue/states", className, c);
-        }
-
-        return childNode;
+        return dialogueAutomatonSynthesizer.visitDialogueAssignment(ctx);
     }
 
     @Override
-    public Node visitAutomatonTransitions(BMLParser.AutomatonTransitionsContext ctx) {
-        var children = ctx.children;
-        var firstState = children.get(0);
-        var stateCounter = 1;
-        var stateClassType = StaticJavaParser.parseClassOrInterfaceType("State");
-        String currStateName = "";
-        var initBlock = new BlockStmt();
-        String intent = "";
-
-        if (firstState instanceof BMLParser.FunctionCallContext funcCall) {
-            currStateName = "state" + stateCounter;
-            var newStateExpr = new ObjectCreationExpr(null, stateClassType, new NodeList<>());
-            initBlock.addStatement(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), currStateName, newStateExpr)));
-            ++stateCounter;
-
-            // Retrieve intent
-            intent = ((BMLState) ((BMLFunctionType) funcCall.type).getReturnType()).getIntent();
-        } else if (firstState instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
-            currStateName = firstState.getText();
-            var className = StaticJavaParser.parseClassOrInterfaceType(StringUtils.capitalize(currStateName) + "State");
-            var newStateExpr = new ObjectCreationExpr(null, className, new NodeList<>());
-            initBlock.addStatement(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), currStateName, newStateExpr)));
-            initBlock.addStatement(new MethodCallExpr(new NameExpr("namedStates"), "put", new NodeList<>(
-                    new StringLiteralExpr(currStateName),
-                    new NameExpr(currStateName)
-            )));
-
-            // Retrieve intent
-            var nodeType = ((VariableSymbol) currentScope.resolve(node.getText())).getType();
-            intent = ((BMLState) nodeType).getIntent();
-        }
-
-        // Add transition from default state
-        if (ctx.parent instanceof BMLParser.DialogueBodyContext) {
-            new MethodCallExpr(new NameExpr("defaultState"), "addTransition",
-                    new NodeList<>(new StringLiteralExpr(intent), new NameExpr(currStateName)));
-        }
-
-        for (int i = 1, childrenSize = children.size(); i < childrenSize; i++) {
-            var child = children.get(i);
-            if (child instanceof BMLParser.FunctionCallContext) {
-
-            } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
-
-            } else if (child instanceof BMLParser.TransitionInitializerContext) {
-                // TODO: Unpack what is returned and add to target states of first state
-                var states = visit(child);
-            }
-        }
-
-        // Add body to init method
-//        Utils.readAndWriteClass("dialogue", "DialogueAutomaton", clazz -> {
-//            clazz.getMethodsByName("init").get(0).setBody(initBlock);
-//        });
-
-        return super.visitAutomatonTransitions(ctx);
+    public Node visitDialogueTransition(BMLParser.DialogueTransitionContext ctx) {
+        return dialogueAutomatonSynthesizer.visitDialogueTransition(ctx, currentScope);
     }
 
     @Override
-    public Node visitTransitionInitializer(BMLParser.TransitionInitializerContext ctx) {
-        return super.visitTransitionInitializer(ctx);
+    public Node visitDialogueTransitionList(BMLParser.DialogueTransitionListContext ctx) {
+        return super.visitDialogueTransitionList(ctx);
     }
 }

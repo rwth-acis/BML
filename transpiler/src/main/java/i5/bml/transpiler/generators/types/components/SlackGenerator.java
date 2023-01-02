@@ -26,7 +26,7 @@ public class SlackGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
 
         // Add initializer method
         var method = currentClass.addMethod("initSlackComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
@@ -42,7 +42,7 @@ public class SlackGenerator implements Generator {
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("threadPool"), "execute", new NodeList<>(threadInstance))));
 
         // Add import for `SlackBotThread`
-        var slackBotThreadImport = Utils.renameImport(SlackBotThread.class, visitor.getOutputPackage());
+        var slackBotThreadImport = Utils.renameImport(SlackBotThread.class, visitor.outputPackage());
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
         currentClass.findCompilationUnit().get().addImport(slackBotThreadImport, false, false);
     }

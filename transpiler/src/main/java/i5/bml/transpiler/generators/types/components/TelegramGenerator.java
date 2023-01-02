@@ -27,7 +27,7 @@ public class TelegramGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
 
         // Add initializer method
         var method = currentClass.addMethod("initTelegramComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
@@ -39,7 +39,7 @@ public class TelegramGenerator implements Generator {
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("threadPool"), "execute", new NodeList<>(threadInstance))));
 
         // Add import for `TelegramBotThread`
-        var telegramBotThreadImport = Utils.renameImport(TelegramBotThread.class, visitor.getOutputPackage());
+        var telegramBotThreadImport = Utils.renameImport(TelegramBotThread.class, visitor.outputPackage());
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
         currentClass.findCompilationUnit().get().addImport(telegramBotThreadImport, false, false);
     }

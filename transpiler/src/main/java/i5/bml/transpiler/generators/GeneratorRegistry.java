@@ -29,7 +29,6 @@ public class GeneratorRegistry {
                     .findAny();
 
             if (generatorClass.isEmpty()) {
-                System.out.println(type);
                 //throw new IllegalStateException("No generator for type %s".formatted(type.getName()));
             } else {
                 Generator generatorInstance = null;

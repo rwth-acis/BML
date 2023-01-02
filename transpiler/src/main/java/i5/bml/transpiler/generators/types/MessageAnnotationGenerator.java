@@ -25,7 +25,7 @@ public class MessageAnnotationGenerator implements Generator {
     @Override
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
                                           BMLParser.AnnotationContext annotationContext, JavaSynthesizer visitor) {
-        Utils.readAndWriteClass("%s%s".formatted(visitor.getBotOutputPath(), PATH), CLASS_NAME, clazz -> {
+        Utils.readAndWriteClass("%s%s".formatted(visitor.botOutputPath(), PATH), CLASS_NAME, clazz -> {
             var functionName = functionContext.head.functionName.getText();
             var methods = clazz.getMethodsByName(functionName);
             var eventName = Utils.pascalCaseToSnakeCase(annotationContext.name.getText());
@@ -34,9 +34,9 @@ public class MessageAnnotationGenerator implements Generator {
                 handlerMethod.addAnnotation(new NormalAnnotationExpr(new Name("MessageEventHandlerMethod"),
                         new NodeList<>(new MemberValuePair("messageEventType", new FieldAccessExpr(new NameExpr("MessageEventType"), eventName)))));
                 handlerMethod.addParameter("MessageEventContext", "context");
-                visitor.getClassStack().push(clazz);
+                visitor.classStack().push(clazz);
                 handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
-                visitor.getClassStack().pop();
+                visitor.classStack().pop();
             } else {
                 methods.get(0).addAnnotation(new NormalAnnotationExpr(new Name("MessageEventHandlerMethod"),
                         new NodeList<>(new MemberValuePair("messageEventType", new FieldAccessExpr(new NameExpr("MessageEventType"), eventName)))));
@@ -45,7 +45,7 @@ public class MessageAnnotationGenerator implements Generator {
             // Add import for `MessageEventHandlerMethod`
             //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
             var compilationUnit = clazz.findCompilationUnit().get();
-            compilationUnit.addImport(Utils.renameImport(MessageEventHandlerMethod.class, visitor.getOutputPackage()), false, false);
+            compilationUnit.addImport(Utils.renameImport(MessageEventHandlerMethod.class, visitor.outputPackage()), false, false);
         });
     }
 }

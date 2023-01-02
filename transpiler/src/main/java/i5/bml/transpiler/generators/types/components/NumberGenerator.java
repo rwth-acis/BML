@@ -9,13 +9,9 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
-import com.google.common.util.concurrent.AtomicDouble;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.BMLList;
 import i5.bml.parser.types.BMLNumber;
 import i5.bml.transpiler.JavaSynthesizer;
 import i5.bml.transpiler.generators.CodeGenerator;
@@ -23,9 +19,6 @@ import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @CodeGenerator(typeClass = BMLNumber.class)
@@ -35,7 +28,7 @@ public class NumberGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
 
         var type = StaticJavaParser.parseClassOrInterfaceType("AtomicLong");
         var initializer = new ObjectCreationExpr(null, type, new NodeList<>());

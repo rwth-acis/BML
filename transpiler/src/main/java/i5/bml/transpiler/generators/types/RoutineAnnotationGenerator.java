@@ -7,8 +7,6 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
 import i5.bml.transpiler.JavaSynthesizer;
-import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
-import i5.bml.transpiler.bot.events.routines.RoutineEventContext;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.utils.Utils;
@@ -32,7 +30,7 @@ public class RoutineAnnotationGenerator implements Generator {
     @Override
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
                                           BMLParser.AnnotationContext annotationContext, JavaSynthesizer visitor) {
-        Utils.readAndWriteClass("%s%s".formatted(visitor.getBotOutputPath(), PATH), CLASS_NAME, clazz -> {
+        Utils.readAndWriteClass("%s%s".formatted(visitor.botOutputPath(), PATH), CLASS_NAME, clazz -> {
             var handlerMethod = clazz.addMethod(functionContext.head.functionName.getText(), Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
             var annotation = new NormalAnnotationExpr(new Name("RoutineEventHandlerMethod"),
                     new NodeList<>(
@@ -41,15 +39,15 @@ public class RoutineAnnotationGenerator implements Generator {
                     ));
             handlerMethod.addAnnotation(annotation);
             handlerMethod.addParameter("RoutineEventContext", "context");
-            visitor.getClassStack().push(clazz);
+            visitor.classStack().push(clazz);
             handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
-            visitor.getClassStack().pop();
+            visitor.classStack().pop();
 
             // Add imports for `MessageEventContext` and `MessageEventHandlerMethod`
             //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
             var compilationUnit = clazz.findCompilationUnit().get();
             compilationUnit.addImport(TimeUnit.class);
-            compilationUnit.addImport(Utils.renameImport(TimeUnit.class, visitor.getOutputPackage()), false, false);
+            compilationUnit.addImport(Utils.renameImport(TimeUnit.class, visitor.outputPackage()), false, false);
         });
     }
 }

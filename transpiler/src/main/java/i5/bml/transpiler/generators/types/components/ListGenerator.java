@@ -15,7 +15,6 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,7 +25,7 @@ public class ListGenerator implements Generator {
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
-        var currentClass = visitor.getCurrentClass();
+        var currentClass = visitor.currentClass();
         //noinspection OptionalGetWithoutIsPresent -> We can assume the presence
         var compilationUnit = currentClass.findCompilationUnit().get();
 
@@ -59,7 +58,7 @@ public class ListGenerator implements Generator {
                 .map(e -> (Expression) visitor.visit(e))
                 .collect(Collectors.toCollection(NodeList::new));
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-        var compilationUnit = visitor.getCurrentClass().findCompilationUnit().get();
+        var compilationUnit = visitor.currentClass().findCompilationUnit().get();
         compilationUnit.addImport(List.class);
         return new MethodCallExpr(new NameExpr("List"), new SimpleName("of"), arguments);
     }
