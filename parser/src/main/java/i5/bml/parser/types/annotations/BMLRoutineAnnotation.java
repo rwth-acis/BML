@@ -11,8 +11,6 @@ import i5.bml.parser.walker.DiagnosticsCollector;
 
 import java.util.concurrent.TimeUnit;
 
-import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
-
 @BMLType(name = BuiltinType.ROUTINE_ANNOTATION, isComplex = true)
 public class BMLRoutineAnnotation extends AbstractBMLType {
 

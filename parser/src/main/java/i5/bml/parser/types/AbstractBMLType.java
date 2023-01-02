@@ -11,7 +11,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import java.util.*;
 
-import static i5.bml.parser.errors.ParserError.*;
+import static i5.bml.parser.errors.ParserError.MISSING_PARAM;
+import static i5.bml.parser.errors.ParserError.PARAM_NOT_DEFINED;
 
 public abstract class AbstractBMLType implements Type {
 

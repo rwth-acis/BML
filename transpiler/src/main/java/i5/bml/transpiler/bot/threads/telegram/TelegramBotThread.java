@@ -1,7 +1,6 @@
 package i5.bml.transpiler.bot.threads.telegram;
 
 import i5.bml.transpiler.bot.events.Event;
-import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.TelegramBotsApi;

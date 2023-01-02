@@ -7,20 +7,14 @@ import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
 import i5.bml.parser.utils.TypeCheckWalker;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 

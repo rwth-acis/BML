@@ -1,9 +1,8 @@
 package i5.bml.transpiler.bot.events.messenger;
 
-import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventSource;
-import org.apache.commons.lang3.StringUtils;
+import i5.bml.transpiler.bot.threads.Session;
 
 import java.util.ArrayList;
 import java.util.List;

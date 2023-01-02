@@ -7,8 +7,8 @@ import com.slack.api.model.event.ChannelLeftEvent;
 import com.slack.api.model.event.MemberJoinedChannelEvent;
 import com.slack.api.model.event.MemberLeftChannelEvent;
 import com.slack.api.socket_mode.SocketModeClient;
-import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.bot.events.Event;
+import i5.bml.transpiler.bot.threads.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

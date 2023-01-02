@@ -2,15 +2,11 @@ package i5.bml.parser;
 
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
-import i5.bml.parser.walker.DiagnosticsCollector;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.eclipse.lsp4j.Diagnostic;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static i5.bml.parser.errors.ParserError.ALREADY_DEFINED;

@@ -5,7 +5,6 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @BMLType(name = BuiltinType.FUNCTION, isComplex = true)

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static i5.bml.parser.errors.ParserError.*;
+import static i5.bml.parser.errors.ParserError.NOT_A_STATEMENT;
 
 class SyntaxTest {
 

@@ -5,10 +5,8 @@ import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import org.antlr.symtab.Scope;
-import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "send")

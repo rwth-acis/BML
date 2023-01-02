@@ -1,11 +1,8 @@
 package i5.bml.parser.types;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
-
-import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 @BMLType(name = BuiltinType.TELEGRAM, isComplex = true)
 public class BMLTelegramComponent extends AbstractBMLType {
