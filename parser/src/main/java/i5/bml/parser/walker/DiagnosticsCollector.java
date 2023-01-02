@@ -573,7 +573,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void exitAutomatonTransitions(BMLParser.AutomatonTransitionsContext ctx) {
+    public void exitDialogueTransition(BMLParser.DialogueTransitionContext ctx) {
         for (var functionCallContext : ctx.functionCall()) {
             var name = functionCallContext.functionName.getText();
             var symbol = currentScope.resolve(name);

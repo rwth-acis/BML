@@ -9,12 +9,12 @@ dialogueAutomaton returns [Scope scope] : head=dialogueHead body=dialogueBody ;
 
 dialogueHead : typeName=DIALOGUE name=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
-dialogueBody : LBRACE (dialogueFunctionDefinition | dialogueAssignment | automatonTransitions)* RBRACE ;
+dialogueBody : LBRACE (dialogueFunctionDefinition | dialogueAssignment | functionCall | dialogueTransition)* RBRACE ;
 
 dialogueFunctionDefinition : functionDefinition ;
 
 dialogueAssignment : assignment ;
 
-automatonTransitions : (functionCall | Identifier) (ARROW (functionCall | transitionInitializer | Identifier))* ;
+dialogueTransition : (functionCall | Identifier) (ARROW (functionCall | dialogueTransitionList | Identifier))+ ;
 
-transitionInitializer : LBRACK (automatonTransitions (COMMA automatonTransitions)*)? RBRACK ;
+dialogueTransitionList : LBRACK ((dialogueTransition | functionCall) (COMMA (dialogueTransition | functionCall))*)? RBRACK ;
