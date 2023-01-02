@@ -34,6 +34,7 @@ public class MessageAnnotationGenerator implements Generator {
                 handlerMethod.addAnnotation(new NormalAnnotationExpr(new Name("MessageEventHandlerMethod"),
                         new NodeList<>(new MemberValuePair("messageEventType", new FieldAccessExpr(new NameExpr("MessageEventType"), eventName)))));
                 handlerMethod.addParameter("MessageEventContext", "ctx");
+
                 visitor.classStack().push(clazz);
                 handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
                 visitor.classStack().pop();

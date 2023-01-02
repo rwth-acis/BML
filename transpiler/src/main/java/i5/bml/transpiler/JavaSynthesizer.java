@@ -476,11 +476,6 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     }
 
     @Override
-    public Node visitDialogueAssignment(BMLParser.DialogueAssignmentContext ctx) {
-        return dialogueAutomatonSynthesizer.visitDialogueAssignment(ctx);
-    }
-
-    @Override
     public Node visitDialogueTransition(BMLParser.DialogueTransitionContext ctx) {
         return dialogueAutomatonSynthesizer.visitDialogueTransition(ctx, currentScope);
     }
