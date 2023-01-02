@@ -3,8 +3,6 @@ package i5.bml.transpiler.generators;
 
 import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.TypeRegistry;
-import i5.bml.parser.types.functions.BMLFunction;
-import i5.bml.parser.types.functions.BMLFunctionAnnotation;
 import i5.bml.parser.types.functions.FunctionRegistry;
 import org.antlr.symtab.Type;
 import org.reflections.Reflections;

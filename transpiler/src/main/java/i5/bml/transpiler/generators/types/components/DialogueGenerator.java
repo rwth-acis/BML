@@ -5,7 +5,6 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.dialogue.BMLDialogue;
 import i5.bml.transpiler.JavaSynthesizer;
@@ -20,9 +19,9 @@ public class DialogueGenerator implements Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
-        var getEvent = new MethodCallExpr(new NameExpr("context"), "event");
-        var getSession = new MethodCallExpr(getEvent, "session");
-        var getDialogue = new MethodCallExpr(getSession, "dialogue");
-        return new MethodCallExpr(getDialogue, "step", new NodeList<>(new NameExpr("context")));
+        var event = new MethodCallExpr(new NameExpr("ctx"), "event");
+        var session = new MethodCallExpr(event, "session");
+        var dialogue = new MethodCallExpr(session, "dialogue");
+        return new MethodCallExpr(dialogue, "step", new NodeList<>(new NameExpr("ctx")));
     }
 }

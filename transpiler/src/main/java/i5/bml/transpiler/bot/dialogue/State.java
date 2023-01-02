@@ -12,6 +12,12 @@ public class State {
 
     private Consumer<MessageEventContext> action;
 
+    public State() {}
+
+    public State(Consumer<MessageEventContext> action) {
+        this.action = action;
+    }
+
     public void action(MessageEventContext context) {
         action.accept(context);
     }

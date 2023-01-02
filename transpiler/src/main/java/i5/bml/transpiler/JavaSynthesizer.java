@@ -1,7 +1,9 @@
 package i5.bml.transpiler;
 
 import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.*;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
@@ -11,15 +13,15 @@ import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.symbols.BlockScope;
-import i5.bml.parser.types.*;
+import i5.bml.parser.types.BMLBoolean;
+import i5.bml.parser.types.BMLNumber;
+import i5.bml.parser.types.BMLString;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.parser.types.dialogue.BMLState;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -431,7 +433,11 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 // Check dialogue scope, not function scope, only "global" dialogue scope
                 symbol = (VariableSymbol) dialogueScope.getSymbol(atom);
                 if (symbol != null) {
-                    yield new MethodCallExpr(new NameExpr("dialogueAutomaton"), "get" + StringUtils.capitalize(atom));
+                    if (currentClass().getImplementedTypes().isEmpty()) { // We have an <dialogueName>Actions or State class
+                        yield new MethodCallExpr(new NameExpr("dialogueAutomaton"), StringUtils.capitalize(atom));
+                    } else { // We have a dialogue class
+                        yield new NameExpr(atom);
+                    }
                 }
 
                 symbol = (VariableSymbol) currentScope.resolve(atom);

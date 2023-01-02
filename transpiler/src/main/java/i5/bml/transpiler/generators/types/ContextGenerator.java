@@ -19,6 +19,6 @@ public class ContextGenerator implements Generator {
 
     @Override
     public Node generateFieldAccess(Expression object, TerminalNode field) {
-        return new MethodCallExpr(new NameExpr("context"), StringUtils.uncapitalize(field.getText()), new NodeList<>());
+        return new MethodCallExpr(new NameExpr("ctx"), StringUtils.uncapitalize(field.getText()), new NodeList<>());
     }
 }

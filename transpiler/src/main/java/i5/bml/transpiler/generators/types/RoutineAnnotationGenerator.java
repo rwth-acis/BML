@@ -38,7 +38,7 @@ public class RoutineAnnotationGenerator implements Generator {
                             new MemberValuePair("timeUnit", new FieldAccessExpr(new NameExpr("TimeUnit"), bmlRoutineAnnotation.getTimeUnit().name()))
                     ));
             handlerMethod.addAnnotation(annotation);
-            handlerMethod.addParameter("RoutineEventContext", "context");
+            handlerMethod.addParameter("RoutineEventContext", "ctx");
             visitor.classStack().push(clazz);
             handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
             visitor.classStack().pop();

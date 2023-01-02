@@ -33,7 +33,7 @@ public class MessageAnnotationGenerator implements Generator {
                 var handlerMethod = clazz.addMethod(functionName, Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
                 handlerMethod.addAnnotation(new NormalAnnotationExpr(new Name("MessageEventHandlerMethod"),
                         new NodeList<>(new MemberValuePair("messageEventType", new FieldAccessExpr(new NameExpr("MessageEventType"), eventName)))));
-                handlerMethod.addParameter("MessageEventContext", "context");
+                handlerMethod.addParameter("MessageEventContext", "ctx");
                 visitor.classStack().push(clazz);
                 handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
                 visitor.classStack().pop();

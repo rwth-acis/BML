@@ -26,7 +26,7 @@ public class SendFunctionGenerator implements Generator {
         if (receiver.isPresent() && receiver.get().getExprCtx() != null) {
             methodCallExpr.addArgument((Expression) visitor.visit(receiver.get().getExprCtx()));
         } else {
-            methodCallExpr.addArgument(new NameExpr("context"));
+            methodCallExpr.addArgument(new NameExpr("ctx"));
         }
 
         var text = functionType.getRequiredParameters().stream()

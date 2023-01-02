@@ -1,7 +1,8 @@
 package i5.bml.transpiler.generators.types.components;
 
 import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.*;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;

@@ -5,7 +5,6 @@ import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.*;
-import i5.bml.parser.types.functions.BMLFunction;
 import i5.bml.parser.types.functions.BMLFunctionScope;
 import i5.bml.parser.types.functions.FunctionRegistry;
 import org.antlr.symtab.*;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -309,7 +307,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
-        if (ctx.expr.type.equals(TypeRegistry.resolveType(BuiltinType.VOID))) {
+        if (ctx.expr.type instanceof BMLVoid) {
             Diagnostics.addDiagnostic(collectedDiagnostics, "Can't assign expression returning `void`", ctx.name);
             return;
         }
@@ -551,25 +549,43 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op.getText(), ctx.parent.parent.getText()));
             };
         } else if (ctx.functionCall() != null) {
-            var name = ctx.functionCall().functionName.getText();
-            var symbol = currentScope.resolve(name);
-            if (symbol == null) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionCall().functionName);
-                ctx.functionCall().type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-                ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-                return;
-            }
-
-            // Perform type checks for function calls
-            var functionType = new BMLFunctionType(((BMLFunctionType) ((TypedSymbol) symbol).getType()));
-            functionType.checkParameters(this, ctx.functionCall().params);
-            functionType.initializeType(ctx.functionCall());
-
-            ctx.functionCall().type = functionType;
-            ctx.type = functionType.getReturnType();
+            ctx.type = ((BMLFunctionType) ctx.functionCall().type).getReturnType();
         } else { // Initializers
             ctx.type = ctx.initializer().type;
         }
+    }
+
+    // TODO: Dialogue type checking:
+    //       - ERROR: More than one default state
+    //       - ERROR: Outgoing state of sink state
+    //       - WARN:  Unreachable state(s)
+    //       -
+
+
+    @Override
+    public void exitFunctionCall(BMLParser.FunctionCallContext ctx) {
+        // We make sure that we are not checking a function call on an object, e.g., api.get(...)
+        // This is handled by the expression type checking
+        if (ctx.parent instanceof BMLParser.ExpressionContext expressionContext
+                && expressionContext.op != null
+                && expressionContext.op.getType() == BMLParser.DOT) {
+            return;
+        }
+
+        var name = ctx.functionName.getText();
+        var symbol = currentScope.resolve(name);
+        if (symbol == null) {
+            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionName);
+            ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+            ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
+            return;
+        }
+
+        // Perform type checks for function calls
+        var functionType = new BMLFunctionType(((BMLFunctionType) ((TypedSymbol) symbol).getType()));
+        functionType.checkParameters(this, ctx.params);
+        functionType.initializeType(ctx);
+        ctx.type = functionType;
     }
 
     @Override

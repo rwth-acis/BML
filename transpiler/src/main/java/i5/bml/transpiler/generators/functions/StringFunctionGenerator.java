@@ -7,7 +7,6 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
-import i5.bml.parser.types.functions.BMLFunction;
 import i5.bml.parser.types.functions.BMLStringFunction;
 import i5.bml.transpiler.JavaSynthesizer;
 import i5.bml.transpiler.generators.CodeGenerator;
