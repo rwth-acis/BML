@@ -1,6 +1,7 @@
 package i5.bml.parser;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.types.BMLNumber;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
@@ -74,7 +75,7 @@ class TypeCheckingTest {
                 floatConversionWasDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
             } else if (name.equals("c5")) {
                 var symbol = currentScope.resolve(name);
-                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER));
+                floatConversionWasNotDone[0] = ((VariableSymbol) symbol).getType() instanceof BMLNumber;
             }
         });
 

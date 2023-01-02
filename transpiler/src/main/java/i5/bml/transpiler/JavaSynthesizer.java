@@ -366,7 +366,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
                 case BMLParser.LT, BMLParser.LE, BMLParser.GT, BMLParser.GE, BMLParser.EQUAL, BMLParser.NOTEQUAL,
                         BMLParser.ADD, BMLParser.SUB, BMLParser.MUL, BMLParser.DIV, BMLParser.MOD -> {
-                    if (ctx.left.type.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
+                    if (ctx.left.type instanceof BMLString) {
                         var methodCallExpr = new MethodCallExpr((Expression) visit(ctx.left), "equals", new NodeList<>((Expression) visit(ctx.right)));
                         if (ctx.op.getType() == BMLParser.EQUAL) {
                             yield methodCallExpr;
@@ -422,8 +422,8 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 // Check global scope
                 var symbol = (VariableSymbol) globalScope.getSymbol(atom);
                 if (symbol != null
-                        && (symbol.getType().equals(TypeRegistry.resolveType(BuiltinType.BOOLEAN))
-                        || symbol.getType().equals(TypeRegistry.resolveType(BuiltinType.NUMBER)))) {
+                        && (symbol.getType() instanceof BMLBoolean
+                        || symbol.getType() instanceof BMLNumber)) {
                     // We have a global variable -> needs thread-safety
                     yield new MethodCallExpr(new NameExpr(atom), "getAcquire");
                 }

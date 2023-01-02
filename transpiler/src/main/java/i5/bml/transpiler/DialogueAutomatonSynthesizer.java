@@ -42,6 +42,7 @@ public class DialogueAutomatonSynthesizer {
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
 
+        // Action definitions
         if (!ctx.dialogueFunctionDefinition().isEmpty()) {
             Utils.readAndWriteClass(javaSynthesizer.botOutputPath() + "dialogue", newActionsClassName, clazz -> {
                 javaSynthesizer.classStack().push(clazz);
@@ -62,11 +63,12 @@ public class DialogueAutomatonSynthesizer {
             });
         }
 
+        // Assignments (States and other types)
         if (!ctx.dialogueAssignment().isEmpty()) {
             Utils.readAndWriteClass(javaSynthesizer.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
                 javaSynthesizer.classStack().push(clazz);
                 ctx.dialogueAssignment().forEach(c -> {
-                    if (c.assignment().expr.type.equals(TypeRegistry.resolveComplexType(BuiltinType.STATE))) {
+                    if (c.assignment().expr.type instanceof BMLState) {
                         javaSynthesizer.visit(c);
                     } else {
                         var field = clazz.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(c.assignment().expr.type),
@@ -80,6 +82,11 @@ public class DialogueAutomatonSynthesizer {
                 });
                 javaSynthesizer.classStack().pop();
             });
+        }
+
+        // State creation, i.e., state function calls
+        if (!ctx.dialogueStateCreation().isEmpty()) {
+
         }
 
         for (var transition : ctx.dialogueTransition()) {
@@ -178,6 +185,8 @@ public class DialogueAutomatonSynthesizer {
 
         return childNode;
     }
+
+
 
     public Node visitDialogueTransition(BMLParser.DialogueTransitionContext ctx, Scope currentScope) {
         var children = ctx.children;
