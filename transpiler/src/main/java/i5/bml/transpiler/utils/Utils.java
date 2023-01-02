@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -58,6 +59,7 @@ public class Utils {
             var javaFilePath = javaFile.toPath();
             Files.createDirectories(javaFilePath.getParent());
             Files.createFile(javaFilePath);
+            orderClassMembers(compilationUnit.getClassByName(fileName).get());
             Files.write(javaFilePath, compilationUnit.toString().getBytes());
         } catch (NoSuchFileException | FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(filePath));
@@ -95,9 +97,12 @@ public class Utils {
         try {
             var javaFile = new File(javaFilePath);
             CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
-
             //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
-            c.accept(compilationUnit.getClassByName(className).get());
+            var clazz = compilationUnit.getClassByName(className).get();
+
+            c.accept(clazz);
+
+            orderClassMembers(clazz);
 
             Files.write(javaFile.toPath(), compilationUnit.toString().getBytes());
         } catch (FileNotFoundException e) {
@@ -105,6 +110,18 @@ public class Utils {
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()));
         }
+    }
+
+    private static void orderClassMembers(ClassOrInterfaceDeclaration clazz) {
+        clazz.getMembers().sort((b1, b2) -> {
+            if (b1.isFieldDeclaration() && !b2.isFieldDeclaration()) {
+                return -1;
+            } else if (!b1.isFieldDeclaration() && b2.isFieldDeclaration()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
     }
 
     public static void readAndWriteClass(String path, String className, Consumer<ClassOrInterfaceDeclaration> c) {
