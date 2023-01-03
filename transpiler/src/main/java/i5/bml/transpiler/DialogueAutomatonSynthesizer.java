@@ -1,6 +1,5 @@
 package i5.bml.transpiler;
 
-import com.github.javaparser.JavaToken;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
@@ -12,6 +11,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLParser;
@@ -29,13 +29,17 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class DialogueAutomatonSynthesizer {
 
-    private final JavaSynthesizer javaSynthesizer;
-
     private int stateCounter = 1;
+
+    private final Set<String> stateNames = new HashSet<>();
+
+    private final JavaSynthesizer javaSynthesizer;
 
     public DialogueAutomatonSynthesizer(JavaSynthesizer javaSynthesizer) {
         this.javaSynthesizer = javaSynthesizer;
@@ -45,6 +49,14 @@ public class DialogueAutomatonSynthesizer {
         var dialogueHeadContext = ((BMLParser.DialogueAutomatonContext) ctx.parent).head;
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
+
+        // Add constructor that invokes init() method
+        Utils.readAndWriteClass(javaSynthesizer.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            var constructor = clazz.addConstructor(Modifier.Keyword.PUBLIC);
+            constructor.setBody(new BlockStmt().addStatement(new MethodCallExpr("initTransitions")));
+        });
+
+        // TODO: Do this in the procedural fashion by going with for each on `ctx.children`
 
         // Action definitions
         if (!ctx.dialogueFunctionDefinition().isEmpty()) {
@@ -94,15 +106,9 @@ public class DialogueAutomatonSynthesizer {
             Utils.readAndWriteClass(javaSynthesizer.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
                 javaSynthesizer.classStack().push(clazz);
                 //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-                var initMethodBody = clazz.getMethodsByName("init").get(0).getBody().get();
+                var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
                 for (var dialogueStateCreationContext : ctx.dialogueStateCreation()) {
                     var block = (BlockStmt) visitDialogueStateCreation(dialogueStateCreationContext, clazz);
-
-                    if (!block.isEmpty()) {
-                        var comment = "State represents: %s".formatted(dialogueStateCreationContext.functionCall().getText());
-                        block.getStatement(0).setComment(new LineComment(comment));
-                    }
-
                     initMethodBody.getStatements().addAll(block.getStatements());
                 }
                 javaSynthesizer.classStack().pop();
@@ -119,6 +125,32 @@ public class DialogueAutomatonSynthesizer {
         }
 
         // We have to do sinks last, since we need to collect all states before
+        Utils.readAndWriteClass(javaSynthesizer.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            ctx.dialogueStateCreation().stream()
+                    .filter(d -> d.functionCall().functionName.getText().equals("sink"))
+                    .forEach(d -> {
+                        var stateType = (BMLState) ((BMLFunctionType) d.functionCall().type).getReturnType();
+                        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+                        var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
+
+                        // Generate action for sink state
+                        var actionLambdaExpr = generateLambdaExprForAction(stateType, clazz);
+
+                        // The sink state jumps back to the default state after executing its action
+                        addJumpToDefaultState(actionLambdaExpr.getBody().asBlockStmt());
+
+                        // Create variable for sink state
+                        var sinkName = "state" + stateCounter++;
+                        addVariableForState(initMethodBody, sinkName, StaticJavaParser.parseClassOrInterfaceType("State"),
+                                new NodeList<>(actionLambdaExpr), d.functionCall().getText());
+
+                        // Add all transitions going into sink state
+                        for (String stateName : stateNames) {
+                            addTransition(initMethodBody, stateName, sinkName, stateType.getIntent());
+                        }
+
+                    });
+        });
     }
 
     private void visitDialogueAssignment(BMLParser.DialogueAssignmentContext ctx) {
@@ -159,6 +191,8 @@ public class DialogueAutomatonSynthesizer {
         actionMethod.addParameter("MessageEventContext", "ctx");
         actionMethod.setBody(generateBlockForStateAction(stateType, c, clazz));
 
+        // TODO: When should this jump back to the default state?
+
         // Add import for action parameter of type `MessageEventContext`
         c.addImport(Utils.renameImport(MessageEventContext.class, javaSynthesizer.outputPackage()), false, false);
 
@@ -168,29 +202,29 @@ public class DialogueAutomatonSynthesizer {
         // Add state to init method
         var dialogueClass = javaSynthesizer.currentClass();
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-        var initMethodBody = dialogueClass.getMethodsByName("init").get(0).getBody().get();
+        var initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();
 
         // Create variable
-        var stateObject = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(className), new NodeList<>(new NameExpr("this")));
+        var stateVarType = StaticJavaParser.parseClassOrInterfaceType(className);
         var stateName = ctx.assignment().name.getText() + "State";
-        var stateVar = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), stateName, stateObject));
+        addVariableForState(initMethodBody, stateName, stateVarType, new NodeList<>(new NameExpr("this")), ctx.assignment().expr.getText());
+
+        // Add state to global collection
+        stateNames.add(stateName);
 
         // Add import for `className`
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         dialogueClass.findCompilationUnit().get().addImport(javaSynthesizer.outputPackage() + "dialogue.states." + className);
 
-        // Add comment to indicate origin
-        var comment = "State represents: %s".formatted(ctx.assignment().expr.getText());
-        stateVar.setComment(new LineComment(comment));
-
-        initMethodBody.addStatement(stateVar);
-
+        // Add transitions depending on function type
         var funcCall = ctx.assignment().expr.functionCall();
         if (funcCall != null) {
             switch (funcCall.functionName.getText()) {
-                case "initial" -> addTransitionsForInitialState(initMethodBody, stateName, ((BMLFunctionType) funcCall.type));
-                case "state" -> addTransitionsForNormalState(initMethodBody, stateName);
-                default -> {}
+                case "initial" ->
+                        addTransitionsForInitialState(initMethodBody, stateName, ((BMLFunctionType) funcCall.type));
+                case "state" -> addTransitionToDefaultState(initMethodBody, stateName);
+                default -> {
+                }
             }
         }
     }
@@ -204,7 +238,7 @@ public class DialogueAutomatonSynthesizer {
             case "default" -> {
                 var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType(), clazz);
                 var initializerExpr = new ObjectCreationExpr(null, stateType, new NodeList<>(actionLambdaExpr));
-                clazz.addFieldWithInitializer("State", "defaultState", initializerExpr, Modifier.Keyword.FINAL);
+                clazz.addFieldWithInitializer("State", "defaultState", initializerExpr, Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
 
                 yield new BlockStmt();
             }
@@ -213,15 +247,15 @@ public class DialogueAutomatonSynthesizer {
 
                 var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType(), clazz);
 
-                // Create variable
-                var stateObject = new ObjectCreationExpr(null, stateType, new NodeList<>(actionLambdaExpr));
-                var stateName = "state" + stateCounter;
-                ++stateCounter;
-                var stateVar = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), stateName, stateObject));
-                stmts.addStatement(stateVar);
+                // Since the state has no transitions, we jump back to the default state to await new commands
+                addJumpToDefaultState(actionLambdaExpr.getBody().asBlockStmt());
 
-                // Adds default -> stateName and stateName -> default
-                addTransitionsForInitialState(stmts, stateName, functionType);
+                // Create variable
+                var stateName = "state" + stateCounter++;
+                addVariableForState(stmts, stateName, stateType, new NodeList<>(actionLambdaExpr), ctx.functionCall().getText());
+
+                // Add state to global collection
+                stateNames.add(stateName);
 
                 yield stmts;
             }
@@ -229,23 +263,39 @@ public class DialogueAutomatonSynthesizer {
         };
     }
 
-    private void addTransitionsForInitialState(BlockStmt block, String stateName, BMLFunctionType functionType) {
-        // Add a transition default -> state since it is initial
-        var intentParameter = new StringLiteralExpr(((BMLState) functionType.getReturnType()).getIntent());
-        block.addStatement(new MethodCallExpr(new NameExpr("defaultState"), "addTransition",
-                new NodeList<>(intentParameter, new NameExpr(stateName))));
-
-        // Add a transition from state -> default (every state has this)
-        var stateTransitionToDefault = new MethodCallExpr(new NameExpr(stateName), "addTransition",
-                new NodeList<>(new StringLiteralExpr("_"), new NameExpr("defaultState")));
-        block.addStatement(stateTransitionToDefault);
+    private void addTransition(BlockStmt block, String from, String to, String withIntent) {
+        var intents = withIntent.split(",");
+        for (String intent : intents) {
+            var transition = new MethodCallExpr(new NameExpr(from), "addTransition",
+                    new NodeList<>(new StringLiteralExpr(intent.replace(" ", "")), new NameExpr(to)));
+            block.addStatement(transition);
+        }
     }
 
-    private void addTransitionsForNormalState(BlockStmt block, String stateName) {
+    private void addTransitionsForInitialState(BlockStmt block, String stateName, BMLFunctionType functionType) {
+        // Add transition(s) default -> state since it is initial (for every intent)
+        addTransition(block, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
+
+        addTransitionToDefaultState(block, stateName);
+    }
+
+    private void addTransitionToDefaultState(BlockStmt block, String stateName) {
         // Add a transition from state -> default (every state has this)
-        var stateTransitionToDefault = new MethodCallExpr(new NameExpr(stateName), "addTransition",
-                new NodeList<>(new StringLiteralExpr("_"), new NameExpr("defaultState")));
-        block.addStatement(stateTransitionToDefault);
+        addTransition(block, stateName, "defaultState", "_");
+    }
+
+    private void addVariableForState(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
+                                     String commentText) {
+        var stateObject = new ObjectCreationExpr(null, stateType, args);
+        var stateVar = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), stateName, stateObject));
+        // Add comment to indicate origin
+        stateVar.setComment(new LineComment("State represents: %s".formatted(commentText)));
+
+        block.addStatement(stateVar);
+    }
+
+    private void addJumpToDefaultState(BlockStmt block) {
+        block.addStatement(new MethodCallExpr("jumpTo", new NameExpr("defaultState"), new NameExpr("ctx")));
     }
 
     private LambdaExpr generateLambdaExprForAction(BMLState stateType, ClassOrInterfaceDeclaration clazz) {
@@ -270,11 +320,12 @@ public class DialogueAutomatonSynthesizer {
                 clazz.addFieldWithInitializer(Random.class, "random",
                         new ObjectCreationExpr(null, randomType, new NodeList<>()), Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
 
-                var getRandomIntStmt = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "nextMessage",
-                        new MethodCallExpr(new NameExpr("random"), "nextInt", new NodeList<>(new IntegerLiteralExpr("3")))));
+                var listNameExpr = (Expression) javaSynthesizer.visit(stateType.getAction());
+                var getRandomListEntry = new MethodCallExpr(listNameExpr, "get", new NodeList<>(new NameExpr("nextMessage")));
 
-                var getRandomListEntry = new MethodCallExpr((Expression) javaSynthesizer.visit(stateType.getAction()), "get",
-                        new NodeList<>(new NameExpr("nextMessage")));
+                var listSizeExpr = new MethodCallExpr(listNameExpr, "size");
+                var getRandomIntStmt = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "nextMessage",
+                        new MethodCallExpr(new NameExpr("random"), "nextInt", new NodeList<>(listSizeExpr))));
 
                 var sendMessageStmt = new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
                         new NodeList<>(new NameExpr("ctx"), getRandomListEntry));
@@ -299,60 +350,7 @@ public class DialogueAutomatonSynthesizer {
     }
 
     public Node visitDialogueTransition(BMLParser.DialogueTransitionContext ctx, Scope currentScope) {
-        var children = ctx.children;
-        var firstState = children.get(0);
-        var stateCounter = 1;
-        var stateClassType = StaticJavaParser.parseClassOrInterfaceType("State");
-        String currStateName = "";
-        var initBlock = new BlockStmt();
-        String intent = "";
-
-        if (firstState instanceof BMLParser.FunctionCallContext funcCall) {
-            currStateName = "state" + stateCounter;
-            var newStateExpr = new ObjectCreationExpr(null, stateClassType, new NodeList<>());
-            initBlock.addStatement(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), currStateName, newStateExpr)));
-            ++stateCounter;
-
-            // Retrieve intent
-            intent = ((BMLState) ((BMLFunctionType) funcCall.type).getReturnType()).getIntent();
-        } else if (firstState instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
-            currStateName = firstState.getText();
-            var className = StaticJavaParser.parseClassOrInterfaceType(StringUtils.capitalize(currStateName) + "State");
-            var newStateExpr = new ObjectCreationExpr(null, className, new NodeList<>());
-            initBlock.addStatement(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), currStateName, newStateExpr)));
-            initBlock.addStatement(new MethodCallExpr(new NameExpr("namedStates"), "put", new NodeList<>(
-                    new StringLiteralExpr(currStateName),
-                    new NameExpr(currStateName)
-            )));
-
-            // Retrieve intent
-            var nodeType = ((VariableSymbol) currentScope.resolve(node.getText())).getType();
-            intent = ((BMLState) nodeType).getIntent();
-        }
-
-        // Add transition from default state
-        if (ctx.parent instanceof BMLParser.DialogueBodyContext) {
-            new MethodCallExpr(new NameExpr("defaultState"), "addTransition",
-                    new NodeList<>(new StringLiteralExpr(intent), new NameExpr(currStateName)));
-        }
-
-        for (int i = 1, childrenSize = children.size(); i < childrenSize; i++) {
-            var child = children.get(i);
-            if (child instanceof BMLParser.FunctionCallContext) {
-
-            } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
-
-            } else if (child instanceof BMLParser.DialogueTransitionListContext) {
-                // TODO: Unpack what is returned and add to target states of first state
-                var states = javaSynthesizer.visit(child);
-            }
-        }
-
-        // Add body to init method
-//        Utils.readAndWriteClass("dialogue", "DialogueAutomaton", clazz -> {
-//            clazz.getMethodsByName("init").get(0).setBody(initBlock);
-//        });
-
-        return javaSynthesizer.visitChildren(ctx);
+        // TODO
+        return null;
     }
 }
