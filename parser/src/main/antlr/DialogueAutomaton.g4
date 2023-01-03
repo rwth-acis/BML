@@ -19,4 +19,6 @@ dialogueStateCreation : functionCall ;
 
 dialogueTransition : (functionCall | Identifier) (ARROW (functionCall | dialogueTransitionList | Identifier))+ ;
 
-dialogueTransitionList : LBRACK ((dialogueTransition | functionCall) (COMMA (dialogueTransition | functionCall))*)? RBRACK ;
+dialogueTransitionList : LBRACK (dialogueTransitionListItem (COMMA dialogueTransitionListItem)*) RBRACK ;
+
+dialogueTransitionListItem : dialogueTransition | functionCall | Identifier ;
