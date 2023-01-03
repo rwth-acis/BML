@@ -13,9 +13,7 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     private State currentState = new State(ctx -> {});
 
-    private final List<State> sinkStates = new ArrayList<>();
-
-    public void init() {
+    public void initTransitions() {
     }
 
     @Override

@@ -3,6 +3,7 @@ package i5.bml.transpiler.utils;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -10,6 +11,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,7 +61,7 @@ public class Utils {
             var javaFilePath = javaFile.toPath();
             Files.createDirectories(javaFilePath.getParent());
             Files.createFile(javaFilePath);
-            orderClassMembers(compilationUnit.getClassByName(fileName).get());
+            sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
             Files.write(javaFilePath, compilationUnit.toString().getBytes());
         } catch (NoSuchFileException | FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(filePath));
@@ -102,7 +104,7 @@ public class Utils {
 
             c.accept(clazz);
 
-            orderClassMembers(clazz);
+            sortClassMembersAndImports(clazz);
 
             Files.write(javaFile.toPath(), compilationUnit.toString().getBytes());
         } catch (FileNotFoundException e) {
@@ -112,16 +114,13 @@ public class Utils {
         }
     }
 
-    private static void orderClassMembers(ClassOrInterfaceDeclaration clazz) {
-        clazz.getMembers().sort((b1, b2) -> {
-            if (b1.isFieldDeclaration() && !b2.isFieldDeclaration()) {
-                return -1;
-            } else if (!b1.isFieldDeclaration() && b2.isFieldDeclaration()) {
-                return 1;
-            } else {
-                return 0;
-            }
-        });
+    private static void sortClassMembersAndImports(ClassOrInterfaceDeclaration clazz) {
+        clazz.getMembers().sort(Comparator.comparing((BodyDeclaration<?> t) -> t.isMethodDeclaration())
+                .thenComparing(BodyDeclaration::isConstructorDeclaration)
+                .thenComparing(BodyDeclaration::isFieldDeclaration));
+
+        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+        clazz.findCompilationUnit().get().getImports().sort(Comparator.comparing(NodeWithName::getNameAsString));
     }
 
     public static void readAndWriteClass(String path, String className, Consumer<ClassOrInterfaceDeclaration> c) {
