@@ -1,4 +1,4 @@
-package i5.bml.transpiler;
+package i5.bml.transpiler.generators.types;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.type.PrimitiveType;

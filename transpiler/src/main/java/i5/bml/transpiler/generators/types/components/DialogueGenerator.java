@@ -7,7 +7,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.dialogue.BMLDialogue;
-import i5.bml.transpiler.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;

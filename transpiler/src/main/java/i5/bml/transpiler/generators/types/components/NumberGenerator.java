@@ -13,7 +13,7 @@ import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLNumber;
-import i5.bml.transpiler.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;

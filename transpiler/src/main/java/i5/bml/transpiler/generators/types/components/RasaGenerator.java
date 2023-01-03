@@ -8,7 +8,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLRasaComponent;
-import i5.bml.transpiler.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.threads.rasa.RasaComponent;

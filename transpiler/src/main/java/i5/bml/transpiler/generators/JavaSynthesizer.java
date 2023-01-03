@@ -1,4 +1,4 @@
-package i5.bml.transpiler;
+package i5.bml.transpiler.generators;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
@@ -17,8 +17,8 @@ import i5.bml.parser.types.BMLBoolean;
 import i5.bml.parser.types.BMLNumber;
 import i5.bml.parser.types.BMLString;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.transpiler.generators.Generator;
-import i5.bml.transpiler.generators.GeneratorRegistry;
+import i5.bml.transpiler.generators.types.BMLTypeResolver;
+import i5.bml.transpiler.generators.dialogue.DialogueAutomatonSynthesizer;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
@@ -462,21 +462,14 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
     public Node visitDialogueAutomaton(BMLParser.DialogueAutomatonContext ctx) {
         dialogueScope = ctx.scope;
         pushScope(dialogueScope);
+
         dialogueAutomatonSynthesizer = new DialogueAutomatonSynthesizer(this);
-        var childNode = super.visitDialogueAutomaton(ctx);
+        visitDialogueHead(ctx.head);
+        dialogueAutomatonSynthesizer.visitDialogueBody(ctx.body, currentScope);
+
         popScope();
         dialogueScope = new BlockScope(null);
-        return childNode;
-    }
 
-    @Override
-    public Node visitDialogueBody(BMLParser.DialogueBodyContext ctx) {
-        dialogueAutomatonSynthesizer.visitDialogueBody(ctx);
         return null;
-    }
-
-    @Override
-    public Node visitDialogueTransition(BMLParser.DialogueTransitionContext ctx) {
-        return dialogueAutomatonSynthesizer.visitDialogueTransition(ctx, currentScope);
     }
 }

@@ -11,7 +11,7 @@ import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.openapi.BMLOpenAPIComponent;
-import i5.bml.transpiler.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;

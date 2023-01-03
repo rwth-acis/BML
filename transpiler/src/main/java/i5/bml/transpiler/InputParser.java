@@ -2,6 +2,7 @@ package i5.bml.transpiler;
 
 import i5.bml.parser.Parser;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;

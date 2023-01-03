@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.transpiler.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaSynthesizer;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.utils.Utils;
