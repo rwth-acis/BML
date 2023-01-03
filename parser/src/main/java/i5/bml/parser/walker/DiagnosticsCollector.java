@@ -558,7 +558,9 @@ public class DiagnosticsCollector extends BMLBaseListener {
     // TODO: Dialogue type checking:
     //       - ERROR: More than one default state
     //       - ERROR: Outgoing state of sink state
-    //       - WARN:  Unreachable state(s)
+    //       - ERROR: RHS of assignment is sink or default
+    //       - ERROR:
+    //       - WARN:  Unreachable state(s), e.g., state(...)
     //       -
 
 
