@@ -10,6 +10,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ForEachStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
@@ -148,13 +149,19 @@ public class DialogueAutomatonSynthesizer {
 
                         // Create variable for sink state
                         var sinkName = "state" + stateCounter++;
-                        addVariableForState(initMethodBody, sinkName, StaticJavaParser.parseClassOrInterfaceType("State"),
+                        addVariableForStateWithoutCollection(initMethodBody, sinkName, StaticJavaParser.parseClassOrInterfaceType("State"),
                                 new NodeList<>(actionLambdaExpr), d.functionCall().getText());
 
-                        // Add all transitions going into sink state
-                        for (String stateName : stateNames) {
-                            addTransition(initMethodBody, stateName, sinkName, stateType.getIntent());
+                        var forExprBody = new BlockStmt();
+                        var intents = stateType.getIntent().split(",");
+                        for (String intent : intents) {
+                            var transitionExpr = new MethodCallExpr(new NameExpr("s"), "addTransition",
+                                    new NodeList<>(new StringLiteralExpr(intent), new NameExpr(sinkName)));
+                            forExprBody.addStatement(transitionExpr);
                         }
+
+                        var forExpr = new ForEachStmt(new VariableDeclarationExpr(new VarType(), "s"), "states", forExprBody);
+                        initMethodBody.addStatement(forExpr);
                     });
         });
     }
@@ -260,7 +267,7 @@ public class DialogueAutomatonSynthesizer {
         addTransition(block, stateName, "defaultState", "_");
     }
 
-    private void addVariableForState(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
+    private void addVariableForStateWithoutCollection(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
                                      String commentText) {
         var stateObject = new ObjectCreationExpr(null, stateType, args);
         var stateVar = new VariableDeclarationExpr(new VariableDeclarator(new VarType(), stateName, stateObject));
@@ -268,6 +275,12 @@ public class DialogueAutomatonSynthesizer {
         stateVar.setComment(new LineComment("State represents: %s".formatted(commentText)));
 
         block.addStatement(stateVar);
+    }
+
+    private void addVariableForState(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
+                                     String commentText) {
+        addVariableForStateWithoutCollection(block, stateName, stateType, args, commentText);
+        block.addStatement(new MethodCallExpr(new NameExpr("states"), "add", new NodeList<>(new NameExpr(stateName))));
     }
 
     private void addJumpToDefaultState(BlockStmt block) {
@@ -402,20 +415,17 @@ public class DialogueAutomatonSynthesizer {
         var functionType = (BMLFunctionType) functionCallContext.type;
         var functionName = functionCallContext.functionName.getText();
         var stateType = StaticJavaParser.parseClassOrInterfaceType("State");
+        var stmts = new BlockStmt();
+        var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType(), clazz);
 
         return switch (functionName) {
             case "default" -> {
-                var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType(), clazz);
                 var initializerExpr = new ObjectCreationExpr(null, stateType, new NodeList<>(actionLambdaExpr));
                 clazz.addFieldWithInitializer("State", "defaultState", initializerExpr, Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
 
-                yield new BlockStmt();
+                yield stmts;
             }
             case "initial", "state" -> {
-                var stmts = new BlockStmt();
-
-                var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType(), clazz);
-
                 // TODO: Determine this
                 // Since the state has no transitions, we jump back to the default state to await new commands
                 //addJumpToDefaultState(actionLambdaExpr.getBody().asBlockStmt());
@@ -439,7 +449,7 @@ public class DialogueAutomatonSynthesizer {
 
                 yield stmts;
             }
-            default -> new BlockStmt();
+            default -> stmts;
         };
     }
 

@@ -2,14 +2,11 @@ package i5.bml.transpiler.bot.dialogue;
 
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
-    private final Map<String, State> namedStates = new HashMap<>();
+    private final Set<State> states = new HashSet<>();
 
     private State currentState = new State(ctx -> {});
 
