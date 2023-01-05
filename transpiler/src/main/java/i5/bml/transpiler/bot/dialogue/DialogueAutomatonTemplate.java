@@ -14,14 +14,20 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
     }
 
     @Override
-    public void step(MessageEventContext context) {
-        currentState = currentState.nextState(context.intent());
-        currentState.action(context);
+    public void step(MessageEventContext ctx) {
+        currentState = currentState.nextState(ctx.intent());
+        currentState.action(ctx);
+
+        // Check whether the _only_ outgoing state (except default state) is fallthrough
+        var fallthroughState = currentState.transitions.get("");
+        if (currentState.transitions.size() <= 2 && fallthroughState != null) {
+            jumpTo(fallthroughState, ctx);
+        }
     }
 
     @Override
-    public void jumpTo(State state, MessageEventContext context) {
+    public void jumpTo(State state, MessageEventContext ctx) {
         currentState = state;
-        currentState.action(context);
+        currentState.action(ctx);
     }
 }
