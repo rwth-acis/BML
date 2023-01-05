@@ -399,14 +399,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
                 default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op, ctx));
             };
         } else if (ctx.functionCall() != null) {
-            if (ctx.functionCall().functionName.getText().equals("send")
-                    || ctx.functionCall().functionName.getText().equals("string")
-                    || ctx.functionCall().functionName.getText().equals("number")) {
-                var generator = GeneratorRegistry.getGeneratorForFunctionName(ctx.functionCall().functionName.getText());
-                return generator.generateFunctionCall(null, ctx.functionCall(), this);
-            } else {
-                return visit(ctx.functionCall());
-            }
+            return visit(ctx.functionCall());
         } else { // Initializers
             return visit(ctx.initializer());
         }
@@ -446,6 +439,12 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
             // This should never happen
             default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(atom, ctx));
         };
+    }
+
+    @Override
+    public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
+        var generator = GeneratorRegistry.getGeneratorForFunctionName(ctx.functionName.getText());
+        return generator.generateFunctionCall(null, ctx, this);
     }
 
     @Override
