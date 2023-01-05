@@ -27,7 +27,7 @@ public class MemberJoinedChannelEventHandler extends AbstractSlackHandler implem
             slackEvent.messageEventType(MessageEventType.BOT_ADDED);
             slackEvent.username(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getInviter()));
             slackBotThread.activeSessions().put(event.getEvent().getChannel(),
-                    new Session(event.getEvent().getChannel()));
+                    new Session(event.getEvent().getChannel(), MessageEventType.BOT_ADDED));
         } else {
             slackEvent.messageEventType(MessageEventType.USER_JOINED_CHAT);
             slackEvent.username(fetchDisplayName(context.client(), slackBotThread.botToken(), event.getEvent().getUser()));

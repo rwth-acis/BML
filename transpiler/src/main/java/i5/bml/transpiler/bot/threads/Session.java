@@ -1,21 +1,24 @@
 package i5.bml.transpiler.bot.threads;
 
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
+import i5.bml.transpiler.bot.dialogue.DialogueFactory;
+import i5.bml.transpiler.bot.events.messenger.MessageEventType;
+
+import java.util.List;
 
 public class Session {
 
-    // TODO: Change to automaton state
-    private DialogueAutomaton dialogue;
+    private final List<DialogueAutomaton> dialogues;
 
     private final Object chatId;
 
-    public Session(Object chatId) {
+    public Session(Object chatId, MessageEventType messageEventType) {
         this.chatId = chatId;
-        // Construct automaton
+        dialogues = DialogueFactory.createDialogue(messageEventType);
     }
 
-    public DialogueAutomaton dialogue() {
-        return dialogue;
+    public List<DialogueAutomaton> dialogues() {
+        return dialogues;
     }
 
     public Object chatId() {
@@ -24,6 +27,6 @@ public class Session {
 
     @Override
     public String toString() {
-        return "Session{dialogue=%s, chatId=%s}".formatted(dialogue, chatId);
+        return "Session{dialogues=%s, chatId=%s}".formatted(dialogues, chatId);
     }
 }

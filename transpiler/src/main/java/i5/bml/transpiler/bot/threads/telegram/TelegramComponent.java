@@ -94,7 +94,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
                 activeSessions.remove(chatId);
             } else if (update.getMyChatMember().getNewChatMember().getStatus().equals("member")) {
                 telegramEvent.messageEventType(MessageEventType.BOT_ADDED);
-                activeSessions.put(chatId, new Session(chatId));
+                activeSessions.put(chatId, new Session(chatId, MessageEventType.BOT_ADDED));
             } else {
                 // myChatMember can be one of
                 // [ChatMemberOwner, ChatMemberAdministrator, ChatMemberMember, ChatMemberRestricted, ChatMemberLeft, ChatMemberBanned]
@@ -132,8 +132,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
                         // Create Session
                         // This means that using "/start" in a chat, RESETS the current conversation status
-                        var session = new Session(chatId);
-                        activeSessions.put(chatId, session);
+                        activeSessions.put(chatId, new Session(chatId, MessageEventType.USER_STARTED_CHAT));
                     } else if (entity.getText().equals("/stop")) {
                         telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
                         activeSessions.remove(chatId);
@@ -152,7 +151,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
                     return false;
                 }
 
-                telegramEvent.session(activeSessions.getOrDefault(chatId, new Session(chatId)));
+                telegramEvent.session(activeSessions.getOrDefault(chatId, new Session(chatId, telegramEvent.messageEventType())));
                 telegramEvent.username(update.getMessage().getFrom().getUserName());
             } else {
                 return false;
