@@ -25,6 +25,7 @@ import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
+import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
@@ -39,8 +40,6 @@ public class DialogueAutomatonSynthesizer {
 
     private int stateCounter = 1;
 
-    private final Set<String> stateNames = new HashSet<>();
-
     private final JavaTreeGenerator javaTreeGenerator;
 
     public DialogueAutomatonSynthesizer(JavaTreeGenerator javaTreeGenerator) {
@@ -53,7 +52,7 @@ public class DialogueAutomatonSynthesizer {
         var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
 
         // Add constructor that invokes init() method
-        Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+        PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
             var constructor = clazz.addConstructor(Modifier.Keyword.PUBLIC);
             constructor.setBody(new BlockStmt().addStatement(new MethodCallExpr("initTransitions")));
         });
@@ -62,7 +61,7 @@ public class DialogueAutomatonSynthesizer {
 
         // Action definitions
         if (!ctx.dialogueFunctionDefinition().isEmpty()) {
-            Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newActionsClassName, clazz -> {
+            PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newActionsClassName, clazz -> {
                 javaTreeGenerator.classStack().push(clazz);
                 for (var c : ctx.dialogueFunctionDefinition()) {
                     var actionMethod = clazz.addMethod(c.functionDefinition().head.functionName.getText(),
@@ -83,7 +82,7 @@ public class DialogueAutomatonSynthesizer {
 
         // Assignments (States and other types)
         if (!ctx.dialogueAssignment().isEmpty()) {
-            Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
                 javaTreeGenerator.classStack().push(clazz);
                 ctx.dialogueAssignment().forEach(c -> {
                     if (c.assignment().expr.type instanceof BMLState) {
@@ -105,7 +104,7 @@ public class DialogueAutomatonSynthesizer {
 
         // State creation, i.e., state function calls
         if (!ctx.dialogueStateCreation().isEmpty()) {
-            Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
                 javaTreeGenerator.classStack().push(clazz);
                 //noinspection OptionalGetWithoutIsPresent -> We can assume presence
                 var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
@@ -119,7 +118,7 @@ public class DialogueAutomatonSynthesizer {
 
         // Take care of dialogue transitions
         for (var transition : ctx.dialogueTransition()) {
-            Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
                 javaTreeGenerator.classStack().push(clazz);
                 //noinspection OptionalGetWithoutIsPresent -> We can assume presence
                 var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
@@ -132,7 +131,7 @@ public class DialogueAutomatonSynthesizer {
         }
 
         // We have to do sinks last, since we need to collect all states before
-        Utils.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+        PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
             ctx.dialogueStateCreation().stream()
                     .filter(d -> d.functionCall().functionName.getText().equals("sink"))
                     .forEach(d -> {
@@ -209,7 +208,7 @@ public class DialogueAutomatonSynthesizer {
         c.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
 
         // Create file at desired destination
-        Utils.writeClass(javaTreeGenerator.botOutputPath() + "dialogue/states", className, c);
+        PrinterUtil.writeClass(javaTreeGenerator.botOutputPath() + "dialogue/states", className, c);
 
         // Add state to init method
         var dialogueClass = javaTreeGenerator.currentClass();
@@ -220,9 +219,6 @@ public class DialogueAutomatonSynthesizer {
         var stateVarType = StaticJavaParser.parseClassOrInterfaceType(className);
         var stateName = ctx.assignment().name.getText() + "State";
         addVariableForState(initMethodBody, stateName, stateVarType, new NodeList<>(new NameExpr("this")), ctx.assignment().expr.getText());
-
-        // Add state to global collection
-        stateNames.add(stateName);
 
         // Add import for `className`
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
@@ -465,9 +461,6 @@ public class DialogueAutomatonSynthesizer {
 
                     addTransitionToDefaultState(stmts, stateName);
                 }
-
-                // Add state to global collection
-                stateNames.add(stateName);
 
                 yield stmts;
             }

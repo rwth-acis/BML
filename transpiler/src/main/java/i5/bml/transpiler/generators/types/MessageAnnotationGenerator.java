@@ -10,6 +10,7 @@ import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.events.MessageEventHandlerMethod;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
@@ -25,7 +26,7 @@ public class MessageAnnotationGenerator implements Generator {
     @Override
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
                                           BMLParser.AnnotationContext annotationContext, JavaTreeGenerator visitor) {
-        Utils.readAndWriteClass("%s%s".formatted(visitor.botOutputPath(), PATH), CLASS_NAME, clazz -> {
+        PrinterUtil.readAndWriteClass("%s%s".formatted(visitor.botOutputPath(), PATH), CLASS_NAME, clazz -> {
             var functionName = functionContext.head.functionName.getText();
             var methods = clazz.getMethodsByName(functionName);
             var eventName = Utils.pascalCaseToSnakeCase(annotationContext.name.getText());

@@ -34,12 +34,6 @@ import java.util.function.Function;
 
 public class Utils {
 
-    private static final PrinterConfiguration configuration = new DefaultPrinterConfiguration();
-
-    private static final Function<PrinterConfiguration, VoidVisitor<Void>> visitorFactory = JavaTreeVisitor::new;
-
-    private static final Printer printer = new DefaultPrettyPrinter(visitorFactory, configuration);
-
     public static boolean isJavaHomeDefined() {
         String javaHome = System.getenv("JAVA_HOME");
         return javaHome != null;
@@ -66,84 +60,6 @@ public class Utils {
             packageName = "%s.%s".formatted(outputPackage, packageName);
         }
         return packageName;
-    }
-
-    public static void writeClass(String path, String fileName, CompilationUnit compilationUnit) {
-        var filePath = "%s/%s.java".formatted(path, fileName);
-        try {
-            var javaFile = new File(filePath);
-            var javaFilePath = javaFile.toPath();
-            Files.createDirectories(javaFilePath.getParent());
-            Files.createFile(javaFilePath);
-            sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
-            Files.write(javaFilePath, printer.print(compilationUnit).getBytes());
-        } catch (NoSuchFileException | FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(filePath));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
-        }
-    }
-
-    public static void readAndWriteJavaFile(File file, String className, Consumer<TypeDeclaration<?>> c) {
-        try {
-            CompilationUnit compilationUnit = StaticJavaParser.parse(file);
-
-            if (compilationUnit.getClassByName(className).isPresent()) {
-                c.accept(compilationUnit.getClassByName(className).get());
-            } else if (compilationUnit.getEnumByName(className).isPresent()) {
-                c.accept(compilationUnit.getEnumByName(className).get());
-            } else if (compilationUnit.getInterfaceByName(className).isPresent()) {
-                c.accept(compilationUnit.getInterfaceByName(className).get());
-            } else if (compilationUnit.getAnnotationDeclarationByName(className).isPresent()) {
-                c.accept(compilationUnit.getAnnotationDeclarationByName(className).get());
-            } else {
-                throw new IllegalStateException("%s is neither a class, enum, nor interface".formatted(className));
-            }
-
-            Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(file.getAbsolutePath(), e.getMessage()));
-        }
-    }
-
-    public static void readAndWriteClass(String path, String fileName, String className, Consumer<ClassOrInterfaceDeclaration> c) {
-        var javaFilePath = "%s/%s.java".formatted(path, fileName);
-        try {
-            var javaFile = new File(javaFilePath);
-            CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
-            var clazz = compilationUnit.getClassByName(className).get();
-
-            c.accept(clazz);
-
-            sortClassMembersAndImports(clazz);
-
-            Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath));
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()));
-        }
-    }
-
-    private static void sortClassMembersAndImports(ClassOrInterfaceDeclaration clazz) {
-        clazz.getMembers().sort(Comparator.comparing((BodyDeclaration<?> t) -> t.isMethodDeclaration())
-                .thenComparing(BodyDeclaration::isConstructorDeclaration)
-                .thenComparing(BodyDeclaration::isFieldDeclaration));
-
-        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-        clazz.findCompilationUnit().get().getImports().sort(Comparator.comparing(NodeWithName::getNameAsString));
-    }
-
-    public static void readAndWriteClass(String path, String className, Consumer<ClassOrInterfaceDeclaration> c) {
-        readAndWriteClass(path, className, className, c);
-    }
-
-    public static void readAndWriteClass(String botOutputPath, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
-        var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
-        readAndWriteClass(botOutputPath + packageName, clazz.getSimpleName(), clazz.getSimpleName(), c);
     }
 
     public static ReturnStmt generateToStringMethod(String className, List<FieldDeclaration> fields) {

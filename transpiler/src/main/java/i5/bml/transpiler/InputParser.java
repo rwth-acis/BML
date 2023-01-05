@@ -3,6 +3,7 @@ package i5.bml.transpiler;
 import i5.bml.parser.Parser;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -71,7 +72,7 @@ public class InputParser {
             FileUtils.copyDirectory(new File(BOT_DIR), new File(outputDir + "/src/main/java/" + outputPackage));
 
             for (File file : FileUtils.listFiles(new File(outputDir + "/src/main/java/" + outputPackage), null, true)) {
-                Utils.readAndWriteJavaFile(file, file.getName().split("\\.")[0], javaFile -> {
+                PrinterUtil.readAndWriteJavaFile(file, file.getName().split("\\.")[0], javaFile -> {
                     //noinspection OptionalGetWithoutIsPresent
                     var compilationUnit = javaFile.findCompilationUnit().get();
 

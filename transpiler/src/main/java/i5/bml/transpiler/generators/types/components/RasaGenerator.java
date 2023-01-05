@@ -14,6 +14,7 @@ import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
@@ -56,7 +57,7 @@ public class RasaGenerator implements Generator {
         currentClass.findCompilationUnit().get().addImport(rasaHandlerImport, false, false);
 
         // Register to `DialogueHandler`
-        Utils.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {
+        PrinterUtil.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {
             var m = clazz.getMethodsByName("handleMessageEvent").get(0);
             var block = new BlockStmt();
             block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().invokeModel", new NameExpr("messageEvent")));
