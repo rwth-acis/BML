@@ -81,6 +81,13 @@ public class DialogueAutomatonSynthesizer {
             });
         }
 
+        // Set currentState = defaultState as first statement in `initTransitions` from dialogue class
+        PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
+            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+            var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
+            initMethodBody.addStatement(new AssignExpr(new NameExpr("currentState"), new NameExpr("defaultState"), AssignExpr.Operator.ASSIGN));
+        });
+
         // Assignments (States and other types)
         if (!ctx.dialogueAssignment().isEmpty()) {
             PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
@@ -109,6 +116,7 @@ public class DialogueAutomatonSynthesizer {
                 javaTreeGenerator.classStack().push(clazz);
                 //noinspection OptionalGetWithoutIsPresent -> We can assume presence
                 var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
+
                 for (var dialogueStateCreationContext : ctx.dialogueStateCreation()) {
                     var block = visitDialogueStateCreation(dialogueStateCreationContext, clazz);
                     initMethodBody.getStatements().addAll(block.getStatements());
