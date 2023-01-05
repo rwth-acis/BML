@@ -152,7 +152,7 @@ public class TelegramComponent extends TelegramLongPollingBot {
                     return false;
                 }
 
-                telegramEvent.session(activeSessions.get(chatId));
+                telegramEvent.session(activeSessions.getOrDefault(chatId, new Session(chatId)));
                 telegramEvent.username(update.getMessage().getFrom().getUserName());
             } else {
                 return false;
