@@ -7,6 +7,8 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -55,5 +57,15 @@ public class Utils {
         stringBuilder.replace(stringBuilder.length() - 2, stringBuilder.length(), "}");
 
         return new ReturnStmt(new MethodCallExpr(new StringLiteralExpr(stringBuilder.toString()), "formatted", args));
+    }
+
+    public static <T> T findParentContext(RuleContext currentCtx, Class<T> parentCtxClass) {
+        var currParent = currentCtx;
+        while (currParent != null && !parentCtxClass.isInstance(currParent)) {
+            currParent = currParent.parent;
+        }
+
+        //noinspection unchecked
+        return currParent != null ? (T) currParent : null;
     }
 }

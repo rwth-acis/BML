@@ -12,10 +12,10 @@ public class DialogueFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(DialogueFactory.class);
 
     public static List<DialogueAutomaton> createDialogue(MessageEventType messageEventType) {
-        return switch (messageEventType.name().toLowerCase()) {
+        return switch (messageEventType) {
             default -> {
                 LOGGER.error("No dialogue registered for message event {}", messageEventType);
-                yield new ArrayList<>();
+                yield List.of();
             }
         };
     }
