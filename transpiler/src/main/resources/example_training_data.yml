@@ -9,6 +9,8 @@ nlu:
       - hi there
       - hello
       - sup
+      - start
+      - /start
 
   - intent: bye
     examples: |
