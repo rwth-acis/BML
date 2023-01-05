@@ -88,6 +88,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void exitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
+        ctx.annotations = ctx.annotation().stream().map(a -> a.name.getText()).toList();
         popScope();
     }
 
