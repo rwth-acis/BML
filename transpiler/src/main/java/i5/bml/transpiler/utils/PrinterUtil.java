@@ -1,9 +1,11 @@
 package i5.bml.transpiler.utils;
 
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.visitor.VoidVisitor;
@@ -30,6 +32,10 @@ public class PrinterUtil {
 
     private static final Printer printer = new DefaultPrettyPrinter(visitorFactory, configuration);
 
+    static {
+        StaticJavaParser.setConfiguration(new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17));
+    }
+
     public static void writeClass(String path, String fileName, CompilationUnit compilationUnit) {
         var filePath = "%s/%s.java".formatted(path, fileName);
         try {
@@ -37,6 +43,7 @@ public class PrinterUtil {
             var javaFilePath = javaFile.toPath();
             Files.createDirectories(javaFilePath.getParent());
             Files.createFile(javaFilePath);
+            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
             Files.write(javaFilePath, printer.print(compilationUnit).getBytes());
         } catch (NoSuchFileException | FileNotFoundException e) {
@@ -58,8 +65,12 @@ public class PrinterUtil {
                 c.accept(compilationUnit.getInterfaceByName(className).get());
             } else if (compilationUnit.getAnnotationDeclarationByName(className).isPresent()) {
                 c.accept(compilationUnit.getAnnotationDeclarationByName(className).get());
+            } else if (compilationUnit.getPrimaryType().isEmpty()) {
+                throw new IllegalStateException("%s doesn't seem to have a primary type declaration".formatted(className));
+            } else if (compilationUnit.getPrimaryType().get() instanceof RecordDeclaration recordDeclaration) {
+                c.accept(recordDeclaration);
             } else {
-                throw new IllegalStateException("%s is neither a class, enum, nor interface".formatted(className));
+                throw new IllegalStateException("%s is neither a class, enum, nor interface, found: %s".formatted(className, compilationUnit.getPrimaryType().get().getMetaModel()));
             }
 
             Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
@@ -101,12 +112,14 @@ public class PrinterUtil {
     }
 
     public static void readAndWriteClass(String botOutputPath, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
-        var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
-        readAndWriteClass(botOutputPath + packageName, clazz.getSimpleName(), clazz.getSimpleName(), c);
+        readAndWriteClass(botOutputPath, clazz.getSimpleName(), clazz, c);
     }
 
     public static void readAndWriteClass(String botOutputPath, String fileName, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
-        var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
+        var packageName = clazz.getPackageName()
+                .replace("i5.bml.transpiler.bot", "")
+                .replaceFirst("\\.", "")
+                .replaceAll("\\.", "/");
         readAndWriteClass(botOutputPath + packageName, fileName, clazz.getSimpleName(), c);
     }
 }
