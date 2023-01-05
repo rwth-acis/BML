@@ -3,6 +3,7 @@ package i5.bml.transpiler.generators.dialogue;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -18,17 +19,15 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
-import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.utils.Utils;
-import org.antlr.symtab.FunctionType;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -145,7 +144,7 @@ public class DialogueAutomatonSynthesizer {
                         var actionLambdaExpr = generateLambdaExprForAction(stateType, clazz);
 
                         // The sink state jumps back to the default state after executing its action
-                        addJumpToDefaultState(actionLambdaExpr.getBody().asBlockStmt());
+                        addJumpToDefaultState(((LambdaExpr) actionLambdaExpr).getBody().asBlockStmt());
 
                         // Create variable for sink state
                         var sinkName = "state" + stateCounter++;
@@ -202,7 +201,7 @@ public class DialogueAutomatonSynthesizer {
         var actionMethod = clazz.addMethod("action", Modifier.Keyword.PUBLIC);
         actionMethod.addMarkerAnnotation(Override.class);
         actionMethod.addParameter("MessageEventContext", "ctx");
-        actionMethod.setBody(generateBlockForStateAction(stateType, c, clazz));
+        actionMethod.setBody((BlockStmt) generateBlockForStateAction(stateType, c, clazz, false));
 
         // TODO: When should this jump back to the default state?
 
@@ -287,14 +286,21 @@ public class DialogueAutomatonSynthesizer {
         block.addStatement(new MethodCallExpr("jumpTo", new NameExpr("defaultState"), new NameExpr("ctx")));
     }
 
-    private LambdaExpr generateLambdaExprForAction(BMLState stateType, ClassOrInterfaceDeclaration clazz) {
+    private Expression generateLambdaExprForAction(BMLState stateType, ClassOrInterfaceDeclaration clazz) {
         // Create a lambda expression for specified action
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-        var lambdaBlock = generateBlockForStateAction(stateType, clazz.findCompilationUnit().get(), clazz);
-        return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), lambdaBlock);
+        var node = generateBlockForStateAction(stateType, clazz.findCompilationUnit().get(), clazz, true);
+        if (node instanceof BlockStmt blockStmt) {
+            return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), blockStmt);
+        } else if (node instanceof MethodReferenceExpr methodReference) {
+            return methodReference;
+        } else { // MethodCallExpr
+            return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), (MethodCallExpr) node);
+        }
     }
 
-    private BlockStmt generateBlockForStateAction(BMLState stateType, CompilationUnit c, ClassOrInterfaceDeclaration clazz) {
+    private Node generateBlockForStateAction(BMLState stateType, CompilationUnit c, ClassOrInterfaceDeclaration clazz,
+                                             boolean isLambda) {
         return switch (stateType.getActionType().getClass().getAnnotation(BMLType.class).name()) {
             case STRING -> {
                 c.addImport(Utils.renameImport(MessageHelper.class, javaSynthesizer.outputPackage()), false, false);
@@ -331,8 +337,24 @@ public class DialogueAutomatonSynthesizer {
                 c.addImport(packageName + actionsClassName, false, false);
 
                 var identifier = (NameExpr) javaSynthesizer.visit(stateType.getAction());
-                var actionCall = new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx")));
-                yield new BlockStmt().addStatement(actionCall);
+
+                if (isLambda) {
+                    yield new MethodReferenceExpr(new NameExpr(actionsClassName), new NodeList<>(), identifier.getNameAsString());
+                } else {
+                    yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx"))));
+                }
+            }
+            case STATE -> {
+                var functionType = (BMLFunctionType) stateType.getAction().functionCall().type;
+                var destinationState = (NameExpr) javaSynthesizer.visit(functionType.getRequiredParameters().get(0).getExprCtx());
+                destinationState.setName(destinationState.getNameAsString() + "State");
+                var methodCallExpr = new MethodCallExpr(null, "jumpTo", new NodeList<>(destinationState, new NameExpr("ctx")));
+
+                if (isLambda) {
+                    yield methodCallExpr;
+                } else {
+                    yield new BlockStmt().addStatement(methodCallExpr);
+                }
             }
             default -> new BlockStmt();
         };
