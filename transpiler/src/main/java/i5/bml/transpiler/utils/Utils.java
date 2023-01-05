@@ -13,6 +13,13 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.visitor.VoidVisitor;
+import com.github.javaparser.printer.DefaultPrettyPrinter;
+import com.github.javaparser.printer.Printer;
+import com.github.javaparser.printer.SourcePrinter;
+import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
+import com.github.javaparser.printer.configuration.PrinterConfiguration;
+import i5.bml.transpiler.generators.JavaTreeVisitor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -23,8 +30,15 @@ import java.nio.file.NoSuchFileException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Utils {
+
+    private static final PrinterConfiguration configuration = new DefaultPrinterConfiguration();
+
+    private static final Function<PrinterConfiguration, VoidVisitor<Void>> visitorFactory = JavaTreeVisitor::new;
+
+    private static final Printer printer = new DefaultPrettyPrinter(visitorFactory, configuration);
 
     public static boolean isJavaHomeDefined() {
         String javaHome = System.getenv("JAVA_HOME");
@@ -62,7 +76,7 @@ public class Utils {
             Files.createDirectories(javaFilePath.getParent());
             Files.createFile(javaFilePath);
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
-            Files.write(javaFilePath, compilationUnit.toString().getBytes());
+            Files.write(javaFilePath, printer.print(compilationUnit).getBytes());
         } catch (NoSuchFileException | FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(filePath));
         } catch (IOException e) {
@@ -86,7 +100,7 @@ public class Utils {
                 throw new IllegalStateException("%s is neither a class, enum, nor interface".formatted(className));
             }
 
-            Files.write(file.toPath(), compilationUnit.toString().getBytes());
+            Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
         } catch (FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()));
         } catch (IOException e) {
@@ -106,7 +120,7 @@ public class Utils {
 
             sortClassMembersAndImports(clazz);
 
-            Files.write(javaFile.toPath(), compilationUnit.toString().getBytes());
+            Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
         } catch (FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(javaFilePath));
         } catch (IOException e) {
