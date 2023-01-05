@@ -13,7 +13,7 @@ public class DialogueFactory {
     public static List<DialogueAutomaton> createDialogue(MessageEventType messageEventType) {
         switch (messageEventType) {
 
-            default: LOGGER.error("");
+            default: LOGGER.error("No dialogue registered for message event {}", messageEventType);
         }
 
         return null;
