@@ -29,8 +29,7 @@ public class EventHandlerRegistry {
 
     public static void dispatchEventHandler(Event event) {
         switch (event.eventSource()) {
-            case SLACK:
-            case TELEGRAM: {
+            case SLACK, TELEGRAM -> {
                 var messageEvent = (MessageEvent) event;
 
                 // We send the message to the desired NLU to infer intent and entity/entities

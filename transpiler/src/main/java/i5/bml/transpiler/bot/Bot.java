@@ -6,6 +6,9 @@ import i5.bml.transpiler.bot.events.EventHandlerRegistry;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventHandler;
 import i5.bml.transpiler.bot.events.routines.RoutineEventHandler;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public class Bot {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Bot.class);
 
     private final PriorityBlockingQueue<Event> eventQueue = new PriorityBlockingQueue<>(100,
             Comparator.comparingLong(Event::arrivalTime));
@@ -39,14 +44,13 @@ public class Bot {
     }
 
     public void run() {
+        //noinspection InfiniteLoopStatement -> The inifinite loop is desired
         while (true) {
             try {
                 var event = eventQueue.take();
                 System.out.println("CURR EVENT: " + event);
 
-                if (event instanceof MessageEvent
-                        && ((MessageEvent) event).session() != null) {
-                    var messageEvent = (MessageEvent) event;
+                if (event instanceof MessageEvent messageEvent && ((MessageEvent) event).session() != null) {
                     var currentChatId = messageEvent.session().chatId();
                     var prevFuture = previousEventCompletableFuture.get(currentChatId);
                     CompletableFuture<Void> newCompletableFuture;
@@ -60,8 +64,7 @@ public class Bot {
 
                     // Add exception handling
                     newCompletableFuture.exceptionally(e -> {
-                        System.err.println(e.getMessage());
-                        e.printStackTrace();
+                        LOGGER.error("An exception occurred while dispatching handler for event {}:\n{}", event, ExceptionUtils.getRootCause(e).getMessage());
                         return null;
                     });
 
@@ -69,7 +72,8 @@ public class Bot {
                 } else {
                     threadPool.execute(() -> EventHandlerRegistry.dispatchEventHandler(event));
                 }
-            } catch (InterruptedException ignore) {
+            } catch (InterruptedException e) {
+                LOGGER.error("Execution of event main loop was interrupted: {}", ExceptionUtils.getRootCause(e).getMessage());
             }
         }
     }

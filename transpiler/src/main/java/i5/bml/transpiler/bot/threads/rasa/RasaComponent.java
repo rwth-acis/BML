@@ -121,26 +121,16 @@ public class RasaComponent {
     private void handleResponse(Request request, Consumer<Response> code200, Consumer<Response> code204, String errorMessage) {
         try (var response = okHttpClient.newCall(request).execute()) {
             switch (response.code()) {
-                case 200:
-                    code200.accept(response);
-                    break;
-                case 204:
-                    code204.accept(response);
-                    break;
-                case 400:
-                case 401:
-                case 403:
-                case 409:
-                case 500:
+                case 200 -> code200.accept(response);
+                case 204 -> code204.accept(response);
+                case 400, 401, 403, 409, 500 -> {
                     if (response.body() == null) {
                         LOGGER.error("Parsing Rasa response body failed because response body is null");
                     }
-
                     RasaErrorResponseSchema responseSchema = new Gson().fromJson(response.body().string(), RasaErrorResponseSchema.class);
                     LOGGER.error("Rasa request failed:\n{}", responseSchema);
-                    break;
-                default:
-                    LOGGER.error("Unexpected code {} with response:\n{}", response.code(), response);
+                }
+                default -> LOGGER.error("Unexpected code {} with response:\n{}", response.code(), response);
             }
         } catch (IOException e) {
             LOGGER.error(errorMessage + e.getMessage());

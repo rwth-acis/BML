@@ -4,7 +4,6 @@ import com.slack.api.methods.SlackApiException;
 import com.slack.api.socket_mode.SocketModeClient;
 import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
 import i5.bml.transpiler.bot.events.messenger.telegram.TelegramUser;
-import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.bot.threads.telegram.TelegramComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

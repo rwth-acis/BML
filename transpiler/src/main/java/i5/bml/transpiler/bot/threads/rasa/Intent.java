@@ -2,24 +2,7 @@ package i5.bml.transpiler.bot.threads.rasa;
 
 import java.util.Objects;
 
-public final class Intent {
-    
-    private final double confidence;
-    
-    private final String name;
-
-    public Intent(double confidence, String name) {
-        this.confidence = confidence;
-        this.name = name;
-    }
-
-    public double confidence() {
-        return confidence;
-    }
-
-    public String name() {
-        return name;
-    }
+public record Intent(double confidence, String name) {
 
     @Override
     public boolean equals(Object obj) {
@@ -31,16 +14,9 @@ public final class Intent {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(confidence, name);
-    }
-
-    @Override
     public String toString() {
-        return "Intent{\n" +
-                "confidence=" + confidence + ",\n" +
-                "name=" + name + "\n" +
-                '}';
+        return "Intent[" +
+                "confidence=" + confidence + ", " +
+                "name=" + name + ']';
     }
-
 }

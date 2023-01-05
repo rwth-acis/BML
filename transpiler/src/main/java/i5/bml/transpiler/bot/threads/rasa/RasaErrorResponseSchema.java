@@ -2,59 +2,8 @@ package i5.bml.transpiler.bot.threads.rasa;
 
 import java.util.Objects;
 
-public final class RasaErrorResponseSchema {
-
-    private final String version;
-
-    private final String status;
-
-    private final String errorMessage;
-
-    private final String reason;
-
-    private final Object details;
-
-    private final String help;
-
-    private final int code;
-
-    public RasaErrorResponseSchema(String version, String status, String errorMessage, String reason, Object details, String help, int code) {
-        this.version = version;
-        this.status = status;
-        this.errorMessage = errorMessage;
-        this.reason = reason;
-        this.details = details;
-        this.help = help;
-        this.code = code;
-    }
-
-    public String version() {
-        return version;
-    }
-
-    public String status() {
-        return status;
-    }
-
-    public String errorMessage() {
-        return errorMessage;
-    }
-
-    public String reason() {
-        return reason;
-    }
-
-    public Object details() {
-        return details;
-    }
-
-    public String help() {
-        return help;
-    }
-
-    public int code() {
-        return code;
-    }
+public record RasaErrorResponseSchema(String version, String status, String errorMessage, String reason, Object details,
+                                      String help, int code) {
 
     @Override
     public boolean equals(Object obj) {
@@ -71,20 +20,14 @@ public final class RasaErrorResponseSchema {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(version, status, errorMessage, reason, details, help, code);
-    }
-
-    @Override
     public String toString() {
-        return "RasaErrorResponseSchema{\n" +
-                "version=" + version + ",\n" +
-                "status=" + status + ",\n" +
-                "errorMessage=" + errorMessage + ",\n" +
-                "reason=" + reason + ",\n" +
-                "details=" + details +
-                "help=" + help + ",\n" +
-                "code=" + code + "\n" +
-                '}';
+        return "RasaErrorResponseSchema[" +
+                "version=" + version + ", " +
+                "status=" + status + ", " +
+                "errorMessage=" + errorMessage + ", " +
+                "reason=" + reason + ", " +
+                "details=" + details + ", " +
+                "help=" + help + ", " +
+                "code=" + code + ']';
     }
 }

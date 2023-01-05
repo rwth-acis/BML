@@ -64,6 +64,7 @@ public class SlackBotThread implements Runnable {
         // Event: BOT_REMOVED
         app.event(ChannelLeftEvent.class, new ChannelLeftEventHandler(this));
 
+        // TODO: Make this more generic
         // Register command handler
         app.command("/sayhello", new SayHelloCommandHandler(this));
 
