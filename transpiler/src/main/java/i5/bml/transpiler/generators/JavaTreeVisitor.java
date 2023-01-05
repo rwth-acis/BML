@@ -13,7 +13,6 @@ public class JavaTreeVisitor extends DefaultPrettyPrinterVisitor {
 
     @Override
     public void visit(LineComment n, Void arg) {
-        super.visit(n, arg);
         printer.println().print("// ").println(Utils.normalizeEolInTextBlock(n.getContent(), "").trim());
     }
 }
