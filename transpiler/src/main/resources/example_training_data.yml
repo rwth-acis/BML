@@ -5,18 +5,60 @@ nlu:
     examples: |
       - Hey
       - Hi
-      - hey there [Sara](name)
-      - Hi [Tom](name)
-      - Hey [Lucas](name)
+      - hey there
+      - hi there
+      - hello
+      - sup
 
-  - intent: faq/language
+  - intent: bye
     examples: |
-      - What language do you speak?
-      - Do you only handle english?
+      - Bye
+      - Gotta go
+      - see you
+      - goodbye
 
-  - intent: id
+  - intent: stop
     examples: |
-      - My pet's id is [93](id)
-      - The id is [2](id)
-      - [3](id)
-      - Pet with id [1](id)
+      - Stop
+      - /stop
+
+  - intent: functions
+    examples: |
+      - What can you do?
+      - What kind of functionality do you have?
+      - What can I make you do?
+
+  - intent: options
+    examples: |
+      - Tell me what options you have
+      - Show me your options
+      - What kind of options do you have?
+
+  - intent: review
+    examples: |
+      - Make a review
+      - Review
+      - I want to do a review
+      - Do a review
+
+  - intent: yes
+    examples: |
+      - yes
+      - yap
+      - ya
+
+  - intent: no
+    examples: |
+      - no
+      - nope
+      - nah
+
+  - regex: value
+    examples: |
+      - \d{1,12}
+
+  - intent: number
+    examples: |
+      - [3](value)
+      - [1](value)
+      - [321](value)
