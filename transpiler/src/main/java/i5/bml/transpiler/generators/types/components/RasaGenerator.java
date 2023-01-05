@@ -8,6 +8,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLRasaComponent;
+import i5.bml.transpiler.bot.BotConfig;
 import i5.bml.transpiler.bot.components.ComponentInitializer;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
@@ -25,6 +26,8 @@ import java.util.concurrent.ExecutorService;
 public class RasaGenerator implements Generator {
 
     private final BMLRasaComponent rasaComponent;
+
+    private static final String NLU_FALLBACK_INTENT = "nlu_fallback";
 
     public RasaGenerator(Type rasaComponent) {
         this.rasaComponent = (BMLRasaComponent) rasaComponent;
@@ -68,6 +71,12 @@ public class RasaGenerator implements Generator {
             //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
             var compilationUnit = clazz.findCompilationUnit().get();
             compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
+        });
+
+        // Add constant with fallback intent
+        PrinterUtil.readAndWriteClass(visitor.botOutputPath(), BotConfig.class, clazz -> {
+            var fallbackIntentField = clazz.addFieldWithInitializer(String.class, "NLU_FALLBACK_INTENT", new StringLiteralExpr(NLU_FALLBACK_INTENT));
+            fallbackIntentField.setModifiers(Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
         });
     }
 }

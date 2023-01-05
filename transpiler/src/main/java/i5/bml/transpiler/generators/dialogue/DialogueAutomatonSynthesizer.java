@@ -19,6 +19,8 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
+import i5.bml.transpiler.bot.BotConfig;
+import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
@@ -244,8 +246,18 @@ public class DialogueAutomatonSynthesizer {
     private void addTransition(BlockStmt block, String from, String to, String withIntent) {
         var intents = withIntent.split(",");
         for (String intent : intents) {
+            intent = intent.replace(" ", "");
+            Expression intentExpr;
+            if (intent.equals("_")) {
+                intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
+                //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+                var compilationUnit = javaTreeGenerator.currentClass().findCompilationUnit().get();
+                compilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
+            } else {
+                intentExpr = new StringLiteralExpr(intent);
+            }
             var transition = new MethodCallExpr(new NameExpr(from), "addTransition",
-                    new NodeList<>(new StringLiteralExpr(intent.replace(" ", "")), new NameExpr(to)));
+                    new NodeList<>(intentExpr, new NameExpr(to)));
             block.addStatement(transition);
         }
     }
@@ -455,10 +467,6 @@ public class DialogueAutomatonSynthesizer {
                 if (functionName.equals("initial")) {
                     addTransitionsForInitialState(stmts, stateName, functionType);
                 } else {
-                    if (((BMLState) functionType.getReturnType()).getIntent().isEmpty()) {
-                        // TODO: if we find a state that has an empty intent, we add a "jumpTo" to it's previous state
-                    }
-
                     addTransitionToDefaultState(stmts, stateName);
                 }
 
