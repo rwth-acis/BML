@@ -1,6 +1,7 @@
 package i5.bml.transpiler.bot;
 
 import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.events.Event;
 import i5.bml.transpiler.bot.events.EventHandlerRegistry;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
@@ -44,7 +45,7 @@ public class Bot {
     }
 
     public void run() {
-        //noinspection InfiniteLoopStatement -> The inifinite loop is desired
+        //noinspection InfiniteLoopStatement -> The infinite loop is desired
         while (true) {
             try {
                 var event = eventQueue.take();

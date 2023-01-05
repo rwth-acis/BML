@@ -19,8 +19,7 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
-import i5.bml.transpiler.bot.BotConfig;
-import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
@@ -156,7 +155,7 @@ public class DialogueAutomatonSynthesizer {
                         var intents = stateType.getIntent().split(",");
                         for (String intent : intents) {
                             var transitionExpr = new MethodCallExpr(new NameExpr("s"), "addTransition",
-                                    new NodeList<>(new StringLiteralExpr(intent), new NameExpr(sinkName)));
+                                    new NodeList<>(new StringLiteralExpr(intent.replaceAll(" ", "")), new NameExpr(sinkName)));
                             forExprBody.addStatement(transitionExpr);
                         }
 
@@ -246,7 +245,7 @@ public class DialogueAutomatonSynthesizer {
     private void addTransition(BlockStmt block, String from, String to, String withIntent) {
         var intents = withIntent.split(",");
         for (String intent : intents) {
-            intent = intent.replace(" ", "");
+            intent = intent.replaceAll(" ", "");
             Expression intentExpr;
             if (intent.equals("_")) {
                 intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");

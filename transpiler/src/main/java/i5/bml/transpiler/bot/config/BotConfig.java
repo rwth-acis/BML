@@ -1,4 +1,4 @@
-package i5.bml.transpiler.bot;
+package i5.bml.transpiler.bot.config;
 
 public class BotConfig {
 

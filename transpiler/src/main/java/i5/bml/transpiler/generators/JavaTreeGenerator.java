@@ -17,7 +17,7 @@ import i5.bml.parser.types.BMLBoolean;
 import i5.bml.parser.types.BMLNumber;
 import i5.bml.parser.types.BMLString;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.transpiler.bot.BotConfig;
+import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.Actions;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;

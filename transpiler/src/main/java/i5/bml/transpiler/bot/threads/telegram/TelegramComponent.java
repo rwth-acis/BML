@@ -129,12 +129,14 @@ public class TelegramComponent extends TelegramLongPollingBot {
                     var entity = update.getMessage().getEntities().get(0);
                     if (entity.getText().equals("/start")) {
                         telegramEvent.messageEventType(MessageEventType.USER_STARTED_CHAT);
+                        telegramEvent.text("start");
 
                         // Create Session
                         // This means that using "/start" in a chat, RESETS the current conversation status
                         activeSessions.put(chatId, new Session(chatId, MessageEventType.USER_STARTED_CHAT));
                     } else if (entity.getText().equals("/stop")) {
                         telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
+                        telegramEvent.text("stop");
                         activeSessions.remove(chatId);
                     } else if (entity.getType().equals("bot_command")) {
                         telegramEvent.messageEventType(MessageEventType.BOT_COMMAND);
