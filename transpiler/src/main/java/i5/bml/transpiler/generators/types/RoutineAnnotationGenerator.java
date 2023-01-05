@@ -6,7 +6,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.utils.Utils;
@@ -29,7 +29,7 @@ public class RoutineAnnotationGenerator implements Generator {
 
     @Override
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
-                                          BMLParser.AnnotationContext annotationContext, JavaSynthesizer visitor) {
+                                          BMLParser.AnnotationContext annotationContext, JavaTreeGenerator visitor) {
         Utils.readAndWriteClass("%s%s".formatted(visitor.botOutputPath(), PATH), CLASS_NAME, clazz -> {
             var handlerMethod = clazz.addMethod(functionContext.head.functionName.getText(), Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
             var annotation = new NormalAnnotationExpr(new Name("RoutineEventHandlerMethod"),

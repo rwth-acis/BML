@@ -11,7 +11,7 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLMap;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.GeneratorRegistry;
@@ -33,7 +33,7 @@ public class MapGenerator implements Generator {
     public MapGenerator(Type mapType) {}
 
     @Override
-    public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
         //noinspection OptionalGetWithoutIsPresent -> We can assume the presence
         var compilationUnit = currentClass.findCompilationUnit().get();
@@ -75,7 +75,7 @@ public class MapGenerator implements Generator {
     }
 
     @Override
-    public Node generateInitializer(ParserRuleContext ctx, JavaSynthesizer visitor) {
+    public Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
         var params = ((BMLParser.MapInitializerContext) ctx).params;
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         visitor.currentClass().findCompilationUnit().get().addImport(Map.class);
@@ -90,7 +90,7 @@ public class MapGenerator implements Generator {
     }
 
     @Override
-    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var params = new ArrayList<>(((BMLFunctionType) ctx.type).getRequiredParameters());
         var args = params.stream().map(p -> (Expression) visitor.visit(p.getExprCtx())).collect(Collectors.toCollection(NodeList::new));
         var name = ctx.functionName.getText().equals("add") ? "put" : ctx.functionName.getText();

@@ -7,7 +7,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLSendFunction;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
@@ -17,7 +17,7 @@ import i5.bml.transpiler.utils.Utils;
 public class SendFunctionGenerator implements Generator {
 
     @Override
-    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var functionType = (BMLFunctionType) ctx.type;
         var receiver = functionType.getOptionalParameters().stream()
                 .filter(p -> p.getName().equals("receiver"))

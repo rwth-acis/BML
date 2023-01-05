@@ -8,7 +8,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLString;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;
@@ -20,7 +20,7 @@ public class StringGenerator implements Generator {
     public StringGenerator(Type stringType) {}
 
     @Override
-    public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
         var type = StaticJavaParser.parseClassOrInterfaceType("StringBuffer");
@@ -38,13 +38,13 @@ public class StringGenerator implements Generator {
     }
 
     @Override
-    public Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaSynthesizer visitor) {
+    public Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaTreeGenerator visitor) {
         var m = "ComponentRegistry.get%s().append".formatted(StringUtils.capitalize(ctx.name.getText()));
         return new MethodCallExpr(m, (Expression) visitor.visit(ctx.expr));
     }
 
     @Override
-    public Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaSynthesizer visitor) {
+    public Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaTreeGenerator visitor) {
         return new AssignExpr(new NameExpr(ctx.name.getText()), (Expression) visitor.visit(ctx.expr), AssignExpr.Operator.PLUS);
     }
 }

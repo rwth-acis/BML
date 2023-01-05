@@ -8,7 +8,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLNumberFunction;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 
@@ -16,7 +16,7 @@ import i5.bml.transpiler.generators.Generator;
 public class NumberFunctionGenerator implements Generator {
 
     @Override
-    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var expr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx();
         return new MethodCallExpr(new NameExpr("Integer"), "parseInt", new NodeList<>((Expression) visitor.visit(expr)));
     }

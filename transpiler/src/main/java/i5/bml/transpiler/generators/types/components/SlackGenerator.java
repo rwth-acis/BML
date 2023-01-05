@@ -7,7 +7,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLSlackComponent;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
@@ -26,7 +26,7 @@ public class SlackGenerator implements Generator {
     }
 
     @Override
-    public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
         // Add initializer method

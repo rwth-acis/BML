@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 public interface Generator {
 
-    default void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    default void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of components");
     }
 
@@ -18,24 +18,24 @@ public interface Generator {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of field accesses");
     }
 
-    default Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    default Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of function calls");
     }
 
-    default Node generateInitializer(ParserRuleContext ctx, JavaSynthesizer visitor) {
+    default Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of initializers");
     }
 
     default void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
-                                           BMLParser.AnnotationContext annotationContext, JavaSynthesizer visitor) {
+                                           BMLParser.AnnotationContext annotationContext, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the population of classes");
     }
 
-    default Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaSynthesizer visitor) {
+    default Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of arithmetic assignments");
     }
 
-    default Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaSynthesizer visitor) {
+    default Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of `+=`");
     }
 

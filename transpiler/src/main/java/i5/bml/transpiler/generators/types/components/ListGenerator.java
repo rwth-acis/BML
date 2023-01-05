@@ -8,7 +8,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLList;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;
@@ -24,7 +24,7 @@ public class ListGenerator implements Generator {
     public ListGenerator(Type listType) {}
 
     @Override
-    public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
         //noinspection OptionalGetWithoutIsPresent -> We can assume the presence
         var compilationUnit = currentClass.findCompilationUnit().get();
@@ -53,7 +53,7 @@ public class ListGenerator implements Generator {
     }
 
     @Override
-    public Node generateInitializer(ParserRuleContext ctx, JavaSynthesizer visitor) {
+    public Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
         var arguments = ((BMLParser.ListInitializerContext) ctx).expression().stream()
                 .map(e -> (Expression) visitor.visit(e))
                 .collect(Collectors.toCollection(NodeList::new));

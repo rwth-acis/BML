@@ -8,14 +8,14 @@ import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLStringFunction;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 
 @CodeGenerator(typeClass = BMLStringFunction.class)
 public class StringFunctionGenerator implements Generator {
     @Override
-    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var functionType = (BMLFunctionType) ctx.type;
         var expr = functionType.getRequiredParameters().get(0).getExprCtx();
         return new MethodCallExpr(new NameExpr("String"), "valueOf", new NodeList<>((Expression) visitor.visit(expr)));

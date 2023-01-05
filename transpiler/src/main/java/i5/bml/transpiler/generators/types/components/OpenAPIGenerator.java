@@ -11,7 +11,7 @@ import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.openapi.BMLOpenAPIComponent;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
@@ -35,7 +35,7 @@ public class OpenAPIGenerator implements Generator {
     }
 
     @Override
-    public void generateComponent(BMLParser.ComponentContext ctx, JavaSynthesizer visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         apiName = ctx.name.getText() + "client";
 
         // Generate swagger client code
@@ -69,7 +69,7 @@ public class OpenAPIGenerator implements Generator {
         });
     }
 
-    private String getAPIImport(JavaSynthesizer visitor, String clientClassName) {
+    private String getAPIImport(JavaTreeGenerator visitor, String clientClassName) {
         // Add import for %sApi
         if (!visitor.outputPackage().isEmpty()) {
             return visitor.outputPackage() + ".openapi." + apiName + ".apis." + clientClassName;
@@ -79,7 +79,7 @@ public class OpenAPIGenerator implements Generator {
     }
 
     @Override
-    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaSynthesizer visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         // Method call
         var params = new ArrayList<>(((BMLFunctionType) ctx.type).getRequiredParameters());
         var pathParameter = params.stream()
@@ -132,7 +132,7 @@ public class OpenAPIGenerator implements Generator {
         return methodCallExpr;
     }
 
-    private String getOpenAPIImport(JavaSynthesizer visitor, String clientClassName) {
+    private String getOpenAPIImport(JavaTreeGenerator visitor, String clientClassName) {
         // Add import for %sApi
         if (!visitor.outputPackage().isEmpty()) {
             return visitor.outputPackage() + ".openapi." + apiName + "." + clientClassName;
@@ -141,7 +141,7 @@ public class OpenAPIGenerator implements Generator {
         }
     }
 
-    private String getModelImport(JavaSynthesizer visitor, String clientClassName) {
+    private String getModelImport(JavaTreeGenerator visitor, String clientClassName) {
         if (!visitor.outputPackage().isEmpty()) {
             return visitor.outputPackage() + ".openapi." + apiName + ".models." + clientClassName;
         } else {

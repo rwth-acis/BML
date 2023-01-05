@@ -32,7 +32,7 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class JavaSynthesizer extends BMLBaseVisitor<Node> {
+public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private final String botOutputPath;
 
@@ -50,7 +50,7 @@ public class JavaSynthesizer extends BMLBaseVisitor<Node> {
 
     private boolean wrapAssignmentInTryStmt = false;
 
-    public JavaSynthesizer(String botOutputPath, String outputPackage) {
+    public JavaTreeGenerator(String botOutputPath, String outputPackage) {
         this.botOutputPath = botOutputPath;
         this.outputPackage = outputPackage;
     }

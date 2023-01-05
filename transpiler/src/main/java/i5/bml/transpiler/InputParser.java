@@ -2,7 +2,7 @@ package i5.bml.transpiler;
 
 import i5.bml.parser.Parser;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import i5.bml.transpiler.generators.JavaSynthesizer;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -126,7 +126,7 @@ public class InputParser {
             FileUtils.copyFile(new File("transpiler/src/main/resources/simplelogger.properties"), new File(outputDir + "/src/main/resources/simplelogger.properties"));
 
             // Emit code into output directory
-            new JavaSynthesizer(outputDir + "/src/main/java/", outputPackage).visit(tree);
+            new JavaTreeGenerator(outputDir + "/src/main/java/", outputPackage).visit(tree);
 
             if (outputFormat.equals("jar")) {
                 // TODO: Compile code, output jar, delete output files except jar
