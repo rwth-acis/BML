@@ -563,6 +563,9 @@ public class DiagnosticsCollector extends BMLBaseListener {
     //       - WARN:  Unreachable state(s), e.g., state(...)
     //       -
 
+    // TODO: Annotations type checking:
+    //       - ERROR: Can only be registered once
+
 
     @Override
     public void exitFunctionCall(BMLParser.FunctionCallContext ctx) {
