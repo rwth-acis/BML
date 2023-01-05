@@ -559,7 +559,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     //       - ERROR: More than one default state
     //       - ERROR: Outgoing state of sink state
     //       - ERROR: RHS of assignment is sink or default
-    //       - ERROR:
+    //       - ERROR: State going into "fallthrough" state has to be anonymous
     //       - WARN:  Unreachable state(s), e.g., state(...)
     //       -
 
@@ -579,7 +579,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
         if (symbol == null) {
             Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.functionName);
             ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-            ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
             return;
         }
 
@@ -588,26 +587,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
         functionType.checkParameters(this, ctx.params);
         functionType.initializeType(ctx);
         ctx.type = functionType;
-    }
-
-    @Override
-    public void exitDialogueTransition(BMLParser.DialogueTransitionContext ctx) {
-        for (var functionCallContext : ctx.functionCall()) {
-            var name = functionCallContext.functionName.getText();
-            var symbol = currentScope.resolve(name);
-            if (symbol == null) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), functionCallContext.functionName);
-                functionCallContext.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
-                return;
-            }
-
-            // Perform type checks for function calls
-            var functionType = new BMLFunctionType(((BMLFunctionType) ((TypedSymbol) symbol).getType()));
-            functionType.checkParameters(this, functionCallContext.params);
-            functionType.initializeType(functionCallContext);
-
-            functionCallContext.type = functionType;
-        }
     }
 
     @Override
