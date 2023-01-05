@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLTelegramComponent;
+import i5.bml.transpiler.bot.components.ComponentInitializer;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.threads.telegram.TelegramBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
@@ -31,10 +32,10 @@ public class TelegramGenerator implements Generator {
 
         // Add initializer method
         var method = currentClass.addMethod("initTelegramComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-        method.addAnnotation(new MarkerAnnotationExpr(new Name("ComponentInitializer")));
+        method.addAnnotation(new MarkerAnnotationExpr(new Name(ComponentInitializer.class.getSimpleName())));
         method.addParameter(ExecutorService.class, "threadPool");
         method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
-        var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType("TelegramBotThread"),
+        var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(TelegramBotThread.class.getSimpleName()),
                 new NodeList<>(new NameExpr("eventQueue"), new StringLiteralExpr(telegramComponent.getBotName()), new StringLiteralExpr(telegramComponent.getBotToken())));
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("threadPool"), "execute", new NodeList<>(threadInstance))));
 

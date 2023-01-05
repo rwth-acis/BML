@@ -15,11 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 @CodeGenerator(typeClass = BMLOpenAPISchema.class)
 public class OpenAPISchemaGenerator implements Generator {
 
-    private final BMLOpenAPISchema openAPISchema;
-
-    public OpenAPISchemaGenerator(Type openAPISchema) {
-        this.openAPISchema = (BMLOpenAPISchema) openAPISchema;
-    }
+    public OpenAPISchemaGenerator(Type openAPISchema) {}
 
     @Override
     public Node generateFieldAccess(Expression object, TerminalNode field) {

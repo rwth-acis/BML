@@ -8,6 +8,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLRasaComponent;
+import i5.bml.transpiler.bot.components.ComponentInitializer;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.DialogueHandler;
@@ -34,7 +35,7 @@ public class RasaGenerator implements Generator {
         var currentClass = visitor.currentClass();
 
         // Add field
-        var type = StaticJavaParser.parseClassOrInterfaceType("RasaComponent");
+        var type = StaticJavaParser.parseClassOrInterfaceType(RasaComponent.class.getSimpleName());
         var fieldName = ctx.name.getText();
         var initializer = new ObjectCreationExpr(null, type, new NodeList<>(new StringLiteralExpr(rasaComponent.getUrl())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName,
@@ -46,7 +47,7 @@ public class RasaGenerator implements Generator {
 
         // Add initializer method
         var method = currentClass.addMethod("initRasaComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-        method.addAnnotation(new MarkerAnnotationExpr(new Name("ComponentInitializer")));
+        method.addAnnotation(new MarkerAnnotationExpr(new Name(ComponentInitializer.class.getSimpleName())));
         method.addParameter(ExecutorService.class, "threadPool");
         method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
         method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(fieldName), "init")));

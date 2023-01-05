@@ -77,11 +77,8 @@ public class PrinterUtil {
             CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
             //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
             var clazz = compilationUnit.getClassByName(className).get();
-
             c.accept(clazz);
-
             sortClassMembersAndImports(clazz);
-
             Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
         } catch (FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(javaFilePath));
@@ -106,5 +103,10 @@ public class PrinterUtil {
     public static void readAndWriteClass(String botOutputPath, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
         var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
         readAndWriteClass(botOutputPath + packageName, clazz.getSimpleName(), clazz.getSimpleName(), c);
+    }
+
+    public static void readAndWriteClass(String botOutputPath, String fileName, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {
+        var packageName = clazz.getPackageName().replace("i5.bml.transpiler.bot.", "").replace(".", "");
+        readAndWriteClass(botOutputPath + packageName, fileName, clazz.getSimpleName(), c);
     }
 }

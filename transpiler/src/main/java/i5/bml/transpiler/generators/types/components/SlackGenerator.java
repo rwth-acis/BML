@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLSlackComponent;
+import i5.bml.transpiler.bot.components.ComponentInitializer;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
@@ -31,10 +32,10 @@ public class SlackGenerator implements Generator {
 
         // Add initializer method
         var method = currentClass.addMethod("initSlackComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-        method.addAnnotation(new MarkerAnnotationExpr(new Name("ComponentInitializer")));
+        method.addAnnotation(new MarkerAnnotationExpr(new Name(ComponentInitializer.class.getSimpleName())));
         method.addParameter(ExecutorService.class, "threadPool");
         method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
-        var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType("SlackBotThread"),
+        var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(SlackBotThread.class.getSimpleName()),
                 new NodeList<>(
                         new NameExpr("eventQueue"),
                         new StringLiteralExpr(slackComponent.getBotToken()),

@@ -17,6 +17,11 @@ import i5.bml.parser.types.BMLBoolean;
 import i5.bml.parser.types.BMLNumber;
 import i5.bml.parser.types.BMLString;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
+import i5.bml.transpiler.bot.BotConfig;
+import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.dialogue.Actions;
+import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.generators.dialogue.DialogueAutomatonSynthesizer;
 import i5.bml.transpiler.utils.PrinterUtil;
@@ -95,7 +100,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitBotHead(BMLParser.BotHeadContext ctx) {
-        PrinterUtil.readAndWriteClass(botOutputPath, "BotConfig", clazz -> {
+        PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
             for (var pair : ctx.params.elementExpressionPair()) {
                 var type = BMLTypeResolver.resolveBMLTypeToJavaType(pair.expr.type);
                 var name = pair.name.getText().toUpperCase();
@@ -110,7 +115,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
         // Components
-        PrinterUtil.readAndWriteClass(botOutputPath + "/components", "ComponentRegistry", clazz -> {
+        PrinterUtil.readAndWriteClass(botOutputPath, ComponentRegistry.class, clazz -> {
             classStack.push(clazz);
             ctx.component().forEach(this::visit);
             classStack.pop();
@@ -126,13 +131,13 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 try {
                     FileUtils.copyFile(new File(botOutputPath + "dialogue/DialogueAutomatonTemplate.java"),
                             new File("%s/dialogue/%s.java".formatted(botOutputPath, newDialogueClassName)));
-                    PrinterUtil.readAndWriteClass("%s/dialogue".formatted(botOutputPath), newDialogueClassName, "DialogueAutomatonTemplate", clazz -> {
+                    PrinterUtil.readAndWriteClass(botOutputPath, newDialogueClassName, DialogueAutomatonTemplate.class, clazz -> {
                         clazz.setName(newDialogueClassName);
                     });
 
                     FileUtils.copyFile(new File(botOutputPath + "dialogue/Actions.java"),
                             new File("%s/dialogue/%s.java".formatted(botOutputPath, newActionsClassName)));
-                    PrinterUtil.readAndWriteClass("%s/dialogue".formatted(botOutputPath), newActionsClassName, "Actions", clazz -> {
+                    PrinterUtil.readAndWriteClass(botOutputPath, newActionsClassName, Actions.class, clazz -> {
                         clazz.setName(newActionsClassName);
                     });
                 } catch (IOException e) {
@@ -155,7 +160,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
             }
         } else {
             // We remove the DialogueAutomaton references when there is no dialogue specified
-            PrinterUtil.readAndWriteClass(botOutputPath + "/threads", "Session", clazz -> {
+            PrinterUtil.readAndWriteClass(botOutputPath, Session.class, clazz -> {
                 //noinspection OptionalGetWithoutIsPresent
                 clazz.findCompilationUnit().get().getImports().clear();
                 //noinspection OptionalGetWithoutIsPresent
@@ -166,7 +171,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);
                 toStringMethod.addAnnotation(Override.class);
                 toStringMethod.setType(String.class);
-                toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod("Session", clazz.getFields())));
+                toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod(Session.class.getSimpleName(), clazz.getFields())));
             });
         }
 
@@ -185,7 +190,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
         // Set number of routines for scheduler pool size
         int finalRoutineCount = routineCount;
-        PrinterUtil.readAndWriteClass(botOutputPath, "BotConfig", clazz -> {
+        PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
             //noinspection OptionalGetWithoutIsPresent
             clazz.getFieldByName("ROUTINE_COUNT").get().getVariables().get(0).setInitializer(new IntegerLiteralExpr("" + finalRoutineCount));
         });
