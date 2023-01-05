@@ -169,6 +169,6 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
     @Override
     public String toString() {
-        return "TelegramComponent{username='%s', token='%s', activeSessions=%s}".formatted(botName, botToken, activeSessions);
+        return "TelegramComponent{username='%s', activeSessions=%s}".formatted(botName, activeSessions);
     }
 }

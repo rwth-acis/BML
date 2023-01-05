@@ -38,7 +38,7 @@ public class EventHandlerRegistry {
                 try {
                     messageEventHandler.get(messageEvent.messageEventType()).invoke(null, new MessageEventContext(messageEvent));
                 } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.messageEventType()));
+                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.messageEventType()), e);
                 }
             }
         }

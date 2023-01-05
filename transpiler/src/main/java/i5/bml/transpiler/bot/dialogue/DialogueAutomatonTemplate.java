@@ -30,4 +30,9 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
         currentState = state;
         currentState.action(ctx);
     }
+
+    @Override
+    public String toString() {
+        return "%s{currentState=%s}".formatted(getClass().getSimpleName(), currentState);
+    }
 }

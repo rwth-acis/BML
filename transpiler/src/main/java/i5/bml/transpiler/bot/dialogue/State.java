@@ -33,4 +33,9 @@ public class State {
     public void setAction(Consumer<MessageEventContext> action) {
         this.action = action;
     }
+
+    @Override
+    public String toString() {
+        return "State{transitions=%s}".formatted(transitions.keySet());
+    }
 }
