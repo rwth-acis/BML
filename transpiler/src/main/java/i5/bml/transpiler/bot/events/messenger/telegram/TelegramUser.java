@@ -5,24 +5,7 @@ import i5.bml.transpiler.bot.threads.telegram.TelegramComponent;
 
 import java.util.Objects;
 
-public final class TelegramUser implements User {
-
-    private final TelegramComponent telegramComponent;
-
-    private final Long chatId;
-
-    public TelegramUser(TelegramComponent telegramComponent, Long chatId) {
-        this.telegramComponent = telegramComponent;
-        this.chatId = chatId;
-    }
-
-    public TelegramComponent telegramComponent() {
-        return telegramComponent;
-    }
-
-    public Long chatId() {
-        return chatId;
-    }
+public record TelegramUser(TelegramComponent telegramComponent, Long chatId) implements User {
 
     @Override
     public boolean equals(Object obj) {
@@ -31,11 +14,6 @@ public final class TelegramUser implements User {
         var that = (TelegramUser) obj;
         return Objects.equals(this.telegramComponent, that.telegramComponent) &&
                 Objects.equals(this.chatId, that.chatId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(telegramComponent, chatId);
     }
 
     @Override

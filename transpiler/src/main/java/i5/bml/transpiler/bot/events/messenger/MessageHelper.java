@@ -13,11 +13,9 @@ import java.io.IOException;
 public class MessageHelper {
 
     public static void replyToMessenger(User user, String msg) {
-        if (user instanceof TelegramUser) {
-            var telegramUser = (TelegramUser) user;
+        if (user instanceof TelegramUser telegramUser) {
             sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg);
-        } else if (user instanceof SlackUser) {
-            var slackUser = (SlackUser) user;
+        } else if (user instanceof SlackUser slackUser) {
             sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg);
         } else {
             // TODO: Throw exception
@@ -25,11 +23,9 @@ public class MessageHelper {
     }
 
     public static void replyToMessenger(MessageEventContext context, String msg) {
-        if (context.event().user() instanceof TelegramUser) {
-            var telegramUser = (TelegramUser) context.event().user();
+        if (context.event().user() instanceof TelegramUser telegramUser) {
             sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg);
-        } else if (context.event().user() instanceof SlackUser) {
-            var slackUser = (SlackUser) context.event().user();
+        } else if (context.event().user() instanceof SlackUser slackUser) {
             sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg);
         } else {
             // TODO: Throw exception

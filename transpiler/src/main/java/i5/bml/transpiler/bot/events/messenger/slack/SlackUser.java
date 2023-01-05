@@ -5,31 +5,7 @@ import i5.bml.transpiler.bot.events.messenger.User;
 
 import java.util.Objects;
 
-public final class SlackUser implements User {
-
-    private final SocketModeClient slackClient;
-
-    private final String botToken;
-
-    private final String channelId;
-
-    public SlackUser(SocketModeClient slackClient, String botToken, String channelId) {
-        this.slackClient = slackClient;
-        this.botToken = botToken;
-        this.channelId = channelId;
-    }
-
-    public SocketModeClient slackClient() {
-        return slackClient;
-    }
-
-    public String botToken() {
-        return botToken;
-    }
-
-    public String channelId() {
-        return channelId;
-    }
+public record SlackUser(SocketModeClient slackClient, String botToken, String channelId) implements User {
 
     @Override
     public boolean equals(Object obj) {
@@ -39,11 +15,6 @@ public final class SlackUser implements User {
         return Objects.equals(this.slackClient, that.slackClient) &&
                 Objects.equals(this.botToken, that.botToken) &&
                 Objects.equals(this.channelId, that.channelId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(slackClient, botToken, channelId);
     }
 
     @Override

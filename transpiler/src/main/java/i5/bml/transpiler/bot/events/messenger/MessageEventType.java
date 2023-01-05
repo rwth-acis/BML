@@ -1,7 +1,5 @@
 package i5.bml.transpiler.bot.events.messenger;
 
-import i5.bml.transpiler.utils.Utils;
-
 public enum MessageEventType {
 
     USER_STARTED_CHAT,
@@ -16,10 +14,5 @@ public enum MessageEventType {
 
     BOT_REMOVED,
 
-    BOT_COMMAND;
-
-    @Override
-    public String toString() {
-        return Utils.pascalCaseToSnakeCase(name());
-    }
+    BOT_COMMAND
 }
