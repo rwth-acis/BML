@@ -106,7 +106,11 @@ public class RasaComponent {
             try {
                 var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
                 LOGGER.debug(responseSchema.toString());
-                messageEvent.entity(responseSchema.entities()[0].value());
+                if (responseSchema.entities().length > 0) {
+                    messageEvent.entity(responseSchema.entities()[0].value());
+                } else {
+                    messageEvent.entity("{no_entity_found}");
+                }
                 messageEvent.intent(responseSchema.intent().name());
             } catch (IOException e) {
                 throw new RuntimeException(e);
