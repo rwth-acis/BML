@@ -19,7 +19,7 @@ import i5.bml.parser.types.BMLString;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
 import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
-import i5.bml.transpiler.bot.dialogue.Actions;
+import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
@@ -114,51 +114,49 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
-        // Components
-        PrinterUtil.readAndWriteClass(botOutputPath, ComponentRegistry.class, clazz -> {
-            classStack.push(clazz);
-            ctx.component().forEach(this::visit);
-            classStack.pop();
+        var componentRegistryClass = PrinterUtil.readClass(botOutputPath, ComponentRegistry.class);
+        var routineCount = 0;
+
+        // Iterate over child nodes in body in procedural manner, i.e., as they appear in the source text
+        for (var child : ctx.children) {
+            if (child.getText().equals("{") || child.getText().equals("}")) {
+                continue;
+            }
+
+            if (child instanceof BMLParser.ComponentContext componentContext) {
+                classStack.push(componentRegistryClass);
+                visit(componentContext);
+                classStack.pop();
+            } else if (child instanceof BMLParser.DialogueAutomatonContext automatonContext) {
+                var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(automatonContext.head.name.getText()));
+                var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(automatonContext.head.name.getText()));
+
+                // Duplicate templates for DialogueAutomaton and Actions
+                PrinterUtil.copyClass(botOutputPath + "dialogue", DialogueAutomatonTemplate.class.getSimpleName(), newDialogueClassName);
+                PrinterUtil.copyClass(botOutputPath + "dialogue", ActionsTemplate.class.getSimpleName(), newActionsClassName);
+
+                visit(automatonContext);
+            } else if (child instanceof BMLParser.FunctionDefinitionContext functionContext) {
+                for (var annotationContext : functionContext.annotation()) {
+                    var generator = GeneratorRegistry.getGeneratorForType(annotationContext.type);
+                    generator.populateClassWithFunction(functionContext, annotationContext, this);
+
+                    if (annotationContext.type instanceof BMLRoutineAnnotation) {
+                        ++routineCount;
+                    }
+                }
+            }
+        }
+
+        // Set number of routines for scheduler pool size
+        int finalRoutineCount = routineCount;
+        PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
+            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+            clazz.getFieldByName("ROUTINE_COUNT").get().getVariables().get(0).setInitializer(new IntegerLiteralExpr("" + finalRoutineCount));
         });
 
-        if (!ctx.dialogueAutomaton().isEmpty()) {
-            // Dialogues
-            for (var dialogueAutomatonContext : ctx.dialogueAutomaton()) {
-                var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueAutomatonContext.head.name.getText()));
-                var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueAutomatonContext.head.name.getText()));
-
-                // Duplicate DialogueAutomaton.java and Actions.java
-                try {
-                    FileUtils.copyFile(new File(botOutputPath + "dialogue/DialogueAutomatonTemplate.java"),
-                            new File("%s/dialogue/%s.java".formatted(botOutputPath, newDialogueClassName)));
-                    PrinterUtil.readAndWriteClass(botOutputPath, newDialogueClassName, DialogueAutomatonTemplate.class, clazz -> {
-                        clazz.setName(newDialogueClassName);
-                    });
-
-                    FileUtils.copyFile(new File(botOutputPath + "dialogue/Actions.java"),
-                            new File("%s/dialogue/%s.java".formatted(botOutputPath, newActionsClassName)));
-                    PrinterUtil.readAndWriteClass(botOutputPath, newActionsClassName, Actions.class, clazz -> {
-                        clazz.setName(newActionsClassName);
-                    });
-                } catch (IOException e) {
-                    System.err.println(e.getMessage());
-                }
-
-                visit(dialogueAutomatonContext);
-            }
-            // After having copied everything, we delete the original
-            try {
-                FileUtils.forceDelete(new File(botOutputPath + "dialogue/DialogueAutomatonTemplate.java"));
-                FileUtils.forceDelete(new File(botOutputPath + "dialogue/Actions.java"));
-
-                if (ctx.dialogueAutomaton().isEmpty()) {
-                    // When there is no dialogue, we can delete the whole folder
-                    FileUtils.deleteDirectory(new File(botOutputPath + "dialogue"));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
+        // We either delete everything or just the templates, depending on whether at least one dialogue was defined
+        if (ctx.dialogueAutomaton().isEmpty()) {
             // We remove the DialogueAutomaton references when there is no dialogue specified
             PrinterUtil.readAndWriteClass(botOutputPath, Session.class, clazz -> {
                 //noinspection OptionalGetWithoutIsPresent
@@ -173,27 +171,27 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 toStringMethod.setType(String.class);
                 toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod(Session.class.getSimpleName(), clazz.getFields())));
             });
-        }
 
-        // Function definitions
-        var routineCount = 0;
-        for (var functionContext : ctx.functionDefinition()) {
-            for (var annotationContext : functionContext.annotation()) {
-                var generator = GeneratorRegistry.getGeneratorForType(annotationContext.type);
-                generator.populateClassWithFunction(functionContext, annotationContext, this);
-
-                if (annotationContext.type instanceof BMLRoutineAnnotation) {
-                    ++routineCount;
-                }
+            // When there is no dialogue, we can delete the whole folder
+            try {
+                FileUtils.deleteDirectory(new File(botOutputPath + "dialogue"));
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to delete directory %s".formatted(botOutputPath + "dialogue"), e);
+            }
+        } else {
+            File file = null;
+            try {
+                file = new File(botOutputPath + "dialogue/%s.java".formatted(DialogueAutomatonTemplate.class.getSimpleName()));
+                FileUtils.forceDelete(file);
+                file = new File(botOutputPath + "dialogue/%s.java".formatted(ActionsTemplate.class.getSimpleName()));
+                FileUtils.forceDelete(file);
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to delete file %s".formatted(file), e);
             }
         }
 
-        // Set number of routines for scheduler pool size
-        int finalRoutineCount = routineCount;
-        PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
-            //noinspection OptionalGetWithoutIsPresent
-            clazz.getFieldByName("ROUTINE_COUNT").get().getVariables().get(0).setInitializer(new IntegerLiteralExpr("" + finalRoutineCount));
-        });
+        // Finally write back the classes we read
+        PrinterUtil.writeClass(botOutputPath, ComponentRegistry.class, componentRegistryClass);
 
         // We have visited all children already, and we have nothing to return
         return null;
@@ -431,12 +429,8 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
                 // Check dialogue scope, not function scope, only "global" dialogue scope
                 symbol = (VariableSymbol) dialogueScope.getSymbol(atom);
-                if (symbol != null) {
-                    if (currentClass().getImplementedTypes().isEmpty()) { // We have an <dialogueName>Actions or State class
-                        yield new MethodCallExpr(new NameExpr("dialogueAutomaton"), StringUtils.capitalize(atom));
-                    } else { // We have a dialogue class
-                        yield new NameExpr(atom);
-                    }
+                if (symbol != null && !currentClass().getImplementedTypes().isEmpty()) {
+                    yield new NameExpr(atom);
                 }
 
                 symbol = (VariableSymbol) currentScope.resolve(atom);

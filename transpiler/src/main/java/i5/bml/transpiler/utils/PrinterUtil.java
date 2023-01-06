@@ -5,7 +5,6 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.visitor.VoidVisitor;
@@ -13,8 +12,8 @@ import com.github.javaparser.printer.DefaultPrettyPrinter;
 import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import com.github.javaparser.printer.configuration.PrinterConfiguration;
-import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter;
 import i5.bml.transpiler.generators.JavaTreeVisitor;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -89,6 +88,10 @@ public class PrinterUtil {
         }
     }
 
+    public static void copyClass(String path, String fileName, String className, Consumer<ClassOrInterfaceDeclaration> c) {
+
+    }
+
     private static void sortClassMembersAndImports(ClassOrInterfaceDeclaration clazz) {
         clazz.getMembers().sort(Comparator.comparing((BodyDeclaration<?> t) -> t.isMethodDeclaration())
                 .thenComparing(BodyDeclaration::isConstructorDeclaration)
@@ -126,6 +129,23 @@ public class PrinterUtil {
         }
     }
 
+    public static ClassOrInterfaceDeclaration readClass(String botOutputPath, Class<?> clazz) {
+        var packageName = clazz.getPackageName()
+                .replace("i5.bml.transpiler.bot", "")
+                .replaceFirst("\\.", "")
+                .replaceAll("\\.", "/");
+        return readClass(botOutputPath + packageName, clazz.getSimpleName());
+    }
+
+    public static void writeClass(String path, Class<?> clazz, ClassOrInterfaceDeclaration classToWrite) {
+        var packageName = clazz.getPackageName()
+                .replace("i5.bml.transpiler.bot", "")
+                .replaceFirst("\\.", "")
+                .replaceAll("\\.", "/");
+        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+        writeClass(path + packageName, classToWrite.findCompilationUnit().get(), classToWrite);
+    }
+
     public static void writeClass(String path, CompilationUnit compilationUnit, ClassOrInterfaceDeclaration clazz) {
         var javaFilePath = "%s/%s.java".formatted(path, clazz.getName());
         try {
@@ -134,6 +154,18 @@ public class PrinterUtil {
             Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
+        }
+    }
+
+    public static void copyClass(String path, String oldName, String newName) {
+        try {
+            FileUtils.copyFile(new File("%s/%s.java".formatted(path, oldName)), new File("%s/%s.java".formatted(path, newName)));
+            readAndWriteClass(path, newName, oldName, clazz -> {
+                clazz.setName(newName);
+                clazz.getConstructors().forEach(c -> c.setName(newName));
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }
