@@ -48,7 +48,7 @@ public class PrinterUtil {
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
             Files.write(javaFilePath, printer.print(compilationUnit).getBytes());
         } catch (NoSuchFileException | FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(filePath));
+            throw new IllegalStateException("Could not find %s".formatted(filePath), e);
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
         }
@@ -66,9 +66,9 @@ public class PrinterUtil {
 
             Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()));
+            throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()), e);
         } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(file.getAbsolutePath(), e.getMessage()));
+            throw new IllegalStateException("Error writing to file %s: %s".formatted(file.getAbsolutePath(), e.getMessage()), e);
         }
     }
 
@@ -83,9 +83,9 @@ public class PrinterUtil {
             sortClassMembersAndImports(clazz);
             Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath));
+            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
         } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()));
+            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
         }
     }
 
@@ -112,5 +112,28 @@ public class PrinterUtil {
                 .replaceFirst("\\.", "")
                 .replaceAll("\\.", "/");
         readAndWriteClass(botOutputPath + packageName, fileName, clazz.getSimpleName(), c);
+    }
+
+    public static ClassOrInterfaceDeclaration readClass(String path, String className) {
+        var javaFilePath = "%s/%s.java".formatted(path, className);
+        try {
+            var javaFile = new File(javaFilePath);
+            CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
+            return compilationUnit.getClassByName(className).get();
+        } catch (FileNotFoundException e) {
+            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
+        }
+    }
+
+    public static void writeClass(String path, CompilationUnit compilationUnit, ClassOrInterfaceDeclaration clazz) {
+        var javaFilePath = "%s/%s.java".formatted(path, clazz.getName());
+        try {
+            var javaFile = new File(javaFilePath);
+            sortClassMembersAndImports(clazz);
+            Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
+        } catch (IOException e) {
+            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
+        }
     }
 }

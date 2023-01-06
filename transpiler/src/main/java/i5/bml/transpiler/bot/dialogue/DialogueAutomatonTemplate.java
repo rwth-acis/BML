@@ -8,7 +8,7 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     private final Set<State> states = new HashSet<>();
 
-    private State currentState = new State(ctx -> {});
+    private State currentState;
 
     private State defaultState;
 

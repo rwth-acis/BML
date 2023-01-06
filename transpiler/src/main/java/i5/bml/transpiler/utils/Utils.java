@@ -59,6 +59,12 @@ public class Utils {
         return new ReturnStmt(new MethodCallExpr(new StringLiteralExpr(stringBuilder.toString()), "formatted", args));
     }
 
+    public static void generateRecordStyleGetter(FieldDeclaration field) {
+        var getter = field.createGetter();
+        // Remove "get" prefix
+        getter.setName(StringUtils.uncapitalize(getter.getNameAsString().substring(3)));
+    }
+
     public static <T> T findParentContext(RuleContext currentCtx, Class<T> parentCtxClass) {
         var currParent = currentCtx;
         while (currParent != null && !parentCtxClass.isInstance(currParent)) {
