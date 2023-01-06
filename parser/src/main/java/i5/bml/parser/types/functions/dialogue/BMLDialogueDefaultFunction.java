@@ -14,7 +14,7 @@ public class BMLDialogueDefaultFunction extends AbstractBMLDialogueFunction {
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);
 
-        symbol.setType(new BMLFunctionType(stateReturnType, new ArrayList<>(), optionalParameters));
+        symbol.setType(new BMLFunctionType(stateReturnType, new ArrayList<>(), optionalParameters.subList(1, optionalParameters.size())));
         scope.define(symbol);
     }
 }

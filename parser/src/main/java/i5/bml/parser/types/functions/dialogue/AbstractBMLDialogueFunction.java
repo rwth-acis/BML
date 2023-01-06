@@ -9,6 +9,8 @@ import org.antlr.symtab.Scope;
 import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class AbstractBMLDialogueFunction implements BMLFunction {
@@ -38,7 +40,7 @@ public abstract class AbstractBMLDialogueFunction implements BMLFunction {
         actionParameter.addType(TypeRegistry.resolveComplexType(BuiltinType.FUNCTION));
         actionParameter.addType(TypeRegistry.resolveComplexType(BuiltinType.STATE));
 
-        optionalParameters = List.of(intentParameter, actionParameter);
+        optionalParameters = Arrays.asList(intentParameter, actionParameter);
 
         symbol = new VariableSymbol(getName());
     }
