@@ -8,5 +8,7 @@ public interface DialogueAutomaton {
 
     void jumpTo(State state, MessageEventContext ctx);
 
+    void jumpToWithoutAction(State state);
+
     State defaultState();
 }

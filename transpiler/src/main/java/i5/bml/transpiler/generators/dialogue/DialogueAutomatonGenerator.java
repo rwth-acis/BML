@@ -3,7 +3,6 @@ package i5.bml.transpiler.generators.dialogue;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -44,8 +43,6 @@ public class DialogueAutomatonGenerator {
 
     private final JavaTreeGenerator javaTreeGenerator;
 
-    private Map<String, BlockStmt> stateActions = new HashMap<>();
-
     private ClassOrInterfaceDeclaration dialogueClass;
 
     private CompilationUnit dialogueCompilationUnit;
@@ -76,6 +73,10 @@ public class DialogueAutomatonGenerator {
         // Forward named states such that they are available at all points in `initTransitions`
         for (var assignmentContext : ctx.dialogueAssignment()) {
             if (assignmentContext.assignment().expr.type instanceof BMLState) {
+                // First create a respective class
+                visitDialogueAssignment(assignmentContext);
+
+                // Second, we can add it to the `initTransitions` method to be instantiated and connected via transitions
                 var name = assignmentContext.assignment().name.getText();
                 var className = StringUtils.capitalize(name) + "State";
 
@@ -124,11 +125,9 @@ public class DialogueAutomatonGenerator {
             } else { // Anything else than action definitions goes into dialogue class
                 javaTreeGenerator.classStack().push(dialogueClass);
 
-                if (child instanceof BMLParser.DialogueAssignmentContext assignmentContext) { // Assignments (States and other types)
-                    if (assignmentContext.assignment().expr.type instanceof BMLState) {
-                        // We have to visit the node to create a class for it
-                        visitDialogueAssignment(assignmentContext);
-                    } else { // We have some "normal" type, add field with getter to class
+                if (child instanceof BMLParser.DialogueAssignmentContext assignmentContext) { // Assignments (Only other types, states have been forwarded)
+                    if (!(assignmentContext.assignment().expr.type instanceof BMLState)) {
+                        // We have some "normal" type, add field with getter to class
                         var field = dialogueClass.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(assignmentContext.assignment().expr.type),
                                 assignmentContext.assignment().name.getText(), (Expression) javaTreeGenerator.visit(assignmentContext.assignment().expr),
                                 Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
@@ -186,13 +185,13 @@ public class DialogueAutomatonGenerator {
         if (block.getStatements().stream()
                 .filter(s -> s.isExpressionStmt() && s.asExpressionStmt().getExpression().isMethodCallExpr())
                 .map(s -> s.asExpressionStmt().getExpression().asMethodCallExpr())
-                .noneMatch(m -> m.getNameAsString().equals("jumpTo"))) {
+                .noneMatch(m -> m.getNameAsString().equals("jumpTo") || m.getNameAsString().equals("jumpToWithoutAction"))) {
             if (isAnonymousAction) {
-                block.addStatement(new MethodCallExpr("jumpTo", new NameExpr("defaultState"), new NameExpr("ctx")));
+                block.addStatement(new MethodCallExpr("jumpToWithoutAction", new NameExpr("defaultState")));
             } else {
                 var defaultState = new MethodCallExpr(new NameExpr("dialogueAutomaton"), "defaultState");
-                block.addStatement(new MethodCallExpr(new NameExpr("dialogueAutomaton"), "jumpTo",
-                        new NodeList<>(defaultState, new NameExpr("ctx"))));
+                block.addStatement(new MethodCallExpr(new NameExpr("dialogueAutomaton"), "jumpToWithoutAction",
+                        new NodeList<>(defaultState)));
             }
         }
     }
@@ -233,7 +232,7 @@ public class DialogueAutomatonGenerator {
         var actionMethod = clazz.addMethod("action", Modifier.Keyword.PUBLIC);
         actionMethod.addMarkerAnnotation(Override.class);
         actionMethod.addParameter("MessageEventContext", "ctx");
-        actionMethod.setBody((BlockStmt) generateBlockForStateAction(stateType, cu, clazz, false));
+        actionMethod.setBody(generateBlockForStateAction(stateType, cu, clazz));
 
         // Add import for action parameter of type `MessageEventContext`
         cu.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
@@ -243,7 +242,11 @@ public class DialogueAutomatonGenerator {
     }
 
     private BlockStmt visitDialogueStateCreation(BMLParser.DialogueStateCreationContext ctx) {
-        return addAnonymousStateForFunctionCall(ctx.functionCall());
+        var pair = addAnonymousStateForFunctionCall(ctx.functionCall());
+        if (!ctx.functionCall().functionName.getText().equals("default")) {
+            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt(), true);
+        }
+        return pair.getLeft();
     }
 
     private void addTransition(BlockStmt block, String from, String to, String withIntent) {
@@ -251,7 +254,7 @@ public class DialogueAutomatonGenerator {
         for (String intent : intents) {
             intent = intent.replaceAll(" ", "");
             Expression intentExpr;
-            if (intent.equals("_")) {
+            if (intent.equals("fallback")) {
                 intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
                 dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
             } else {
@@ -293,18 +296,11 @@ public class DialogueAutomatonGenerator {
 
     private Expression generateLambdaExprForAction(BMLState stateType) {
         // Create a lambda expression for specified action
-        var node = generateBlockForStateAction(stateType, dialogueCompilationUnit, dialogueClass, true);
-        if (node instanceof BlockStmt blockStmt) {
-            return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), blockStmt);
-        } else if (node instanceof MethodReferenceExpr methodReference) {
-            return methodReference;
-        } else { // MethodCallExpr
-            return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), (MethodCallExpr) node);
-        }
+        var block = generateBlockForStateAction(stateType, dialogueCompilationUnit, dialogueClass);
+        return new LambdaExpr(new Parameter(new UnknownType(), "ctx"), block);
     }
 
-    private Node generateBlockForStateAction(BMLState stateType, CompilationUnit cu, ClassOrInterfaceDeclaration clazz,
-                                             boolean isLambda) {
+    private BlockStmt generateBlockForStateAction(BMLState stateType, CompilationUnit cu, ClassOrInterfaceDeclaration clazz) {
         return switch (stateType.getActionType().getClass().getAnnotation(BMLType.class).name()) {
             case STRING -> {
                 cu.addImport(Utils.renameImport(MessageHelper.class, javaTreeGenerator.outputPackage()), false, false);
@@ -338,11 +334,7 @@ public class DialogueAutomatonGenerator {
 
                 // Add call for action
                 var identifier = (NameExpr) javaTreeGenerator.visit(stateType.getAction());
-                if (isLambda) {
-                    yield new MethodReferenceExpr(new NameExpr(actionsClassName), new NodeList<>(), identifier.getNameAsString());
-                } else {
-                    yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx"))));
-                }
+                yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx"))));
             }
             case STATE -> {
                 var functionType = (BMLFunctionType) stateType.getAction().functionCall().type;
@@ -352,11 +344,7 @@ public class DialogueAutomatonGenerator {
                 destinationState.setName(destinationState.getNameAsString() + "State");
                 var methodCallExpr = new MethodCallExpr(null, "jumpTo", new NodeList<>(destinationState, new NameExpr("ctx")));
 
-                if (isLambda) {
-                    yield methodCallExpr;
-                } else {
-                    yield new BlockStmt().addStatement(methodCallExpr);
-                }
+                yield new BlockStmt().addStatement(methodCallExpr);
             }
             default -> new BlockStmt();
         };
@@ -393,15 +381,12 @@ public class DialogueAutomatonGenerator {
                 String currentStateName = "";
 
                 if (child instanceof BMLParser.FunctionCallContext functionCallContext) {
-                    var block = addAnonymousStateForFunctionCall(functionCallContext);
-                    //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+                    var block = addAnonymousStateForFunctionCall(functionCallContext).getLeft();
                     currentStateName = block.stream()
                             .filter(n -> n instanceof VariableDeclarationExpr)
                             .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
                             .findAny().get();
                     currentStateIntent = ((BMLState) ((BMLFunctionType) functionCallContext.type).getReturnType()).getIntent();
-
-                    stateActions.put(currentStateName, block);
 
                     transitionBlock.getStatements().addAll(block.getStatements());
                 } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
@@ -434,22 +419,21 @@ public class DialogueAutomatonGenerator {
         return new ImmutablePair<>(startStates, prevStates);
     }
 
-    private BlockStmt addAnonymousStateForFunctionCall(BMLParser.FunctionCallContext functionCallContext) {
+    private Pair<BlockStmt, LambdaExpr> addAnonymousStateForFunctionCall(BMLParser.FunctionCallContext functionCallContext) {
         var functionType = (BMLFunctionType) functionCallContext.type;
         var functionName = functionCallContext.functionName.getText();
         var stateType = StaticJavaParser.parseClassOrInterfaceType("State");
         var stmts = new BlockStmt();
-        var actionLambdaExpr = generateLambdaExprForAction((BMLState) functionType.getReturnType());
+        var actionLambdaExpr = (LambdaExpr) generateLambdaExprForAction((BMLState) functionType.getReturnType());
 
-        return switch (functionName) {
+        switch (functionName) {
             case "default" -> {
                 var initializerExpr = new ObjectCreationExpr(null, stateType, new NodeList<>(actionLambdaExpr));
                 var defaultStateField = dialogueClass.getFieldByName("defaultState").get();
                 defaultStateField.getVariable(0).setInitializer(initializerExpr);
                 defaultStateField.addModifier(Modifier.Keyword.FINAL);
 
-                // Return empty stmts since we only added a field
-                yield stmts;
+                addTransitionToDefaultState(stmts, "defaultState");
             }
             case "initial", "state" -> {
                 // Create variable
@@ -461,11 +445,11 @@ public class DialogueAutomatonGenerator {
                 } else {
                     addTransitionToDefaultState(stmts, stateName);
                 }
-
-                yield stmts;
             }
-            default -> stmts;
-        };
+            default -> {}
+        }
+
+        return new ImmutablePair<>(stmts, actionLambdaExpr);
     }
 
     public Pair<List<DialogueState>, List<DialogueState>> visitDialogueTransitionList(BMLParser.DialogueTransitionListContext ctx, Scope currentScope) {
@@ -479,7 +463,7 @@ public class DialogueAutomatonGenerator {
                 startStates.addAll(stateListPair.getLeft());
                 endStates.addAll(stateListPair.getRight());
             } else if (child.functionCall() != null) {
-                var block = addAnonymousStateForFunctionCall(child.functionCall());
+                var block = addAnonymousStateForFunctionCall(child.functionCall()).getLeft();
                 var stateName = block.stream()
                         .filter(n -> n instanceof VariableDeclarationExpr)
                         .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())

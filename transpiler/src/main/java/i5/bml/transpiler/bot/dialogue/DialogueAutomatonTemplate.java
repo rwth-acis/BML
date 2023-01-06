@@ -19,10 +19,17 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     @Override
     public void step(MessageEventContext ctx) {
-        currentState = currentState.nextState(ctx.intent());
+        var newState = currentState.nextState(ctx.intent());
+
+        // No state matches, check if wildcard is declared
+        currentState = Objects.requireNonNullElseGet(newState, () -> {
+            // Go to default state if no wildcard state is declared
+            return Objects.requireNonNullElse(currentState.nextState("_"), defaultState);
+        });
+
         currentState.action(ctx);
 
-        // Check whether state is fallthrough
+        // Check whether "new" state is fallthrough, if so, fall through
         var fallthroughState = currentState.transitions.get("");
         if (fallthroughState != null) {
             jumpTo(fallthroughState, ctx);
@@ -33,6 +40,11 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
     public void jumpTo(State state, MessageEventContext ctx) {
         currentState = state;
         currentState.action(ctx);
+    }
+
+    @Override
+    public void jumpToWithoutAction(State state) {
+        currentState = state;
     }
 
     @Override

@@ -105,7 +105,7 @@ public class RasaComponent {
 
             try {
                 var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
-                LOGGER.debug(responseSchema.toString());
+                LOGGER.info(responseSchema.toString());
                 if (responseSchema.entities().length > 0) {
                     messageEvent.entity(responseSchema.entities()[0].value());
                 } else {
