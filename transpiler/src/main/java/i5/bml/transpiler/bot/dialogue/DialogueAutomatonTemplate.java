@@ -10,7 +10,10 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     private State currentState = new State(ctx -> {});
 
+    private State defaultState;
+
     public void initTransitions() {
+        currentState = defaultState;
     }
 
     @Override
@@ -29,6 +32,11 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
     public void jumpTo(State state, MessageEventContext ctx) {
         currentState = state;
         currentState.action(ctx);
+    }
+
+    @Override
+    public State defaultState() {
+        return defaultState;
     }
 
     @Override

@@ -43,6 +43,8 @@ public class DialogueAutomatonSynthesizer {
 
     private final JavaTreeGenerator javaTreeGenerator;
 
+    private Map<String, BlockStmt> stateActions = new HashMap<>();
+
     public DialogueAutomatonSynthesizer(JavaTreeGenerator javaTreeGenerator) {
         this.javaTreeGenerator = javaTreeGenerator;
     }
@@ -76,17 +78,11 @@ public class DialogueAutomatonSynthesizer {
 
                     // We visit the whole function definition to have a scope created
                     actionMethod.setBody((BlockStmt) javaTreeGenerator.visit(c.functionDefinition()));
+
                 }
                 javaTreeGenerator.classStack().pop();
             });
         }
-
-        // Set currentState = defaultState as first statement in `initTransitions` from dialogue class
-        PrinterUtil.readAndWriteClass(javaTreeGenerator.botOutputPath() + "dialogue", newDialogueClassName, clazz -> {
-            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-            var initMethodBody = clazz.getMethodsByName("initTransitions").get(0).getBody().get();
-            initMethodBody.addStatement(new AssignExpr(new NameExpr("currentState"), new NameExpr("defaultState"), AssignExpr.Operator.ASSIGN));
-        });
 
         // Assignments (States and other types)
         if (!ctx.dialogueAssignment().isEmpty()) {
@@ -173,6 +169,21 @@ public class DialogueAutomatonSynthesizer {
         });
     }
 
+    private void addJumpToDefaultStateIfNotPresent(BlockStmt block, boolean isAnonymousAction) {
+        if (block.getStatements().stream()
+                .filter(s -> s.isExpressionStmt() && s.asExpressionStmt().getExpression().isMethodCallExpr())
+                .map(s -> s.asExpressionStmt().getExpression().asMethodCallExpr())
+                .noneMatch(m -> m.getNameAsString().equals("jumpTo"))) {
+            if (isAnonymousAction) {
+                block.addStatement(new MethodCallExpr("jumpTo", new NameExpr("defaultState"), new NameExpr("ctx")));
+            } else {
+                var defaultState = new MethodCallExpr(new NameExpr("dialogueAutomaton"), "defaultState");
+                block.addStatement(new MethodCallExpr(new NameExpr("dialogueAutomaton"), "jumpTo",
+                        new NodeList<>(defaultState, new NameExpr("ctx"))));
+            }
+        }
+    }
+
     private void visitDialogueAssignment(BMLParser.DialogueAssignmentContext ctx) {
         var stateType = (BMLState) ctx.assignment().expr.type;
 
@@ -210,8 +221,6 @@ public class DialogueAutomatonSynthesizer {
         actionMethod.addMarkerAnnotation(Override.class);
         actionMethod.addParameter("MessageEventContext", "ctx");
         actionMethod.setBody((BlockStmt) generateBlockForStateAction(stateType, c, clazz, false));
-
-        // TODO: When should this jump back to the default state?
 
         // Add import for action parameter of type `MessageEventContext`
         c.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
@@ -415,6 +424,8 @@ public class DialogueAutomatonSynthesizer {
                             .findAny().get();
                     currentStateIntent = ((BMLState) ((BMLFunctionType) functionCallContext.type).getReturnType()).getIntent();
 
+                    stateActions.put(currentStateName, block);
+
                     transitionBlock.getStatements().addAll(block.getStatements());
                 } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
                     currentStateName = node.getText();
@@ -458,15 +469,15 @@ public class DialogueAutomatonSynthesizer {
         return switch (functionName) {
             case "default" -> {
                 var initializerExpr = new ObjectCreationExpr(null, stateType, new NodeList<>(actionLambdaExpr));
-                clazz.addFieldWithInitializer("State", "defaultState", initializerExpr, Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
+                //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+                var defaultStateField = clazz.getFieldByName("defaultState").get();
+                defaultStateField.getVariable(0).setInitializer(initializerExpr);
+                defaultStateField.addModifier(Modifier.Keyword.FINAL);
 
+                // Return empty stmts since we only added a field
                 yield stmts;
             }
             case "initial", "state" -> {
-                // TODO: Determine this
-                // Since the state has no transitions, we jump back to the default state to await new commands
-                //addJumpToDefaultState(actionLambdaExpr.getBody().asBlockStmt());
-
                 // Create variable
                 var stateName = "state" + stateCounter++;
                 addVariableForState(stmts, stateName, stateType, new NodeList<>(actionLambdaExpr), functionCallContext.getText());

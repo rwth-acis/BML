@@ -4,7 +4,9 @@ import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 
 public interface DialogueAutomaton {
 
-    void step(MessageEventContext context);
+    void step(MessageEventContext ctx);
 
-    void jumpTo(State state, MessageEventContext context);
+    void jumpTo(State state, MessageEventContext ctx);
+
+    State defaultState();
 }
