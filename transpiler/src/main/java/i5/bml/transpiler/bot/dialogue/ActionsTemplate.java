@@ -1,5 +1,5 @@
 package i5.bml.transpiler.bot.dialogue;
 
-public class Actions {
+public class ActionsTemplate {
 
 }

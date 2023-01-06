@@ -8,9 +8,15 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     private final List<State> states = new ArrayList<>();
 
+    private final Map<String, State> namedStates = new HashMap<>();
+
     private State currentState;
 
     private State defaultState;
+
+    public DialogueAutomatonTemplate() {
+        initTransitions();
+    }
 
     public void initTransitions() {
         currentState = defaultState;
@@ -50,6 +56,11 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
     @Override
     public State defaultState() {
         return defaultState;
+    }
+
+    @Override
+    public State getStateByName(String stateName) {
+        return namedStates.get(stateName);
     }
 
     @Override

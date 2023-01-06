@@ -11,4 +11,6 @@ public interface DialogueAutomaton {
     void jumpToWithoutAction(State state);
 
     State defaultState();
+
+    State getStateByName(String stateName);
 }
