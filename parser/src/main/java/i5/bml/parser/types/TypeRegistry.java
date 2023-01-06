@@ -1,5 +1,6 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.types.dialogue.BMLState;
 import org.antlr.symtab.Type;
 import org.reflections.Reflections;
 
@@ -125,6 +126,11 @@ public class TypeRegistry {
         type = new BMLNumber(false, true);
         type.setTypeIndex(typeIndex++);
         registeredTypes.put(BuiltinType.LONG_NUMBER.toString().toLowerCase(), type);
+
+        // FIXME: Explicitly add BuiltinTypes.STATE.toString() as Type
+        var stateType = new BMLState();
+        stateType.setTypeIndex(typeIndex++);
+        registeredTypes.put(BuiltinType.STATE.toString().toLowerCase(), stateType);
     }
 
     public static void clear() {

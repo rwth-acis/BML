@@ -9,7 +9,6 @@ import org.antlr.symtab.Scope;
 import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
