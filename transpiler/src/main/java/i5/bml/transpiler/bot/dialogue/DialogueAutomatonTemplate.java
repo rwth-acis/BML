@@ -21,9 +21,9 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
         currentState = currentState.nextState(ctx.intent());
         currentState.action(ctx);
 
-        // Check whether the _only_ outgoing state (except default state) is fallthrough
+        // Check whether state is fallthrough
         var fallthroughState = currentState.transitions.get("");
-        if (currentState.transitions.size() <= 2 && fallthroughState != null) {
+        if (fallthroughState != null) {
             jumpTo(fallthroughState, ctx);
         }
     }
