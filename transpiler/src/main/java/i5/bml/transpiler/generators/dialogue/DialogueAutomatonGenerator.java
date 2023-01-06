@@ -18,8 +18,10 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
+import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
+import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
@@ -66,10 +68,6 @@ public class DialogueAutomatonGenerator {
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
         initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();
 
-        // Add constructor that invokes init() method
-        var constructor = dialogueClass.addConstructor(Modifier.Keyword.PUBLIC);
-        constructor.setBody(new BlockStmt().addStatement(new MethodCallExpr("initTransitions")));
-
         // Forward named states such that they are available at all points in `initTransitions`
         for (var assignmentContext : ctx.dialogueAssignment()) {
             if (assignmentContext.assignment().expr.type instanceof BMLState) {
@@ -85,6 +83,10 @@ public class DialogueAutomatonGenerator {
                 var stateName = name + "State";
                 addVariableForState(initMethodBody, stateName, stateVarType, new NodeList<>(new NameExpr("this")),
                         assignmentContext.assignment().expr.getText());
+
+                // Add to namedStates
+                initMethodBody.addStatement(new MethodCallExpr(new NameExpr("namedStates"), "put",
+                        new NodeList<>(new StringLiteralExpr(name), new NameExpr(stateName))));
 
                 // Add import for `className` to dialogue class
                 dialogueCompilationUnit.addImport(javaTreeGenerator.outputPackage() + "dialogue.states." + className);
@@ -113,6 +115,7 @@ public class DialogueAutomatonGenerator {
                 var actionMethod = actionClass.addMethod(functionDefinitionContext.functionDefinition().head.functionName.getText(),
                         Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
                 actionMethod.addParameter(MessageEventContext.class.getSimpleName(), "ctx");
+                actionMethod.addParameter(newDialogueClassName, "dialogueAutomaton");
 
                 // Add import for `MessageEventContext`
                 actionCompilationUnit.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
@@ -275,7 +278,11 @@ public class DialogueAutomatonGenerator {
 
     private void addTransitionToDefaultState(BlockStmt block, String stateName) {
         // Add a transition from state -> default (every state has this)
-        addTransition(block, stateName, "defaultState", "_");
+        var intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
+        block.addStatement(new MethodCallExpr(new NameExpr(stateName), "addTransition", new NodeList<>(intentExpr, new NameExpr("defaultState"))));
+
+        // Add import for `BotConfig`
+        dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
     }
 
     private void addVariableForStateWithoutCollection(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
@@ -334,7 +341,7 @@ public class DialogueAutomatonGenerator {
 
                 // Add call for action
                 var identifier = (NameExpr) javaTreeGenerator.visit(stateType.getAction());
-                yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx"))));
+                yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(actionsClassName), identifier.getName(), new NodeList<>(new NameExpr("ctx"), new NameExpr("this"))));
             }
             case STATE -> {
                 var functionType = (BMLFunctionType) stateType.getAction().functionCall().type;
