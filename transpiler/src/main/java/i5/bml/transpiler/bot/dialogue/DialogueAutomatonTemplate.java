@@ -6,7 +6,7 @@ import java.util.*;
 
 public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
-    private final Set<State> states = new HashSet<>();
+    private final List<State> states = new ArrayList<>();
 
     private State currentState;
 
@@ -14,6 +14,7 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     public void initTransitions() {
         currentState = defaultState;
+        states.add(defaultState);
     }
 
     @Override
