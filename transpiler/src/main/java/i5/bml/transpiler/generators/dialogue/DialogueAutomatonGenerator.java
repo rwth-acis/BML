@@ -30,7 +30,6 @@ import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -39,7 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.*;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class DialogueAutomatonSynthesizer {
+public class DialogueAutomatonGenerator {
 
     private int stateCounter = 1;
 
@@ -53,11 +52,9 @@ public class DialogueAutomatonSynthesizer {
 
     private BlockStmt initMethodBody;
 
-    private ClassOrInterfaceDeclaration actionClass;
-
     private final String dialogueOutputPath;
 
-    public DialogueAutomatonSynthesizer(JavaTreeGenerator javaTreeGenerator) {
+    public DialogueAutomatonGenerator(JavaTreeGenerator javaTreeGenerator) {
         this.javaTreeGenerator = javaTreeGenerator;
         dialogueOutputPath = javaTreeGenerator.botOutputPath() + "dialogue";
     }
@@ -67,7 +64,7 @@ public class DialogueAutomatonSynthesizer {
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         dialogueClass = PrinterUtil.readClass(dialogueOutputPath, newDialogueClassName);
-        actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
+        var actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
         dialogueCompilationUnit = dialogueClass.findCompilationUnit().get();
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
         initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();

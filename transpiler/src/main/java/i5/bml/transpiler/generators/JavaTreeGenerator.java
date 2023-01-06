@@ -23,7 +23,7 @@ import i5.bml.transpiler.bot.dialogue.Actions;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
-import i5.bml.transpiler.generators.dialogue.DialogueAutomatonSynthesizer;
+import i5.bml.transpiler.generators.dialogue.DialogueAutomatonGenerator;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
@@ -50,7 +50,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private Scope dialogueScope = new BlockScope(null);
 
-    private DialogueAutomatonSynthesizer dialogueAutomatonSynthesizer;
+    private DialogueAutomatonGenerator dialogueAutomatonGenerator;
 
     private final Stack<ClassOrInterfaceDeclaration> classStack = new Stack<>();
 
@@ -468,9 +468,9 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         dialogueScope = ctx.scope;
         pushScope(dialogueScope);
 
-        dialogueAutomatonSynthesizer = new DialogueAutomatonSynthesizer(this);
+        dialogueAutomatonGenerator = new DialogueAutomatonGenerator(this);
         visitDialogueHead(ctx.head);
-        dialogueAutomatonSynthesizer.visitDialogueBody(ctx.body, currentScope);
+        dialogueAutomatonGenerator.visitDialogueBody(ctx.body, currentScope);
 
         popScope();
         dialogueScope = new BlockScope(null);
