@@ -58,20 +58,10 @@ public class PrinterUtil {
         try {
             CompilationUnit compilationUnit = StaticJavaParser.parse(file);
 
-            if (compilationUnit.getClassByName(className).isPresent()) {
-                c.accept(compilationUnit.getClassByName(className).get());
-            } else if (compilationUnit.getEnumByName(className).isPresent()) {
-                c.accept(compilationUnit.getEnumByName(className).get());
-            } else if (compilationUnit.getInterfaceByName(className).isPresent()) {
-                c.accept(compilationUnit.getInterfaceByName(className).get());
-            } else if (compilationUnit.getAnnotationDeclarationByName(className).isPresent()) {
-                c.accept(compilationUnit.getAnnotationDeclarationByName(className).get());
-            } else if (compilationUnit.getPrimaryType().isEmpty()) {
-                throw new IllegalStateException("%s doesn't seem to have a primary type declaration".formatted(className));
-            } else if (compilationUnit.getPrimaryType().get() instanceof RecordDeclaration recordDeclaration) {
-                c.accept(recordDeclaration);
+            if (compilationUnit.getPrimaryType().isPresent()) {
+                c.accept(compilationUnit.getPrimaryType().get());
             } else {
-                throw new IllegalStateException("%s is neither a class, enum, nor interface, found: %s".formatted(className, compilationUnit.getPrimaryType().get().getMetaModel()));
+                throw new IllegalStateException("%s doesn't seem to have a primary type declaration (i.e., class, enum, etc.)".formatted(className));
             }
 
             Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
