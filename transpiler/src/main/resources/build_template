@@ -46,6 +46,7 @@ dependencies {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    destinationDirectory = file("rootDir")
 
     manifest {
         attributes 'Main-Class': '<groupId><needsDot><mainClass>'
