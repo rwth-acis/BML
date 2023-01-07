@@ -9,7 +9,6 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLRasaComponent;
 import i5.bml.transpiler.bot.config.BotConfig;
-import i5.bml.transpiler.bot.components.ComponentInitializer;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.DialogueHandler;
@@ -20,10 +19,8 @@ import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
-import java.util.concurrent.ExecutorService;
-
 @CodeGenerator(typeClass = BMLRasaComponent.class)
-public class RasaGenerator implements Generator {
+public class RasaGenerator implements Generator, InitializableComponent {
 
     private final BMLRasaComponent rasaComponent;
 
@@ -48,17 +45,9 @@ public class RasaGenerator implements Generator {
         var getter = field.createGetter();
         getter.addModifier(Modifier.Keyword.STATIC);
 
-        // Add initializer method
-        var method = currentClass.addMethod("initRasaComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-        method.addAnnotation(new MarkerAnnotationExpr(new Name(ComponentInitializer.class.getSimpleName())));
-        method.addParameter(ExecutorService.class, "threadPool");
-        method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
-        method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr(fieldName), "init")));
-
-        // Add import for `RasaHandler`
-        var rasaHandlerImport = Utils.renameImport(RasaComponent.class, visitor.outputPackage());
-        //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        currentClass.findCompilationUnit().get().addImport(rasaHandlerImport, false, false);
+        // Add component initializer method to registry
+        var expr = new MethodReferenceExpr(new NameExpr(fieldName), new NodeList<>(), "init");
+        addComponentInitializerMethod(currentClass, "Rasa", RasaComponent.class, expr, visitor.outputPackage());
 
         // Register to `DialogueHandler`
         PrinterUtil.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {

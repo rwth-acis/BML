@@ -5,6 +5,7 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLTelegramComponent;
 import i5.bml.transpiler.bot.components.ComponentInitializer;
@@ -18,7 +19,7 @@ import org.antlr.symtab.Type;
 import java.util.concurrent.ExecutorService;
 
 @CodeGenerator(typeClass = BMLTelegramComponent.class)
-public class TelegramGenerator implements Generator {
+public class TelegramGenerator implements Generator, InitializableComponent {
 
     private final BMLTelegramComponent telegramComponent;
 
@@ -30,18 +31,9 @@ public class TelegramGenerator implements Generator {
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
-        // Add initializer method
-        var method = currentClass.addMethod("initTelegramComponent", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
-        method.addAnnotation(new MarkerAnnotationExpr(new Name(ComponentInitializer.class.getSimpleName())));
-        method.addParameter(ExecutorService.class, "threadPool");
-        method.addParameter(StaticJavaParser.parseType("PriorityBlockingQueue<Event>"), "eventQueue");
+        // Add component initializer method to registry
         var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(TelegramBotThread.class.getSimpleName()),
                 new NodeList<>(new NameExpr("eventQueue"), new StringLiteralExpr(telegramComponent.getBotName()), new StringLiteralExpr(telegramComponent.getBotToken())));
-        method.setBody(new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("threadPool"), "execute", new NodeList<>(threadInstance))));
-
-        // Add import for `TelegramBotThread`
-        var telegramBotThreadImport = Utils.renameImport(TelegramBotThread.class, visitor.outputPackage());
-        //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        currentClass.findCompilationUnit().get().addImport(telegramBotThreadImport, false, false);
+        addComponentInitializerMethod(currentClass, "Telegram", TelegramBotThread.class, threadInstance, visitor.outputPackage());
     }
 }
