@@ -136,6 +136,7 @@ public class TypeRegistry {
     public static void clear() {
         registeredTypes.clear();
         builtinTypes.clear();
+        builtinAnnotations.clear();
         complexTypeBlueprints.clear();
     }
 

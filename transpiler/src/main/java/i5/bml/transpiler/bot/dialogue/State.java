@@ -26,6 +26,10 @@ public class State {
         return transitions.get(intent);
     }
 
+    public boolean hasTransition(String intent) {
+        return transitions.containsKey(intent);
+    }
+
     public void addTransition(String intent, State target) {
         transitions.put(intent, target);
     }

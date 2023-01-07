@@ -10,7 +10,9 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForEachStmt;
+import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
@@ -18,10 +20,8 @@ import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
-import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
-import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
@@ -49,9 +49,13 @@ public class DialogueAutomatonGenerator {
 
     private CompilationUnit dialogueCompilationUnit;
 
+    private ClassOrInterfaceDeclaration actionClass;
+
     private BlockStmt initMethodBody;
 
     private final String dialogueOutputPath;
+
+    private final Map<String, BlockStmt> stateActions = new HashMap<>();
 
     public DialogueAutomatonGenerator(JavaTreeGenerator javaTreeGenerator) {
         this.javaTreeGenerator = javaTreeGenerator;
@@ -63,7 +67,7 @@ public class DialogueAutomatonGenerator {
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
         dialogueClass = PrinterUtil.readClass(dialogueOutputPath, newDialogueClassName);
-        var actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
+        actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
         dialogueCompilationUnit = dialogueClass.findCompilationUnit().get();
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
         initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();
@@ -93,12 +97,8 @@ public class DialogueAutomatonGenerator {
 
                 // Add transitions depending on function type to dialogue class `initTransitions` method
                 var funcCall = assignmentContext.assignment().expr.functionCall();
-                if (funcCall != null) {
-                    switch (funcCall.functionName.getText()) {
-                        case "initial" -> addTransitionsForInitialState(initMethodBody, stateName, ((BMLFunctionType) funcCall.type));
-                        case "state" -> addTransitionToDefaultState(initMethodBody, stateName);
-                        default -> {}
-                    }
+                if (funcCall != null && funcCall.functionName.getText().equals("initial")) {
+                    addTransition(initMethodBody, "defaultState", stateName, ((BMLState) ((BMLFunctionType) funcCall.type).getReturnType()).getIntent());
                 }
             }
         }
@@ -120,7 +120,6 @@ public class DialogueAutomatonGenerator {
                 // Add import for `MessageEventContext`
                 actionCompilationUnit.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
 
-                // TODO: It's possible to use jumpTo in actions, we need dialogue-wide access to named states, e.g., pass it to action
                 // We visit the whole function definition to have a scope created
                 actionMethod.setBody((BlockStmt) javaTreeGenerator.visit(functionDefinitionContext.functionDefinition()));
 
@@ -140,10 +139,7 @@ public class DialogueAutomatonGenerator {
                     var block = visitDialogueStateCreation(stateCreationContext);
                     initMethodBody.getStatements().addAll(block.getStatements());
                 } else if (child instanceof BMLParser.DialogueTransitionContext transitionContext) { // Take care of dialogue transitions
-                    var stateListPair = visitDialogueTransition(transitionContext, currentScope);
-                    for (var state : stateListPair.getRight()) {
-                        addTransitionToDefaultState(initMethodBody, state.name());
-                    }
+                    visitDialogueTransition(transitionContext, currentScope);
                 }
 
                 javaTreeGenerator.classStack().pop();
@@ -160,7 +156,7 @@ public class DialogueAutomatonGenerator {
                     var actionLambdaExpr = generateLambdaExprForAction(stateType);
 
                     // The sink state jumps back to the default state after executing its action
-                    addJumpToDefaultStateIfNotPresent(((LambdaExpr) actionLambdaExpr).getBody().asBlockStmt(), true);
+                    addJumpToDefaultStateIfNotPresent(((LambdaExpr) actionLambdaExpr).getBody().asBlockStmt());
 
                     // Create variable for sink state
                     var sinkName = "state" + stateCounter++;
@@ -179,23 +175,35 @@ public class DialogueAutomatonGenerator {
                     initMethodBody.addStatement(forExpr);
                 });
 
+        // Add fallback transition to all states that not yet overwrite the fallback intent
+        var fallbackIntent = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
+        var addTransition = new MethodCallExpr(new NameExpr("s"), "addTransition", new NodeList<>(fallbackIntent, new NameExpr("defaultState")));
+        var ifStmt = new IfStmt(new UnaryExpr(new MethodCallExpr(new NameExpr("s"), "hasTransition", new NodeList<>(fallbackIntent)), UnaryExpr.Operator.LOGICAL_COMPLEMENT),
+                new ExpressionStmt(addTransition), null);
+        var forExpr = new ForEachStmt(new VariableDeclarationExpr(new VarType(), "s"), "states", new BlockStmt().addStatement(ifStmt));
+        forExpr.setComment(new LineComment("Add fallback transition to all states that not yet overwrite the fallback intent"));
+        initMethodBody.addStatement(forExpr);
+
+        // Add import for `BotConfig`
+        dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
+
         // Finally, write back action and dialogue classes
         PrinterUtil.writeClass(dialogueOutputPath, dialogueCompilationUnit, dialogueClass);
         PrinterUtil.writeClass(dialogueOutputPath, actionCompilationUnit, actionClass);
     }
 
-    private void addJumpToDefaultStateIfNotPresent(BlockStmt block, boolean isAnonymousAction) {
-        if (block.getStatements().stream()
+    private void addJumpToDefaultStateIfNotPresent(BlockStmt block) {
+        var notContainsJumpOrActionCall = block.getStatements().stream()
                 .filter(s -> s.isExpressionStmt() && s.asExpressionStmt().getExpression().isMethodCallExpr())
                 .map(s -> s.asExpressionStmt().getExpression().asMethodCallExpr())
-                .noneMatch(m -> m.getNameAsString().equals("jumpTo") || m.getNameAsString().equals("jumpToWithoutAction"))) {
-            if (isAnonymousAction) {
-                block.addStatement(new MethodCallExpr("jumpToWithoutAction", new NameExpr("defaultState")));
-            } else {
-                var defaultState = new MethodCallExpr(new NameExpr("dialogueAutomaton"), "defaultState");
-                block.addStatement(new MethodCallExpr(new NameExpr("dialogueAutomaton"), "jumpToWithoutAction",
-                        new NodeList<>(defaultState)));
-            }
+                .noneMatch(m -> {
+                    return m.getNameAsString().equals("jumpTo")
+                            || m.getNameAsString().equals("jumpToWithoutAction")
+                            || (m.getScope().isPresent() && m.getScope().get().asNameExpr().getNameAsString().equals(actionClass.getNameAsString()));
+                });
+
+        if (notContainsJumpOrActionCall) {
+            block.addStatement(new MethodCallExpr("jumpToWithoutAction", new NameExpr("defaultState")));
         }
     }
 
@@ -213,7 +221,7 @@ public class DialogueAutomatonGenerator {
         var clazz = cu.addClass(className);
         clazz.addExtendedType(State.class.getSimpleName());
 
-        // Make import for extends
+        // Make import for extends `State`
         cu.addImport(Utils.renameImport(State.class, javaTreeGenerator.outputPackage()), false, false);
 
         // Add field to store & set intent
@@ -247,7 +255,7 @@ public class DialogueAutomatonGenerator {
     private BlockStmt visitDialogueStateCreation(BMLParser.DialogueStateCreationContext ctx) {
         var pair = addAnonymousStateForFunctionCall(ctx.functionCall());
         if (!ctx.functionCall().functionName.getText().equals("default")) {
-            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt(), true);
+            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt());
         }
         return pair.getLeft();
     }
@@ -267,22 +275,6 @@ public class DialogueAutomatonGenerator {
                     new NodeList<>(intentExpr, new NameExpr(to)));
             block.addStatement(transition);
         }
-    }
-
-    private void addTransitionsForInitialState(BlockStmt block, String stateName, BMLFunctionType functionType) {
-        // Add transition(s) default -> state since it is initial (for every intent)
-        addTransition(block, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
-
-        addTransitionToDefaultState(block, stateName);
-    }
-
-    private void addTransitionToDefaultState(BlockStmt block, String stateName) {
-        // Add a transition from state -> default (every state has this)
-        var intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
-        block.addStatement(new MethodCallExpr(new NameExpr(stateName), "addTransition", new NodeList<>(intentExpr, new NameExpr("defaultState"))));
-
-        // Add import for `BotConfig`
-        dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
     }
 
     private void addVariableForStateWithoutCollection(BlockStmt block, String stateName, ClassOrInterfaceType stateType, NodeList<Expression> args,
@@ -388,14 +380,16 @@ public class DialogueAutomatonGenerator {
                 String currentStateName = "";
 
                 if (child instanceof BMLParser.FunctionCallContext functionCallContext) {
-                    var block = addAnonymousStateForFunctionCall(functionCallContext).getLeft();
-                    currentStateName = block.stream()
+                    var pair = addAnonymousStateForFunctionCall(functionCallContext);
+                    currentStateName = pair.getLeft().stream()
                             .filter(n -> n instanceof VariableDeclarationExpr)
                             .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
                             .findAny().get();
                     currentStateIntent = ((BMLState) ((BMLFunctionType) functionCallContext.type).getReturnType()).getIntent();
 
-                    transitionBlock.getStatements().addAll(block.getStatements());
+                    stateActions.put(currentStateName, pair.getRight().getBody().asBlockStmt());
+
+                    transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
                 } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
                     currentStateName = node.getText();
                     currentStateIntent = ((BMLState) ((VariableSymbol) currentScope.resolve(currentStateName)).getType()).getIntent();
@@ -414,11 +408,12 @@ public class DialogueAutomatonGenerator {
             }
         }
 
-        // TODO:
-        // Add jumps to default state at the end of actions of last states in dialogue transition
-        // But only if there is no jumpTo already & the last state is not an anonymous state
+        // Add jump to default state (without executing action)
         for (var prevState : prevStates) {
-
+            var block = stateActions.get(prevState.name());
+            if (block != null) {
+                addJumpToDefaultStateIfNotPresent(block);
+            }
         }
 
         initMethodBody.getStatements().addAll(transitionBlock.getStatements());
@@ -439,8 +434,6 @@ public class DialogueAutomatonGenerator {
                 var defaultStateField = dialogueClass.getFieldByName("defaultState").get();
                 defaultStateField.getVariable(0).setInitializer(initializerExpr);
                 defaultStateField.addModifier(Modifier.Keyword.FINAL);
-
-                addTransitionToDefaultState(stmts, "defaultState");
             }
             case "initial", "state" -> {
                 // Create variable
@@ -448,9 +441,7 @@ public class DialogueAutomatonGenerator {
                 addVariableForState(stmts, stateName, stateType, new NodeList<>(actionLambdaExpr), functionCallContext.getText());
 
                 if (functionName.equals("initial")) {
-                    addTransitionsForInitialState(stmts, stateName, functionType);
-                } else {
-                    addTransitionToDefaultState(stmts, stateName);
+                    addTransition(stmts, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
                 }
             }
             default -> {}
@@ -470,18 +461,20 @@ public class DialogueAutomatonGenerator {
                 startStates.addAll(stateListPair.getLeft());
                 endStates.addAll(stateListPair.getRight());
             } else if (child.functionCall() != null) {
-                var block = addAnonymousStateForFunctionCall(child.functionCall()).getLeft();
-                var stateName = block.stream()
+                var pair = addAnonymousStateForFunctionCall(child.functionCall());
+                var stateName = pair.getLeft().stream()
                         .filter(n -> n instanceof VariableDeclarationExpr)
                         .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
                         .findAny().get();
 
-                transitionBlock.getStatements().addAll(block.getStatements());
+                transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
 
                 var intent = ((BMLState) ((BMLFunctionType) child.functionCall().type).getReturnType()).getIntent();
                 var currentState = new DialogueState(stateName, intent);
                 startStates.add(currentState);
                 endStates.add(currentState);
+
+                stateActions.put(stateName, pair.getRight().getBody().asBlockStmt());
             } else { // Identifier
                 var intent = ((BMLState) ((VariableSymbol) currentScope.resolve(child.getText())).getType()).getIntent();
                 var currentState = new DialogueState(child.getText() + "State", intent);
