@@ -88,10 +88,6 @@ public class PrinterUtil {
         }
     }
 
-    public static void copyClass(String path, String fileName, String className, Consumer<ClassOrInterfaceDeclaration> c) {
-
-    }
-
     private static void sortClassMembersAndImports(ClassOrInterfaceDeclaration clazz) {
         clazz.getMembers().sort(Comparator.comparing((BodyDeclaration<?> t) -> t.isMethodDeclaration())
                 .thenComparing(BodyDeclaration::isConstructorDeclaration)
@@ -99,10 +95,6 @@ public class PrinterUtil {
 
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         clazz.findCompilationUnit().get().getImports().sort(Comparator.comparing(NodeWithName::getNameAsString));
-    }
-
-    public static void readAndWriteClass(String path, String className, Consumer<ClassOrInterfaceDeclaration> c) {
-        readAndWriteClass(path, className, className, c);
     }
 
     public static void readAndWriteClass(String botOutputPath, Class<?> clazz, Consumer<ClassOrInterfaceDeclaration> c) {

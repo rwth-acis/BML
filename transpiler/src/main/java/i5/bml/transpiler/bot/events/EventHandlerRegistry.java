@@ -1,9 +1,12 @@
 package i5.bml.transpiler.bot.events;
 
+import i5.bml.transpiler.bot.dialogue.DialogueFactory;
 import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EventHandlerRegistry {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventHandlerRegistry.class);
 
     private static final Map<MessageEventType, Method> messageEventHandler = new HashMap<>();
 
@@ -35,10 +40,15 @@ public class EventHandlerRegistry {
                 // We send the message to the desired NLU to infer intent and entity/entities
                 DialogueHandler.handleMessageEvent(messageEvent);
 
-                try {
-                    messageEventHandler.get(messageEvent.messageEventType()).invoke(null, new MessageEventContext(messageEvent));
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new IllegalStateException("No message handler registered for message event type %s".formatted(messageEvent.messageEventType()), e);
+                var handler = messageEventHandler.get(messageEvent.messageEventType());
+                if (handler == null) {
+                    LOGGER.error("No handler registered for message event {}", messageEvent.messageEventType());
+                } else {
+                    try {
+                        handler.invoke(null, new MessageEventContext(messageEvent));
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new IllegalStateException(e);
+                    }
                 }
             }
         }
