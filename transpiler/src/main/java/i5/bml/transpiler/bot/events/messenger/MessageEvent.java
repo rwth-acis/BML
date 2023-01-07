@@ -131,6 +131,17 @@ public class MessageEvent implements Event {
 
     @Override
     public String toString() {
-        return "MessageEvent{eventSource=%s, messageEventType=%s, text='%s', commandArguments=%s, session=%s, user=%s, username='%s'}".formatted(eventSource, messageEventType, text, commandArguments, session, user, username);
+        return "MessageEvent{\n" +
+                "  eventSource=" + eventSource + " \n" +
+                "  messageEventType=" + messageEventType + " \n" +
+                "  text='" + text + '\'' + " \n" +
+                "  intent='" + intent + '\'' + " \n" +
+                "  entity='" + entity + '\'' + " \n" +
+                "  commandArguments=" + commandArguments + " \n" +
+                "  session=" + session + " \n" +
+                "  user=" + user + " \n" +
+                "  username='" + username + '\'' + " \n" +
+                "  arrivalTime=" + arrivalTime + " \n" +
+                '}';
     }
 }

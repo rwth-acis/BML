@@ -49,7 +49,6 @@ public class Bot {
         while (true) {
             try {
                 var event = eventQueue.take();
-                System.out.println("CURR EVENT: " + event);
 
                 if (event instanceof MessageEvent messageEvent && ((MessageEvent) event).session() != null) {
                     var currentChatId = messageEvent.session().chatId();
