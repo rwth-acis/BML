@@ -23,6 +23,9 @@ nlu:
     examples: |
       - Stop
       - /stop
+      - I don't want to
+      - Stop it
+      - Okay, enough
 
   - intent: functions
     examples: |
