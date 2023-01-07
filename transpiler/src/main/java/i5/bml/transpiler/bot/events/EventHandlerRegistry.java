@@ -1,6 +1,5 @@
 package i5.bml.transpiler.bot.events;
 
-import i5.bml.transpiler.bot.dialogue.DialogueFactory;
 import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
@@ -8,7 +7,6 @@ import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,12 +40,12 @@ public class EventHandlerRegistry {
 
                 var handler = messageEventHandler.get(messageEvent.messageEventType());
                 if (handler == null) {
-                    LOGGER.error("No handler registered for message event {}", messageEvent.messageEventType());
+                    LOGGER.warn("No handler registered for message event {}", messageEvent.messageEventType());
                 } else {
                     try {
                         handler.invoke(null, new MessageEventContext(messageEvent));
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new IllegalStateException(e);
+                    } catch (Exception e) {
+                        LOGGER.error("Execution of handler for message event {} failed", messageEvent.messageEventType(), e);
                     }
                 }
             }
