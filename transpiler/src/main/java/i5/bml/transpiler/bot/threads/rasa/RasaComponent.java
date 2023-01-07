@@ -3,13 +3,13 @@ package i5.bml.transpiler.bot.threads.rasa;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
+import i5.bml.transpiler.bot.utils.IOUtil;
+import i5.bml.transpiler.bot.utils.PersistentStorage;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -32,24 +32,35 @@ public class RasaComponent {
     }
 
     public void init() {
-        var fileName = trainModel();
+        // Check if bot has already been started and model name was saved
+        var settings = PersistentStorage.getBotSettings();
+        if (settings.rasaModelName() != null) {
+            var rasaModelName = settings.rasaModelName();
+            if (!rasaModelName.equals(getLoadedModel())) {
+                loadModel(rasaModelName);
+            } else {
+                LOGGER.info("Desired model is already loaded");
+            }
+        } else {
+            var rasaModelName = trainModel();
 
-        // Training failed -> we can't load the model, hence, just return
-        if (fileName == null) {
-            return;
+            // Training failed -> we can't load the model, hence, just return
+            if (rasaModelName == null) {
+                return;
+            }
+
+            settings.rasaModelName(rasaModelName);
+            PersistentStorage.writeBotSettings(settings);
+            loadModel(rasaModelName);
         }
-
-        loadModel(fileName);
     }
 
     private String trainModel() {
-        // TODO: Load this from somewhere?
-        var ymlFile = new File("src/main/resources/example_training_data.yml");
         var ymlContent = "";
         try {
-            ymlContent = Files.readString(ymlFile.toPath());
+            ymlContent = IOUtil.getResourceFileAsString("example_training_data.yml");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Failed to read training file", e);
         }
 
         var request = new Request.Builder()
@@ -59,35 +70,35 @@ public class RasaComponent {
 
         LOGGER.info("Starting model training...");
 
-        final String[] fileName = {null};
+        final String[] rasaModelName = {null};
         handleResponse(request, response -> {
-                    fileName[0] = response.headers().get("filename");
-                    if (fileName[0] == null) {
-                        LOGGER.error("Rasa model training for file {} failed", ymlFile);
+                    rasaModelName[0] = response.headers().get("filename");
+                    if (rasaModelName[0] == null) {
+                        LOGGER.error("Rasa model training failed, response header, does not contain rasaModelName");
                     } else {
                         LOGGER.info("Model training done!");
                     }
-                }, response -> LOGGER.error("Callback URLs are not supported"),
-                "Rasa model training for file %s failed: ".formatted(ymlFile));
+                }, response -> LOGGER.error("Callback URLs are not supported"), "Rasa model training failed: ");
 
-        return fileName[0];
+        return rasaModelName[0];
     }
 
-    private void loadModel(String fileName) {
+    private void loadModel(String rasaModelName) {
         var content = new JsonObject();
-        content.addProperty("model_file", "models/" + fileName);
+        content.addProperty("model_file", "models/" + rasaModelName);
         var request = new Request.Builder()
                 .url(url + "/model")
                 .put(RequestBody.create(content.toString(), MediaType.parse("application/json")))
                 .build();
 
         LOGGER.info("Starting model loading...");
-        handleResponse(request, r -> {}, r -> LOGGER.info("Model loading done!"), "Rasa loading model failed: ");
+        handleResponse(request, r -> {
+            LOGGER.error("Rasa loading model failed, it seems that the model name {} is not known", rasaModelName);
+        }, r -> LOGGER.info("Model loading done!"), "Rasa loading model failed: ");
     }
 
     public void invokeModel(MessageEvent messageEvent) {
         if (messageEvent.text().isEmpty()) {
-            // TODO: Add dummy intent and entity or send error message?
             return;
         }
 
@@ -105,7 +116,7 @@ public class RasaComponent {
 
             try {
                 var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
-                LOGGER.info(responseSchema.toString());
+                LOGGER.debug(responseSchema.toString());
                 if (responseSchema.entities().length > 0) {
                     messageEvent.entity(responseSchema.entities()[0].value());
                 } else {
@@ -113,9 +124,32 @@ public class RasaComponent {
                 }
                 messageEvent.intent(responseSchema.intent().name());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                LOGGER.error("Rasa parsing message failed while retrieving response body", e);
             }
         }, r -> {}, "Rasa parsing message %s failed: ".formatted(messageEvent));
+    }
+
+    private String getLoadedModel() {
+        var request = new Request.Builder()
+                .url(url + "/status")
+                .get()
+                .build();
+
+        final String[] rasaModelName = {null};
+        handleResponse(request, response -> {
+            if (response.body() == null) {
+                LOGGER.error("Rasa getting server status failed because response body is null");
+            }
+
+            try {
+                var responseSchema = new Gson().fromJson(response.body().string(), RasaStatusResponseSchema.class);
+                rasaModelName[0] = responseSchema.modelFile();
+            } catch (IOException e) {
+                LOGGER.error("Rasa getting server status failed while retrieving response body", e);
+            }
+        }, response -> LOGGER.error("Callback URLs are not supported"), "Rasa getting server status failed: ");
+
+        return rasaModelName[0];
     }
 
     private void handleResponse(Request request, Consumer<Response> code200, Consumer<Response> code204, String errorMessage) {
