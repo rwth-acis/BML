@@ -60,7 +60,7 @@ public class RasaComponent {
         try {
             ymlContent = IOUtil.getResourceFileAsString("example_training_data.yml");
         } catch (IOException e) {
-            LOGGER.error("Failed to read training file", e);
+            throw new IllegalStateException("Failed to read training file", e);
         }
 
         var request = new Request.Builder()
@@ -71,14 +71,16 @@ public class RasaComponent {
         LOGGER.info("Starting model training...");
 
         final String[] rasaModelName = {null};
-        handleResponse(request, response -> {
-                    rasaModelName[0] = response.headers().get("filename");
-                    if (rasaModelName[0] == null) {
-                        LOGGER.error("Rasa model training failed, response header, does not contain rasaModelName");
-                    } else {
-                        LOGGER.info("Model training done!");
-                    }
-                }, response -> LOGGER.error("Callback URLs are not supported"), "Rasa model training failed: ");
+        handleResponse(request, code200Response -> {
+            rasaModelName[0] = code200Response.headers().get("filename");
+            if (rasaModelName[0] == null) {
+                throw new IllegalStateException("Rasa model training failed, response header, does not contain rasaModelName");
+            } else {
+                LOGGER.info("Model training done!");
+            }
+        }, code204Response -> {
+            throw new IllegalStateException("Callback URLs are not supported");
+        }, "Rasa model training failed: ");
 
         return rasaModelName[0];
     }
@@ -92,8 +94,8 @@ public class RasaComponent {
                 .build();
 
         LOGGER.info("Starting model loading...");
-        handleResponse(request, r -> {
-            LOGGER.error("Rasa loading model failed, it seems that the model name {} is not known", rasaModelName);
+        handleResponse(request, code200Response -> {
+            throw new IllegalStateException("Rasa loading model failed, it seems that the model name %s is not known".formatted(rasaModelName));
         }, r -> LOGGER.info("Model loading done!"), "Rasa loading model failed: ");
     }
 
@@ -109,13 +111,13 @@ public class RasaComponent {
                 .post(RequestBody.create(content.toString(), MediaType.parse("application/json")))
                 .build();
 
-        handleResponse(request, response -> {
-            if (response.body() == null) {
-                LOGGER.error("Rasa parsing message failed because response body is null");
+        handleResponse(request, code200Response -> {
+            if (code200Response.body() == null) {
+                throw new IllegalStateException("Rasa parsing message failed because response body is null");
             }
 
             try {
-                var responseSchema = new Gson().fromJson(response.body().string(), RasaParseResponseSchema.class);
+                var responseSchema = new Gson().fromJson(code200Response.body().string(), RasaParseResponseSchema.class);
                 LOGGER.debug(responseSchema.toString());
                 if (responseSchema.entities().length > 0) {
                     messageEvent.entity(responseSchema.entities()[0].value());
@@ -124,9 +126,10 @@ public class RasaComponent {
                 }
                 messageEvent.intent(responseSchema.intent().name());
             } catch (IOException e) {
-                LOGGER.error("Rasa parsing message failed while retrieving response body", e);
+                throw new IllegalStateException("Rasa parsing message failed while retrieving response body", e);
             }
-        }, r -> {}, "Rasa parsing message %s failed: ".formatted(messageEvent));
+        }, code204Response -> {
+        }, "Rasa parsing message %s failed: ".formatted(messageEvent));
     }
 
     private String getLoadedModel() {
@@ -136,18 +139,20 @@ public class RasaComponent {
                 .build();
 
         final String[] rasaModelName = {null};
-        handleResponse(request, response -> {
-            if (response.body() == null) {
-                LOGGER.error("Rasa getting server status failed because response body is null");
+        handleResponse(request, code200Response -> {
+            if (code200Response.body() == null) {
+                throw new IllegalStateException("Rasa getting server status failed because response body is null");
             }
 
             try {
-                var responseSchema = new Gson().fromJson(response.body().string(), RasaStatusResponseSchema.class);
+                var responseSchema = new Gson().fromJson(code200Response.body().string(), RasaStatusResponseSchema.class);
                 rasaModelName[0] = responseSchema.modelFile();
             } catch (IOException e) {
-                LOGGER.error("Rasa getting server status failed while retrieving response body", e);
+                throw new IllegalStateException("Rasa getting server status failed while retrieving response body", e);
             }
-        }, response -> LOGGER.error("Callback URLs are not supported"), "Rasa getting server status failed: ");
+        }, code204Response -> {
+            throw new IllegalStateException("Callback URLs are not supported");
+        }, "Rasa getting server status failed: ");
 
         return rasaModelName[0];
     }
@@ -159,15 +164,16 @@ public class RasaComponent {
                 case 204 -> code204.accept(response);
                 case 400, 401, 403, 409, 500 -> {
                     if (response.body() == null) {
-                        LOGGER.error("Parsing Rasa response body failed because response body is null");
+                        throw new IllegalStateException("Parsing Rasa response body failed because response body is null");
                     }
                     RasaErrorResponseSchema responseSchema = new Gson().fromJson(response.body().string(), RasaErrorResponseSchema.class);
-                    LOGGER.error("Rasa request failed:\n{}", responseSchema);
+                    throw new IllegalStateException("Rasa request failed:\n%s".formatted(responseSchema));
                 }
-                default -> LOGGER.error("Unexpected code {} with response:\n{}", response.code(), response);
+                default ->
+                        throw new IllegalStateException("Unexpected code %s with response:\n%s".formatted(response.code(), response));
             }
         } catch (IOException e) {
-            LOGGER.error(errorMessage + e.getMessage());
+            throw new IllegalStateException(errorMessage, e);
         }
     }
 }

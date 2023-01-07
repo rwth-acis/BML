@@ -30,6 +30,8 @@ public class ComponentRegistry {
         try {
             CompletableFuture.allOf(futures).get();
             LOGGER.info("Component initialization done!");
-        } catch (InterruptedException | ExecutionException ignore) {}
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Component initialization failed", ExceptionUtils.getRootCause(e));
+        }
     }
 }

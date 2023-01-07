@@ -33,7 +33,7 @@ public class TelegramBotThread implements Runnable {
             telegramBotsApi.registerBot(telegramBot);
             LOGGER.info("Successfully initialized Telegram bot");
         } catch (TelegramApiException e) {
-            LOGGER.error("Connecting with Telegram failed", e);
+            throw new IllegalStateException("Connecting with Telegram failed", e);
         }
     }
 }

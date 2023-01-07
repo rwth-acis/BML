@@ -74,7 +74,7 @@ public class SlackBotThread implements Runnable {
             client = socketModeApp.getClient();
             LOGGER.info("Successfully initialized Slack bot");
         } catch (Exception e) {
-            LOGGER.error("Connecting with Slack failed", e);
+            throw new IllegalStateException("Connecting with Slack failed", e);
         }
     }
 
