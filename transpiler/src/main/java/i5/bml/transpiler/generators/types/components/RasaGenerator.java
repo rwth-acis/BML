@@ -35,7 +35,10 @@ public class RasaGenerator extends Generator implements InitializableComponent {
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
-        // Copy required implementation for Slack
+        // Make sure that dependencies and included in gradle build file
+        visitor.gradleFile().add("hasRasaComponent", true);
+
+        // Copy required implementation for Rasa
         IOUtil.copyDirAndRenameImports("threads/rasa", visitor);
 
         // Add field

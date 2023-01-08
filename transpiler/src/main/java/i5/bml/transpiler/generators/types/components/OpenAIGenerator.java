@@ -5,8 +5,10 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.BMLOpenAIComponent;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
@@ -31,6 +33,9 @@ public class OpenAIGenerator extends Generator {
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
+
+        // Make sure that dependencies and included in gradle build file
+        visitor.gradleFile().add("hasOpenAIComponent", true);
 
         // Copy required implementation for OpenAI
         IOUtil.copyDirAndRenameImports("threads/openai", visitor);

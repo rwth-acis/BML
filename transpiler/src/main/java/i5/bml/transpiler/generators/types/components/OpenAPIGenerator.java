@@ -39,6 +39,9 @@ public class OpenAPIGenerator extends Generator {
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         apiName = ctx.name.getText() + "client";
 
+        // Make sure that dependencies and included in gradle build file
+        visitor.gradleFile().add("hasOpenAPIComponent", true);
+
         // Generate swagger client code
         OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.url(), visitor.outputPackage(), apiName, visitor.botOutputPath());
 

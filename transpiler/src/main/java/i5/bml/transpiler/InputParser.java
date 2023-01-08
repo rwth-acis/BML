@@ -107,12 +107,16 @@ public class InputParser {
         gradleFile.add("needsDot", outputPackage.isEmpty() ? "" : ".");
         gradleFile.add("mainClass", "BotMain");
         // Set components
-        gradleFile.add("hasTelegramComponent", true);
-        gradleFile.add("hasSlackComponent", true);
-        gradleFile.add("hasOpenAPIComponent", true);
-        gradleFile.add("hasRasaComponent", true);
-        gradleFile.add("hasOpenAIComponent", true);
+        gradleFile.add("hasSlackComponent", false);
+        gradleFile.add("hasTelegramComponent", false);
+        gradleFile.add("hasOpenAPIComponent", false);
+        gradleFile.add("hasRasaComponent", false);
+        gradleFile.add("hasOpenAIComponent", false);
 
+        // Emit code into output directory
+        Measurements.measure("Code generation", () -> new JavaTreeGenerator(outputDir + "/src/main/java/", outputPackage, gradleFile).visit(tree));
+
+        // Write back gradle file after templating
         Files.write(new File(outputDir + "/build.gradle").toPath(), gradleFile.render().getBytes());
 
         // Copy gitignore
@@ -121,16 +125,13 @@ public class InputParser {
         // Copy SLF4J SimpleLogger config
         FileUtils.copyFile(new File("transpiler/src/main/resources/simplelogger.properties"), new File(outputDir + "/src/main/resources/simplelogger.properties"));
 
-        // Emit code into output directory
-        Measurements.measure("Code generation", () -> new JavaTreeGenerator(outputDir + "/src/main/java/", outputPackage).visit(tree));
-
         if (outputFormat.equals("jar")) {
             Measurements.measure("Compiling generated code", this::outputJar);
         }
     }
 
     private IOFileFilter filterComponentSpecificPackages() {
-        var componentPackageNames = new String[]{"slack", "telegram", "rasa", "dialogue", "openai"};
+        var componentPackageNames = new String[]{"slack", "telegram", "openapi", "rasa", "dialogue", "openai"};
         var componentFilter = FileFilterUtils.or(Arrays.stream(componentPackageNames).map(FileFilterUtils::nameFileFilter).toArray(IOFileFilter[]::new));
         return FileFilterUtils.notFileFilter(FileFilterUtils.and(componentFilter, FileFilterUtils.directoryFileFilter()));
     }

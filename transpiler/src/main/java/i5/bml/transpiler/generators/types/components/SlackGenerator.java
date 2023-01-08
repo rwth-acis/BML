@@ -41,6 +41,9 @@ public class SlackGenerator extends Generator implements InitializableComponent,
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
+        // Make sure that dependencies and included in gradle build file
+        visitor.gradleFile().add("hasSlackComponent", true);
+
         // Copy required implementation for Slack
         IOUtil.copyDirAndRenameImports("threads/slack", visitor);
 

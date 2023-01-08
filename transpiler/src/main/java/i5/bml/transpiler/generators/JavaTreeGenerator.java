@@ -26,6 +26,7 @@ import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
+import org.stringtemplate.v4.ST;
 
 import java.util.Arrays;
 import java.util.Stack;
@@ -38,6 +39,8 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private final String outputPackage;
 
+    private final ST gradleFile;
+
     private Scope currentScope;
 
     private Scope globalScope;
@@ -48,9 +51,10 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private boolean wrapAssignmentInTryStmt = false;
 
-    public JavaTreeGenerator(String botOutputPath, String outputPackage) {
+    public JavaTreeGenerator(String botOutputPath, String outputPackage, ST gradleFile) {
         this.botOutputPath = botOutputPath;
         this.outputPackage = outputPackage;
+        this.gradleFile = gradleFile;
     }
 
     private void pushScope(Scope s) {
@@ -67,6 +71,10 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     public String outputPackage() {
         return outputPackage;
+    }
+
+    public ST gradleFile() {
+        return gradleFile;
     }
 
     public Stack<ClassOrInterfaceDeclaration> classStack() {

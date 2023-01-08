@@ -43,6 +43,9 @@ public class TelegramGenerator extends Generator implements InitializableCompone
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
+        // Make sure that dependencies and included in gradle build file
+        visitor.gradleFile().add("hasTelegramComponent", true);
+
         // Copy required implementation for Telegram
         IOUtil.copyDirAndRenameImports("threads/telegram", visitor);
 
