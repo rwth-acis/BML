@@ -11,7 +11,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
-import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -278,11 +277,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         return new BMLFunctionType((BMLFunctionType) functionType);
     }
 
-    public String getUrl() {
+    public String url() {
         return url;
     }
 
-    public Map<String, Pair<String, String>> getTagOperationIdPairs() {
+    public Map<String, Pair<String, String>> tagOperationIdPairs() {
         return tagOperationIdPairs;
     }
 

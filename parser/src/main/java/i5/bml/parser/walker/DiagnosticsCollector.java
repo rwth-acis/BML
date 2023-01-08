@@ -566,7 +566,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     //       - ERROR: RHS of assignment is sink or default
     //       - ERROR: State going into "fallthrough" state has to be anonymous
     //       - WARN:  Unreachable state(s), e.g., state(...)
-    //       -
+    //       - ERROR: Using Rasa & OpenAI
 
     // TODO: Annotations type checking:
     //       - ERROR: Can only be registered once
