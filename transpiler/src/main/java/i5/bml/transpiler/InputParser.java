@@ -4,12 +4,13 @@ import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
-import i5.bml.transpiler.utils.PrinterUtil;
+import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
@@ -21,9 +22,9 @@ import org.stringtemplate.v4.ST;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Arrays;
 
 public class InputParser {
 
@@ -33,7 +34,7 @@ public class InputParser {
 
     private String outputPackage;
 
-    private static final String BOT_DIR = "transpiler/src/main/java/i5/bml/transpiler/bot";
+    public static final String BOT_DIR = "transpiler/src/main/java/i5/bml/transpiler/bot";
 
     private String inputFilePath;
 
@@ -80,42 +81,12 @@ public class InputParser {
         // Prepare output directory
         outputPackage = outputPackage.replaceAll("\\.", "/");
 
-        // Copies source code to specified directory
+        // Copy source code to specified directory
         FileUtils.deleteDirectory(new File(outputDir));
-        var filter = FileFilterUtils.notFileFilter(FileFilterUtils.and(FileFilterUtils.nameFileFilter("slack"), FileFilterUtils.directoryFileFilter()));
-        FileUtils.copyDirectory(new File(BOT_DIR), new File(outputDir + "/src/main/java/" + outputPackage), filter);
-
-        for (File file : FileUtils.listFiles(new File(outputDir + "/src/main/java/" + outputPackage), null, true)) {
-            PrinterUtil.readAndWriteJavaFile(file, file.getName().split("\\.")[0], javaFile -> {
-                //noinspection OptionalGetWithoutIsPresent
-                var compilationUnit = javaFile.findCompilationUnit().get();
-
-                // Rename package declaration
-                //noinspection OptionalGetWithoutIsPresent
-                var currentPackage = compilationUnit.getPackageDeclaration().get().getName().asString().replaceFirst("i5.bml.transpiler.bot", "");
-                if (currentPackage.isEmpty()) {
-                    compilationUnit.removePackageDeclaration();
-                } else {
-                    if (!outputPackage.isEmpty()) {
-                        currentPackage = "%s.%s".formatted(outputPackage, currentPackage);
-                    }
-
-                    compilationUnit.setPackageDeclaration(currentPackage.replaceFirst("\\.", ""));
-                }
-
-                // Rename imports
-                compilationUnit.getImports().stream()
-                        .filter(i -> i.getName().asString().startsWith("i5.bml.transpiler.bot"))
-                        .forEach(i -> {
-                            var importName = i.getName().asString().replaceFirst("i5.bml.transpiler.bot.", "");
-                            if (!outputPackage.isEmpty()) {
-                                i.setName("%s.%s".formatted(outputPackage, importName));
-                            } else {
-                                i.setName(importName);
-                            }
-                        });
-            });
-        }
+        var filter = filterComponentSpecificPackages();
+        var srcDir = new File(outputDir + "/src/main/java/" + outputPackage);
+        FileUtils.copyDirectory(new File(BOT_DIR), srcDir, filter);
+        IOUtil.renameImportsForFilesInDir(srcDir, outputPackage);
 
         // Create "project" folders
         //noinspection ResultOfMethodCallIgnored
@@ -135,7 +106,6 @@ public class InputParser {
         gradleFile.add("groupId", outputPackage);
         gradleFile.add("needsDot", outputPackage.isEmpty() ? "" : ".");
         gradleFile.add("mainClass", "BotMain");
-
         // Set components
         gradleFile.add("hasTelegramComponent", true);
         gradleFile.add("hasSlackComponent", true);
@@ -157,6 +127,12 @@ public class InputParser {
         if (outputFormat.equals("jar")) {
             Measurements.measure("Compiling generated code", this::outputJar);
         }
+    }
+
+    private IOFileFilter filterComponentSpecificPackages() {
+        var componentPackageNames = new String[]{"slack", "telegram", "rasa", "dialogue", "openai"};
+        var componentFilter = FileFilterUtils.or(Arrays.stream(componentPackageNames).map(FileFilterUtils::nameFileFilter).toArray(IOFileFilter[]::new));
+        return FileFilterUtils.notFileFilter(FileFilterUtils.and(componentFilter, FileFilterUtils.directoryFileFilter()));
     }
 
     private void outputJar() {

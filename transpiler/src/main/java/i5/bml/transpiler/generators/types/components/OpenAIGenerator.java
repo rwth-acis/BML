@@ -19,6 +19,7 @@ import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
@@ -37,6 +38,9 @@ public class OpenAIGenerator extends Generator {
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
+
+        // Copy required implementation for OpenAI
+        IOUtil.copyDirAndRenameImports("threads/openai", visitor);
 
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(OpenAIComponent.class.getSimpleName());

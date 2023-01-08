@@ -9,12 +9,12 @@ import com.slack.api.methods.SlackApiException;
 import com.slack.api.socket_mode.SocketModeClient;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.BMLSlackComponent;
-import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
-import i5.bml.transpiler.bot.events.messenger.telegram.TelegramUser;
+import i5.bml.transpiler.bot.threads.slack.SlackUser;
 import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.symtab.Type;
 
 import java.io.IOException;
@@ -41,7 +41,8 @@ public class SlackGenerator extends Generator implements InitializableComponent,
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
 
-        
+        // Copy required implementation for Slack
+        IOUtil.copyDirAndRenameImports("threads/slack", visitor);
 
         // Add methods to `MessageHelper`
         var expr = StaticJavaParser.parseExpression("sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg)");
