@@ -3,12 +3,12 @@ Bot(host="localhost", port=8080) {
     Number b()
 
     @Routine(rate="1h")
-    notDefinedInAnyScope(data) {
+    notDefinedInAnyScope(context) {
         a = d // d is unknown
     }
 
     @Routine(rate="1h")
-    statementHasLocalScope(data) {
+    statementHasLocalScope(context) {
         a = 1
         if 1 == 0 {
             z = a // No problem, a from parent scope
@@ -17,7 +17,12 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h", rate="2h")
-    alreadyDefinedInParameterList(data) {
+    alreadyDefinedInParameterList(context) {
 
+    }
+    
+    @Routine(rate="1h")
+    shadowingGlobalVariable(context) {
+        b = 2 // Shadowing, but not allowed, because it's a global variable
     }
 }

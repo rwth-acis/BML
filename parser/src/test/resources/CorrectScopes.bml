@@ -28,8 +28,7 @@ Bot(host="localhost", port=8080) {
             c = a + "st"
         }
 
-        b = "te" // Even more shadowing, with different type now
-        a = b + "st"
+        a = string(number=b) + "st"
         a += "." // Should not give a type error
     }
 

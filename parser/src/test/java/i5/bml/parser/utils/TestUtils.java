@@ -3,10 +3,13 @@ package i5.bml.parser.utils;
 import i5.bml.parser.Parser;
 import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.junit.jupiter.api.Assertions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -17,6 +20,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class TestUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
     public static String readFileIntoString(String fileName) {
         var inputString = "";
@@ -36,11 +41,15 @@ public class TestUtils {
         var pair = Parser.parse(TestUtils.readFileIntoString(fileName));
         pair.getRight().removeErrorListeners();
         pair.getRight().addErrorListener(syntaxErrorListener);
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        try {
+            new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        } catch (Exception e) {
+            LOGGER.error("Walking parse tree of file {} failed", fileName, e);
+        }
         return syntaxErrorListener.getCollectedSyntaxErrors();
     }
 
-    public static void assertNoErrors(String relativeFilePath, List<String> expectedErrors) {
+    public static void assertErrors(String relativeFilePath, List<String> expectedErrors) {
         var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();
         new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());

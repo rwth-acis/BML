@@ -9,8 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static i5.bml.parser.errors.ParserError.ALREADY_DEFINED;
-import static i5.bml.parser.errors.ParserError.NOT_DEFINED;
+import static i5.bml.parser.errors.ParserError.*;
 
 class ScopeTest {
 
@@ -32,15 +31,16 @@ class ScopeTest {
 
     @Test
     void testWrongScopes() {
-        TestUtils.assertNoErrors(WRONG_SCOPES_BML, List.of(
+        TestUtils.assertErrors(WRONG_SCOPES_BML, List.of(
                 NOT_DEFINED.format("d"),
                 NOT_DEFINED.format("z"),
-                ALREADY_DEFINED.format("rate")
+                ALREADY_DEFINED.format("rate"),
+                CANT_ASSIGN_GLOBAL.message
         ));
     }
 
     @Test
     void testCorrectScopes() {
-        TestUtils.assertNoErrors(CORRECT_SCOPES_BML, List.of());
+        TestUtils.assertErrors(CORRECT_SCOPES_BML, List.of());
     }
 }

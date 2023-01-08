@@ -15,12 +15,12 @@ class SyntaxTest {
 
     @Test
     void checkAllowedSyntax() {
-        TestUtils.assertNoErrors(ALLOWED_SYNTAX_BML, List.of());
+        TestUtils.assertErrors(ALLOWED_SYNTAX_BML, List.of());
     }
 
     @Test
     void checkStatements() {
-        TestUtils.assertNoErrors(DISALLOWED_STATEMENT_SYNTAX_BML_BASE + "lonelyExpression.bml", List.of(
+        TestUtils.assertErrors(DISALLOWED_STATEMENT_SYNTAX_BML_BASE + "lonelyExpression.bml", List.of(
                 NOT_A_STATEMENT.message
         ));
     }

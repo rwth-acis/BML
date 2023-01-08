@@ -38,14 +38,14 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckAnnotations() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "annotations.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "annotations.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)
         ));
     }
 
     @Test
     void typeCheckArithmetic() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "arithmetic.bml", List.of(
                 CANNOT_APPLY_OP.format("+", BuiltinType.BOOLEAN, BuiltinType.NUMBER),
                 CANNOT_APPLY_OP.format("+", BuiltinType.NUMBER, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format("-", "List<String>", BuiltinType.STRING),
@@ -82,7 +82,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckAssignments() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "assignments.bml", List.of(
                 CANNOT_APPLY_OP.format("+=", BuiltinType.NUMBER, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format("+=", "List<String>", "List<Number>"),
                 CANNOT_APPLY_OP.format("-=", "List<String>", "List<String>")
@@ -91,7 +91,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckBools() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "bools.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "bools.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.NUMBER),
                 EXPECTED_BUT_FOUND.format(BuiltinType.BOOLEAN, BuiltinType.STRING)
         ));
@@ -99,7 +99,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckComponents() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "components.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "components.bml", List.of(
                 URL_NOT_VALID.format(":/petstore3.swagger.io/api/v3/openapi.json"),
                 CONNECT_FAILED.format(":/petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("url"),
@@ -112,8 +112,8 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckBotHead() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml", List.of());
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml", List.of());
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING)
         ));
@@ -121,26 +121,26 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckEqualities() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "equalities.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "equalities.bml", List.of(
                 CANNOT_APPLY_OP.format("==", BuiltinType.NUMBER, "List<Number>")
         ));
     }
 
     @Test
     void typeCheckFieldAccesses() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "fieldAccesses.bml", List.of());
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "fieldAccesses.bml", List.of());
     }
 
     @Test
     void typeCheckForEach() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "foreach.bml", List.of(
                 FOREACH_NOT_APPLICABLE.format(BuiltinType.STRING)
         ));
     }
 
     @Test
     void typeCheckFunctionCalls() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "functionCalls.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "functionCalls.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
                 PARAM_NOT_DEFINED.format("name"),
                 MISSING_PARAM.format("petId"),
@@ -150,21 +150,21 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckListAccess() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "listAccess.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "listAccess.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.FLOAT_NUMBER)
         ));
     }
 
     @Test
     void typeCheckListInitializer() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "listInitializer.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "listInitializer.bml", List.of(
                 LIST_BAD_TYPES.message
         ));
     }
 
     @Test
     void typeCheckMapInitializer() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "mapInitializer.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "mapInitializer.bml", List.of(
                 ALREADY_DEFINED.format("a"),
                 CANT_RESOLVE_IN.format("d", "Map"),
                 CANT_RESOLVE_IN.format("get", "Map")
@@ -174,7 +174,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckOpenAPIFunctionCalls() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "openAPIFunctionCalls.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "openAPIFunctionCalls.bml", List.of(
                 NO_PATH_FOR_API.format("/pet/{petId}/get", "https://petstore3.swagger.io/api/v3/openapi.json"),
                 METHOD_NOT_SUPPORTED.format("/pet", "get", "https://petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("path"),
@@ -186,7 +186,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckRelations() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "relations.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "relations.bml", List.of(
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.BOOLEAN),
                 EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
                 CANNOT_APPLY_OP.format(">", BuiltinType.STRING, BuiltinType.BOOLEAN)
@@ -195,7 +195,7 @@ class TypeCheckingTest {
 
     @Test
     void typeCheckTernary() {
-        TestUtils.assertNoErrors(TYPE_CHECKING_BASE_PATH + "ternary.bml", List.of(
+        TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "ternary.bml", List.of(
                 TERNARY_BAD_TYPES.format(BuiltinType.NUMBER, BuiltinType.STRING),
                 TERNARY_BAD_TYPES.format(BuiltinType.NUMBER, BuiltinType.OBJECT),
                 TERNARY_BAD_TYPES.format(BuiltinType.STRING, BuiltinType.NUMBER),
