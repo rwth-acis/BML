@@ -13,9 +13,9 @@ import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.BMLNumber;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
 

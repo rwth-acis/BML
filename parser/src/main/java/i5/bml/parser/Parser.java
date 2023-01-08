@@ -3,7 +3,6 @@ package i5.bml.parser;
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.SyntaxErrorListener;
-import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;

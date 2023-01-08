@@ -6,7 +6,6 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.utils.PrinterUtil;

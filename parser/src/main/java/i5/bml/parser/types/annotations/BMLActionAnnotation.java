@@ -1,6 +1,9 @@
 package i5.bml.parser.types.annotations;
 
-import i5.bml.parser.types.*;
+import i5.bml.parser.types.AbstractBMLType;
+import i5.bml.parser.types.BMLType;
+import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.components.BMLList;
 import org.antlr.v4.runtime.ParserRuleContext;
 

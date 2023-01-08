@@ -1,13 +1,8 @@
 package i5.bml.parser.utils;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Stack;
 import java.util.function.Supplier;
 
 public class Measurements {

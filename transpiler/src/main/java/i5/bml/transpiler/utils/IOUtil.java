@@ -1,8 +1,6 @@
 package i5.bml.transpiler.utils;
 
 import i5.bml.transpiler.InputParser;
-import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
-import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;

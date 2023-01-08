@@ -1,9 +1,9 @@
 package i5.bml.parser;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
+import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.utils.TestUtils;
 import i5.bml.parser.utils.TypeCheckWalker;
 import i5.bml.parser.walker.DiagnosticsCollector;

@@ -12,8 +12,6 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import org.antlr.v4.runtime.RuleContext;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.List;
-
 public class Utils {
 
     public static boolean isJavaHomeDefined() {

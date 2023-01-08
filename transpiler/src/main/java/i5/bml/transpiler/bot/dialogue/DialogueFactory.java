@@ -4,7 +4,6 @@ import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class DialogueFactory {

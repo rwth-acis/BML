@@ -8,9 +8,9 @@ import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLStringFunction;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 
 @CodeGenerator(typeClass = BMLStringFunction.class)
 public class StringFunctionGenerator extends Generator {

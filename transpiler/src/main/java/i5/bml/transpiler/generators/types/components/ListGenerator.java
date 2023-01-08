@@ -8,9 +8,9 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.BMLList;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 
