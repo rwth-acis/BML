@@ -133,6 +133,14 @@ public class InputParser {
         gradleFile.add("groupId", outputPackage);
         gradleFile.add("needsDot", outputPackage.isEmpty() ? "" : ".");
         gradleFile.add("mainClass", "BotMain");
+
+        // Set components
+        gradleFile.add("hasTelegramComponent", true);
+        gradleFile.add("hasSlackComponent", true);
+        gradleFile.add("hasOpenAPIComponent", true);
+        gradleFile.add("hasRasaComponent", true);
+        gradleFile.add("hasOpenAIComponent", true);
+
         Files.write(new File(outputDir + "/build.gradle").toPath(), gradleFile.render().getBytes());
 
         // Copy gitignore

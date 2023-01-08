@@ -46,18 +46,17 @@ public class OpenAIGenerator implements Generator {
                 Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
         // Add getter
-        Utils.generateRecordStyleGetter(field);
+        Utils.generateRecordStyleGetter(field, true);
+
+        // Add import for `OpenAIComponent`
+        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+        var compilationUnit = currentClass.findCompilationUnit().get();
+        compilationUnit.addImport(Utils.renameImport(OpenAIComponent.class, visitor.outputPackage()), false, false);
     }
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
-
-        var block = new BlockStmt();
-        var invokeModelExpr = new MethodCallExpr("ComponentRegistry.%s().invokeModel".formatted(fieldName), new NameExpr("messageEvent"));
-        block.addStatement(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "response", invokeModelExpr)));
-        block.addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                new NodeList<>(new NameExpr("ctx"), new NameExpr("response"))));
 
         // Add import for `ComponentRegistry` and `MessageHelper`
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
@@ -65,6 +64,9 @@ public class OpenAIGenerator implements Generator {
         compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
         compilationUnit.addImport(Utils.renameImport(MessageHelper.class, visitor.outputPackage()), false, false);
 
-        return block;
+        var messageEvent = new MethodCallExpr(new NameExpr("ctx"), "event");
+        var invokeModelExpr = new MethodCallExpr("ComponentRegistry.%s().invokeModel".formatted(fieldName), messageEvent);
+        return new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
+                new NodeList<>(new NameExpr("ctx"), invokeModelExpr)));
     }
 }

@@ -21,6 +21,7 @@ import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
+import i5.bml.transpiler.bot.events.messenger.MessageEventType;
 import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.generators.dialogue.DialogueAutomatonGenerator;
@@ -160,16 +161,23 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
             // We remove the DialogueAutomaton references when there is no dialogue specified
             PrinterUtil.readAndWriteClass(botOutputPath, Session.class, clazz -> {
                 //noinspection OptionalGetWithoutIsPresent
-                clazz.findCompilationUnit().get().getImports().clear();
+                var compilationUnit = clazz.findCompilationUnit().get();
+                compilationUnit.getImports().clear();
                 //noinspection OptionalGetWithoutIsPresent
-                clazz.getFieldByName("dialogue").get().remove();
-                clazz.getMethodsByName("dialogue").get(0).remove();
+                clazz.getFieldByName("dialogues").get().remove();
+                clazz.getMethodsByName("dialogues").get(0).remove();
                 clazz.getMethodsByName("toString").get(0).remove();
+
+                // Remove dialogues initialization from constructor
+                clazz.getConstructors().get(0).getBody().getStatement(1).remove();
 
                 var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);
                 toStringMethod.addAnnotation(Override.class);
                 toStringMethod.setType(String.class);
                 toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod(Session.class.getSimpleName(), clazz.getFields())));
+
+                // Leave import for `MessageEventType`
+                compilationUnit.addImport(Utils.renameImport(MessageEventType.class, outputPackage), false, false);
             });
 
             // When there is no dialogue, we can delete the whole folder

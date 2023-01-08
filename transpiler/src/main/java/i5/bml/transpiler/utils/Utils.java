@@ -1,5 +1,6 @@
 package i5.bml.transpiler.utils;
 
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.Expression;
@@ -58,10 +59,14 @@ public class Utils {
         return new ReturnStmt(new MethodCallExpr(new StringLiteralExpr(stringBuilder.toString()), "formatted", args));
     }
 
-    public static void generateRecordStyleGetter(FieldDeclaration field) {
+    public static void generateRecordStyleGetter(FieldDeclaration field, boolean makeStatic) {
         var getter = field.createGetter();
         // Remove "get" prefix
         getter.setName(StringUtils.uncapitalize(getter.getNameAsString().substring(3)));
+
+        if (makeStatic) {
+            getter.addModifier(Modifier.Keyword.STATIC);
+        }
     }
 
     public static <T> T findParentContext(RuleContext currentCtx, Class<T> parentCtxClass) {

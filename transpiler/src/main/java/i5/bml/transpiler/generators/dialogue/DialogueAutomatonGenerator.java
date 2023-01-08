@@ -133,7 +133,7 @@ public class DialogueAutomatonGenerator {
                         var field = dialogueClass.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(assignmentContext.assignment().expr.type),
                                 assignmentContext.assignment().name.getText(), (Expression) javaTreeGenerator.visit(assignmentContext.assignment().expr),
                                 Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
-                        Utils.generateRecordStyleGetter(field);
+                        Utils.generateRecordStyleGetter(field, false);
                     }
                 } else if (child instanceof BMLParser.DialogueStateCreationContext stateCreationContext) { // State creation, i.e., state function calls
                     var block = visitDialogueStateCreation(stateCreationContext);

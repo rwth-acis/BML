@@ -42,7 +42,7 @@ public class RasaGenerator implements Generator, InitializableComponent {
                 initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
         // Add getter
-        Utils.generateRecordStyleGetter(field);
+        Utils.generateRecordStyleGetter(field, true);
 
         // Add component initializer method to registry
         var expr = new MethodReferenceExpr(new NameExpr(fieldName), new NodeList<>(), "init");

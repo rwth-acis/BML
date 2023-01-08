@@ -4,6 +4,7 @@ import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,7 @@ public class EventHandlerRegistry {
                     try {
                         handler.invoke(null, new MessageEventContext(messageEvent));
                     } catch (Exception e) {
-                        LOGGER.error("Execution of handler for message event {} failed", messageEvent.messageEventType(), e);
+                        LOGGER.error("Execution of handler for message event {} failed", messageEvent.messageEventType(), ExceptionUtils.getRootCause(e));
                     }
                 }
             }
