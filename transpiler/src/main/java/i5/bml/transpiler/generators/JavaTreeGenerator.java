@@ -26,8 +26,6 @@ import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Stack;
@@ -109,6 +107,12 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
         var componentRegistryClass = PrinterUtil.readClass(botOutputPath, ComponentRegistry.class);
+
+        if (!ctx.dialogueAutomaton().isEmpty()) {
+            // We populate the Session class with required dialogues (we can pick any dialogue from scope)
+            var dialogueType = ((VariableSymbol) currentScope.resolve(ctx.dialogueAutomaton(0).head.name.getText())).getType();
+            GeneratorRegistry.getGeneratorForType(dialogueType).generateComponent(null, this);
+        }
 
         // Iterate over child nodes in body in procedural manner, i.e., as they appear in the source text
         for (var child : ctx.children) {

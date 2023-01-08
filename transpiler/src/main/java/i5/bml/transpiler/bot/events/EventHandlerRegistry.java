@@ -1,6 +1,5 @@
 package i5.bml.transpiler.bot.events;
 
-import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
@@ -35,9 +34,6 @@ public class EventHandlerRegistry {
         switch (event.eventSource()) {
             case SLACK, TELEGRAM -> {
                 var messageEvent = (MessageEvent) event;
-
-                // We send the message to the desired NLU to infer intent and entity/entities
-                DialogueHandler.handleMessageEvent(messageEvent);
 
                 var handler = messageEventHandler.get(messageEvent.messageEventType());
                 if (handler == null) {

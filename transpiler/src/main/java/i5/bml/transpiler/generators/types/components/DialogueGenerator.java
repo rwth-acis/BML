@@ -3,39 +3,66 @@ package i5.bml.transpiler.generators.types.components;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.EnumConstantDeclaration;
-import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.*;
-import com.github.javaparser.ast.type.PrimitiveType;
-import com.github.javaparser.ast.type.UnknownType;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchEntry;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.dialogue.BMLDialogue;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
 import i5.bml.transpiler.bot.dialogue.DialogueFactory;
-import i5.bml.transpiler.bot.events.messenger.MessageEventType;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.bot.threads.Session;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.List;
 
 @CodeGenerator(typeClass = BMLDialogue.class)
 public class DialogueGenerator extends Generator {
 
     public DialogueGenerator(Type dialogueComponent) {}
+
+    /**
+     * Invoked by {@link JavaTreeGenerator#visitBotBody(BMLParser.BotBodyContext)} not, as usual, by
+     * {@link JavaTreeGenerator#visitComponent(BMLParser.ComponentContext)}.
+     * <p>
+     * This method is only called if we have at least one dialogue. We then need a few things in the {@link Session} class:
+     * <p><ul>
+     * <li> A `dialogues` field to store different dialogues for a session (e.g., different events use different dialogues)
+     * <li> We instantiate `dialogues` by calling the {@link DialogueFactory} that returns us a dialogue instance
+     *      depending on the message event type
+     * <li> Lastly, we add a `toString` method for debug purposes
+     * </ul><p>
+     *
+     * @param ctx always null, since we do not need it
+     * @param visitor Instance of the current parse tree visitor
+     */
+    @Override
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
+        PrinterUtil.readAndWriteClass(visitor.botOutputPath(), Session.class, clazz -> {
+            var field = clazz.addField("List<%s>".formatted(DialogueAutomaton.class.getSimpleName()), "dialogues");
+            Utils.generateRecordStyleGetter(field, false);
+
+            var assignExpr = StaticJavaParser.parseExpression("dialogues = DialogueFactory.createDialogue(messageEventType)");
+            clazz.getConstructors().get(0).getBody().addStatement(assignExpr);
+
+            // Add imports for `DialogueAutomaton`, `DialogueFactory`, and `List`
+            //noinspection OptionalGetWithoutIsPresent -> We can assume pressence
+            var compilationUnit = clazz.findCompilationUnit().get();
+            compilationUnit.addImport(Utils.renameImport(DialogueAutomaton.class, visitor.outputPackage()), false, false);
+            compilationUnit.addImport(Utils.renameImport(DialogueFactory.class, visitor.outputPackage()), false, false);
+            compilationUnit.addImport(List.class);
+
+            Utils.generateToStringMethod(clazz);
+        });
+    }
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
