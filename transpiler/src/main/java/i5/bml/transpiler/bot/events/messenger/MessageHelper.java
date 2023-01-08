@@ -1,5 +1,6 @@
 package i5.bml.transpiler.bot.events.messenger;
 
+import i5.bml.transpiler.bot.threads.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

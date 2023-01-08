@@ -3,7 +3,6 @@ package i5.bml.transpiler.bot.utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import i5.bml.transpiler.bot.config.BotSettings;
-import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,7 @@ public class PersistentStorage {
 
     static {
         try {
-            var jarExecutionFile = RasaComponent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+            var jarExecutionFile = PersistentStorage.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
             settingsFile = new File("/" + FilenameUtils.getPath(jarExecutionFile) + SETTINGS_FILE_NAME);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to retrieve jar execution uri", e);

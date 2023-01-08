@@ -1,7 +1,6 @@
-package i5.bml.transpiler.bot.events.messenger.telegram;
+package i5.bml.transpiler.bot.threads.telegram;
 
-import i5.bml.transpiler.bot.events.messenger.User;
-import i5.bml.transpiler.bot.threads.telegram.TelegramComponent;
+import i5.bml.transpiler.bot.threads.User;
 
 import java.util.Objects;
 

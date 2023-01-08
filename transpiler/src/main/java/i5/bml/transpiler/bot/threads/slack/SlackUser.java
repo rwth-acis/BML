@@ -1,7 +1,7 @@
-package i5.bml.transpiler.bot.events.messenger.slack;
+package i5.bml.transpiler.bot.threads.slack;
 
 import com.slack.api.socket_mode.SocketModeClient;
-import i5.bml.transpiler.bot.events.messenger.User;
+import i5.bml.transpiler.bot.threads.User;
 
 import java.util.Objects;
 

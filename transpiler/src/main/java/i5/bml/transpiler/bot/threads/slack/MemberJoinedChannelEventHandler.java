@@ -9,7 +9,6 @@ import com.slack.api.model.event.MemberJoinedChannelEvent;
 import i5.bml.transpiler.bot.events.EventSource;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import i5.bml.transpiler.bot.events.messenger.MessageEventType;
-import i5.bml.transpiler.bot.events.messenger.slack.SlackUser;
 import i5.bml.transpiler.bot.threads.Session;
 
 import java.io.IOException;
