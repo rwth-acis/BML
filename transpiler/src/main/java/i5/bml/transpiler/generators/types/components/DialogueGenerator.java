@@ -78,11 +78,13 @@ public class DialogueGenerator extends Generator {
             }
         });
 
-        var event = new MethodCallExpr(new NameExpr("ctx"), "event");
-        var session = new MethodCallExpr(event, "session");
-        var dialogues = new MethodCallExpr(session, "dialogues");
-        var stepCall = new MethodCallExpr(new NameExpr("d"), "step", new NodeList<>(new NameExpr("ctx")));
-        var lambda = new LambdaExpr(new Parameter(new UnknownType(), "d"), stepCall);
-        return new MethodCallExpr(dialogues, "forEach", new NodeList<>(lambda));
+        // Add import for `ComponentRegistry`
+        //noinspection OptionalGetWithoutIsPresent -> We can assume pressence
+        var compilationUnit = visitor.currentClass().findCompilationUnit().get();
+        compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
+
+        var invokeModel = "ComponentRegistry.rasa().invokeModel(ctx.event())";
+        var step = "ctx.event().session().dialogues().forEach(d -> d.step(ctx))";
+        return new BlockStmt().addStatement(StaticJavaParser.parseExpression(invokeModel)).addStatement(StaticJavaParser.parseExpression(step));
     }
 }

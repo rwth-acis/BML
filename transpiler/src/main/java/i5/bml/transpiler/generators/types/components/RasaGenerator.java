@@ -36,7 +36,7 @@ public class RasaGenerator extends Generator implements InitializableComponent {
 
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(RasaComponent.class.getSimpleName());
-        var fieldName = ctx.name.getText();
+        var fieldName = "rasa";
         var initializer = new ObjectCreationExpr(null, type, new NodeList<>(new StringLiteralExpr(rasaComponent.getUrl())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName,
                 initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
@@ -47,19 +47,6 @@ public class RasaGenerator extends Generator implements InitializableComponent {
         // Add component initializer method to registry
         var expr = new MethodReferenceExpr(new NameExpr(fieldName), new NodeList<>(), "init");
         addComponentInitializerMethod(currentClass, "Rasa", RasaComponent.class, expr, visitor.outputPackage());
-
-        // Register to `DialogueHandler`
-        PrinterUtil.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {
-            var m = clazz.getMethodsByName("handleMessageEvent").get(0);
-            var block = new BlockStmt();
-            block.addStatement(new MethodCallExpr("ComponentRegistry.%s().invokeModel".formatted(fieldName), new NameExpr("messageEvent")));
-            m.setBody(block);
-
-            // Add import for `ComponentRegistry`
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-            var compilationUnit = clazz.findCompilationUnit().get();
-            compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
-        });
 
         // Add constant with fallback intent
         PrinterUtil.readAndWriteClass(visitor.botOutputPath(), BotConfig.class, clazz -> {

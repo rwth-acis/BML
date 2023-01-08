@@ -1,6 +1,8 @@
 package i5.bml.transpiler.utils;
 
 import i5.bml.transpiler.InputParser;
+import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
+import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -11,6 +13,20 @@ import java.io.File;
 public class IOUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtil.class);
+
+    public static void forceDeleteFile(String botOutputPath, Class<?> clazz) {
+        var packageName = clazz.getPackageName()
+                .replace("i5.bml.transpiler.bot", "")
+                .replaceFirst("\\.", "")
+                .replaceAll("\\.", "/");
+        File file = null;
+        try {
+            file = new File("%s%s/%s.java".formatted(botOutputPath, packageName, clazz.getSimpleName()));
+            FileUtils.forceDelete(file);
+        } catch (Exception e) {
+            LOGGER.error("Failed to delete file {}", file, e);
+        }
+    }
 
     public static void copyDirAndRenameImports(String packageName, JavaTreeGenerator visitor) {
         try {

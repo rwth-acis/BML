@@ -16,31 +16,25 @@ import i5.bml.parser.symbols.BlockScope;
 import i5.bml.parser.types.components.BMLBoolean;
 import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.components.BMLString;
-import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
+import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
-import i5.bml.transpiler.bot.events.messenger.MessageEventType;
-import i5.bml.transpiler.bot.threads.Session;
-import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.generators.dialogue.DialogueAutomatonGenerator;
+import i5.bml.transpiler.generators.types.BMLTypeResolver;
+import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
-import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
-
 
     private final String botOutputPath;
 
@@ -115,7 +109,6 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
         var componentRegistryClass = PrinterUtil.readClass(botOutputPath, ComponentRegistry.class);
-        var routineCount = 0;
 
         // Iterate over child nodes in body in procedural manner, i.e., as they appear in the source text
         for (var child : ctx.children) {
@@ -128,76 +121,22 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 visit(componentContext);
                 classStack.pop();
             } else if (child instanceof BMLParser.DialogueAutomatonContext automatonContext) {
-                var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(automatonContext.head.name.getText()));
-                var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(automatonContext.head.name.getText()));
-
-                // Duplicate templates for DialogueAutomaton and Actions
-                PrinterUtil.copyClass(botOutputPath + "dialogue", DialogueAutomatonTemplate.class.getSimpleName(), newDialogueClassName);
-                PrinterUtil.copyClass(botOutputPath + "dialogue", ActionsTemplate.class.getSimpleName(), newActionsClassName);
-
                 visit(automatonContext);
             } else if (child instanceof BMLParser.FunctionDefinitionContext functionContext) {
                 for (var annotationContext : functionContext.annotation()) {
                     var generator = GeneratorRegistry.getGeneratorForType(annotationContext.type);
                     generator.populateClassWithFunction(functionContext, annotationContext, this);
-
-                    if (annotationContext.type instanceof BMLRoutineAnnotation) {
-                        ++routineCount;
-                    }
                 }
             }
         }
 
-        // Set number of routines for scheduler pool size
-        int finalRoutineCount = routineCount;
-        PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
-            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
-            clazz.getFieldByName("ROUTINE_COUNT").get().getVariables().get(0).setInitializer(new IntegerLiteralExpr("" + finalRoutineCount));
-        });
-
-        // We either delete everything or just the templates, depending on whether at least one dialogue was defined
-        if (ctx.dialogueAutomaton().isEmpty()) {
-            // We remove the DialogueAutomaton references when there is no dialogue specified
-            PrinterUtil.readAndWriteClass(botOutputPath, Session.class, clazz -> {
-                //noinspection OptionalGetWithoutIsPresent
-                var compilationUnit = clazz.findCompilationUnit().get();
-                compilationUnit.getImports().clear();
-                //noinspection OptionalGetWithoutIsPresent
-                clazz.getFieldByName("dialogues").get().remove();
-                clazz.getMethodsByName("dialogues").get(0).remove();
-                clazz.getMethodsByName("toString").get(0).remove();
-
-                // Remove dialogues initialization from constructor
-                clazz.getConstructors().get(0).getBody().getStatement(1).remove();
-
-                var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);
-                toStringMethod.addAnnotation(Override.class);
-                toStringMethod.setType(String.class);
-                toStringMethod.setBody(new BlockStmt().addStatement(Utils.generateToStringMethod(Session.class.getSimpleName(), clazz.getFields())));
-
-                // Leave import for `MessageEventType`
-                compilationUnit.addImport(Utils.renameImport(MessageEventType.class, outputPackage), false, false);
-            });
-
-            // When there is no dialogue, we can delete the whole folder
-            try {
-                FileUtils.deleteDirectory(new File(botOutputPath + "dialogue"));
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to delete directory %s".formatted(botOutputPath + "dialogue"), e);
-            }
-        } else {
-            File file = null;
-            try {
-                file = new File(botOutputPath + "dialogue/%s.java".formatted(DialogueAutomatonTemplate.class.getSimpleName()));
-                FileUtils.forceDelete(file);
-                file = new File(botOutputPath + "dialogue/%s.java".formatted(ActionsTemplate.class.getSimpleName()));
-                FileUtils.forceDelete(file);
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to delete file %s".formatted(file), e);
-            }
+        // Delete dialogue templates, if we have at least one dialogue
+        if (!ctx.dialogueAutomaton().isEmpty()) {
+            IOUtil.forceDeleteFile(botOutputPath, DialogueAutomatonTemplate.class);
+            IOUtil.forceDeleteFile(botOutputPath, ActionsTemplate.class);
         }
 
-        // Finally write back the classes we read
+        // Write back the ComponentRegistry class
         PrinterUtil.writeClass(botOutputPath, ComponentRegistry.class, componentRegistryClass);
 
         // We have visited all children already, and we have nothing to return
@@ -471,6 +410,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
         DialogueAutomatonGenerator dialogueAutomatonGenerator = new DialogueAutomatonGenerator(this);
         visitDialogueHead(ctx.head);
+        dialogueAutomatonGenerator.init(ctx.head);
         dialogueAutomatonGenerator.visitDialogueBody(ctx.body, currentScope);
 
         popScope();

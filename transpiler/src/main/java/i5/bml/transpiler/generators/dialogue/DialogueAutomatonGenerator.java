@@ -21,12 +21,15 @@ import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BMLType;
 import i5.bml.parser.types.dialogue.BMLState;
 import i5.bml.transpiler.bot.config.BotConfig;
+import i5.bml.transpiler.bot.dialogue.ActionsTemplate;
 import i5.bml.transpiler.bot.dialogue.DialogueAutomaton;
+import i5.bml.transpiler.bot.dialogue.DialogueAutomatonTemplate;
 import i5.bml.transpiler.bot.dialogue.State;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
+import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Scope;
@@ -62,12 +65,22 @@ public class DialogueAutomatonGenerator {
         dialogueOutputPath = javaTreeGenerator.botOutputPath() + "dialogue";
     }
 
-    public void visitDialogueBody(BMLParser.DialogueBodyContext ctx, Scope currentScope) {
-        var dialogueHeadContext = ((BMLParser.DialogueAutomatonContext) ctx.parent).head;
-        var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
-        var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(dialogueHeadContext.name.getText()));
+    public void init(BMLParser.DialogueHeadContext ctx) {
+        // Copy required implementation for dialogues
+        IOUtil.copyDirAndRenameImports("dialogue", javaTreeGenerator);
+
+        // Duplicate templates for DialogueAutomaton and Actions
+        var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(ctx.name.getText()));
+        var newActionsClassName = "%sActions".formatted(StringUtils.capitalize(ctx.name.getText()));
+        PrinterUtil.copyClass(javaTreeGenerator.botOutputPath() + "dialogue", DialogueAutomatonTemplate.class.getSimpleName(), newDialogueClassName);
+        PrinterUtil.copyClass(javaTreeGenerator.botOutputPath() + "dialogue", ActionsTemplate.class.getSimpleName(), newActionsClassName);
+
+        // Read freshly copied classes
         dialogueClass = PrinterUtil.readClass(dialogueOutputPath, newDialogueClassName);
         actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
+    }
+
+    public void visitDialogueBody(BMLParser.DialogueBodyContext ctx, Scope currentScope) {
         dialogueCompilationUnit = dialogueClass.findCompilationUnit().get();
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
         initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();
@@ -115,7 +128,7 @@ public class DialogueAutomatonGenerator {
                 var actionMethod = actionClass.addMethod(functionDefinitionContext.functionDefinition().head.functionName.getText(),
                         Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
                 actionMethod.addParameter(MessageEventContext.class.getSimpleName(), "ctx");
-                actionMethod.addParameter(newDialogueClassName, "dialogueAutomaton");
+                actionMethod.addParameter(dialogueClass.getNameAsString(), "dialogueAutomaton");
 
                 // Add import for `MessageEventContext`
                 actionCompilationUnit.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
