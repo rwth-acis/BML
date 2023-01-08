@@ -2,6 +2,7 @@ package i5.bml.transpiler.utils;
 
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -43,10 +44,13 @@ public class Utils {
         return packageName;
     }
 
-    public static ReturnStmt generateToStringMethod(String className, List<FieldDeclaration> fields) {
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public static void generateToStringMethod(ClassOrInterfaceDeclaration clazz) {
+        var className = clazz.getNameAsString();
         StringBuilder stringBuilder = new StringBuilder(StringUtils.capitalize(className));
         stringBuilder.append("{");
 
+        var fields = clazz.getFields();
         var args = new NodeList<Expression>();
         for (var field : fields) {
             var name = field.getVariable(0).getName();
@@ -56,7 +60,9 @@ public class Utils {
 
         stringBuilder.replace(stringBuilder.length() - 2, stringBuilder.length(), "}");
 
-        return new ReturnStmt(new MethodCallExpr(new StringLiteralExpr(stringBuilder.toString()), "formatted", args));
+        var toStringMethod = clazz.addMethod("toString", Modifier.Keyword.PUBLIC);
+        toStringMethod.setType(String.class);
+        toStringMethod.getBody().get().addStatement(new ReturnStmt(new MethodCallExpr(new StringLiteralExpr(stringBuilder.toString()), "formatted", args)));
     }
 
     public static void generateRecordStyleGetter(FieldDeclaration field, boolean makeStatic) {
