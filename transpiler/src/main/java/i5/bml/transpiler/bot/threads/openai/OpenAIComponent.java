@@ -15,13 +15,14 @@ public class OpenAIComponent {
         this.model = model;
     }
 
-    public void invokeModel(MessageEvent messageEvent) {
+    public String invokeModel(MessageEvent messageEvent) {
         CompletionRequest completionRequest = CompletionRequest.builder()
                 .prompt(messageEvent.text())
                 .model(model)
                 .echo(false)
                 .user(messageEvent.username())
+                .n(1) // We only want one choice for completion
                 .build();
-        service.createCompletion(completionRequest).getChoices().get(0);
+        return service.createCompletion(completionRequest).getChoices().get(0).getText();
     }
 }
