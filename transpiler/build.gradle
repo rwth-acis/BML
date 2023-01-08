@@ -49,6 +49,9 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'org.reflections:reflections:0.10.2'
 
+    // OpenAI API Support
+    implementation 'com.theokanning.openai-gpt3-java:client:0.8.1'
+
     // Invoked by transpiler before actual code generation to guarantee code "correctness"
     implementation project(':parser')
 }

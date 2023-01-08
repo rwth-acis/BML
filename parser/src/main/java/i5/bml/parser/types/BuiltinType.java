@@ -66,6 +66,7 @@ public enum BuiltinType {
      */
     OPENAPI("OpenAPI"),
     OPENAPI_SCHEMA("OpenAPISchema", true),
+    OPENAI("OpenAI"),
     EMAIL("Email"),
     RSS("RSS"),
     SQL("SQL");
