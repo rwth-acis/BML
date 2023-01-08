@@ -42,8 +42,7 @@ public class RasaGenerator implements Generator, InitializableComponent {
                 initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
         // Add getter
-        var getter = field.createGetter();
-        getter.addModifier(Modifier.Keyword.STATIC);
+        Utils.generateRecordStyleGetter(field);
 
         // Add component initializer method to registry
         var expr = new MethodReferenceExpr(new NameExpr(fieldName), new NodeList<>(), "init");
@@ -53,7 +52,7 @@ public class RasaGenerator implements Generator, InitializableComponent {
         PrinterUtil.readAndWriteClass(visitor.botOutputPath(), DialogueHandler.class, clazz -> {
             var m = clazz.getMethodsByName("handleMessageEvent").get(0);
             var block = new BlockStmt();
-            block.addStatement(new MethodCallExpr("ComponentRegistry.getRasa().invokeModel", new NameExpr("messageEvent")));
+            block.addStatement(new MethodCallExpr("ComponentRegistry.%s().invokeModel".formatted(fieldName), new NameExpr("messageEvent")));
             m.setBody(block);
 
             // Add import for `ComponentRegistry`
