@@ -97,10 +97,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             return;
         }
 
-        var start = System.nanoTime();
-        SwaggerParseResult result = new OpenAPIParser().readLocation(url, null, null);
-        var end = System.nanoTime();
-        Measurements.add("Fetch OpenAPI Spec", (end - start));
+        var result = Measurements.measure("OpenAPI parser", () -> new OpenAPIParser().readLocation(url, null, null));
 
         openAPI = result.getOpenAPI();
 
@@ -119,8 +116,11 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
 
+        Measurements.measure("Parsing OpenAPI spec", this::parseOpenAPISpec);
+    }
+
+    private void parseOpenAPISpec() {
         // Determine route return types & arguments
-        start = System.nanoTime();
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
             AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(route, httpMethod.name(), operation);
 
@@ -145,8 +145,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                         new ImmutablePair<>(operation.getTags().get(0), operation.getOperationId()));
             }
         }));
-        end = System.nanoTime();
-        Measurements.add("Parsing OpenAPI Spec", end - start);
     }
 
     private Type computeRouteReturnTypes(String route, String httpMethod, Operation operation) {
@@ -239,7 +237,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
 
     @Override
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
-        var start = System.nanoTime();
         var functionCallCtx = (BMLParser.FunctionCallContext) ctx;
         var httpMethod = functionCallCtx.functionName.getText();
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
@@ -278,8 +275,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
-        var end = System.nanoTime();
-        Measurements.add("Resolve & check call `%s`".formatted(functionCallCtx.functionName.getText()), end - start);
         return new BMLFunctionType((BMLFunctionType) functionType);
     }
 

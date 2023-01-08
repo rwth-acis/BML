@@ -145,7 +145,7 @@ public class InputParser {
         Measurements.measure("Code generation", () -> new JavaTreeGenerator(outputDir + "/src/main/java/", outputPackage).visit(tree));
 
         if (outputFormat.equals("jar")) {
-            outputJar();
+            Measurements.measure("Compiling generated code", this::outputJar);
         }
     }
 
@@ -153,7 +153,6 @@ public class InputParser {
         LOGGER.info("Starting compilation process ...");
 
         ProjectConnection connection = GradleConnector.newConnector()
-                .useGradleVersion("7.5.1")
                 .forProjectDirectory(new File(outputDir))
                 .connect();
 

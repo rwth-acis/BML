@@ -23,21 +23,14 @@ public class Parser {
     }
 
     public static List<Diagnostic> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
-        var start = System.nanoTime();
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
         var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
         var syntaxErrorListener = new SyntaxErrorListener();
         bmlParser.removeErrorListeners();
         bmlParser.addErrorListener(syntaxErrorListener);
-        var end = System.nanoTime();
-        Measurements.add("Parsing (%s Bytes)".formatted(inputString.getBytes().length), (end - start));
 
         DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
-        start = System.nanoTime();
         new ParseTreeWalker().walk(diagnosticsCollector, bmlParser.program());
-        end = System.nanoTime();
-        Measurements.add("Collect diagnostics", "Fetch OpenAPI Spec", (end - start));
-        Measurements.print(report);
 
         diagnosticsCollector.getCollectedDiagnostics().addAll(syntaxErrorListener.getCollectedSyntaxErrors());
         return diagnosticsCollector.getCollectedDiagnostics();
