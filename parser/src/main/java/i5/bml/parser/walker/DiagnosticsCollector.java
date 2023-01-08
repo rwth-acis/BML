@@ -16,10 +16,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.eclipse.lsp4j.Diagnostic;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -126,7 +123,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
         else if (ctx.expr != null // We have an expression
                 && (ctx.expr.op == null || ctx.expr.op.getType() != BMLParser.DOT) // Expression is not using obj.foo()
                 && ctx.expr.functionCall() == null) { // Expression is not a function call
-            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_A_STATEMENT.message, ctx.expr);
+            Diagnostics.addDiagnostic(collectedDiagnostics, NOT_A_STATEMENT, ctx.expr);
         }
     }
 
@@ -313,7 +310,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
     @Override
     public void exitAssignment(BMLParser.AssignmentContext ctx) {
         if (ctx.expr.type instanceof BMLVoid) {
-            Diagnostics.addDiagnostic(collectedDiagnostics, "Can't assign expression returning `void`", ctx.name);
+            Diagnostics.addDiagnostic(collectedDiagnostics, CANT_ASSIGN_VOID, ctx.name);
             return;
         }
 
@@ -324,7 +321,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
             var symbol = globalScope.getSymbol(name);
             if (symbol != null) {
-                Diagnostics.addDiagnostic(collectedDiagnostics, "Can't assign a global variable", ctx.name);
+                Diagnostics.addDiagnostic(collectedDiagnostics, CANT_ASSIGN_GLOBAL, ctx.name);
                 return;
             }
 
@@ -542,9 +539,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     }
 
                     if (!firstType.equals(secondType)) {
-                        Diagnostics.addDiagnostic(collectedDiagnostics,
-                                "expressions need to have the same type\nFound `%s` : `%s`"
-                                        .formatted(firstType, secondType), ctx);
+                        Diagnostics.addDiagnostic(collectedDiagnostics, TERNARY_BAD_TYPES.format(firstType, secondType), ctx);
                         yield TypeRegistry.resolveType(BuiltinType.OBJECT);
                     } else {
                         yield firstType;
@@ -650,7 +645,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var firstItemType = expressions.get(0).type;
             for (int i = 1, expressionSize = expressions.size(); i < expressionSize; ++i) {
                 if (!firstItemType.equals(expressions.get(i).type)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, LIST_BAD_TYPES.message, ctx);
+                    Diagnostics.addDiagnostic(collectedDiagnostics, LIST_BAD_TYPES, ctx);
                     ctx.type = TypeRegistry.resolveType(BuiltinType.OBJECT);
                     return;
                 }

@@ -20,7 +20,9 @@ public enum ParserError {
     NO_PATH_FOR_API("Path `%s` is not defined for API:\n`%s`"),
     METHOD_NOT_SUPPORTED("Path `%s` does not support HTTP method `%s` for API:\n`%s`"),
     PARAM_REQUIRES_CONSTANT("Parameter `%s` requires a constant `%s`"),
-    UNKNOWN_ANNOTATION("Unknown annotation `%s`");
+    UNKNOWN_ANNOTATION("Unknown annotation `%s`"),
+    CANT_ASSIGN_GLOBAL("Can't assign a global variable"),
+    CANT_ASSIGN_VOID("Can't assign expression returning `void`");
 
     public final String message;
 

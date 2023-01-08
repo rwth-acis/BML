@@ -28,6 +28,10 @@ public class Diagnostics {
         addDiagnostic(diagnostics, message, ctx, DiagnosticSeverity.Error);
     }
 
+    public static void addDiagnostic(List<Diagnostic> diagnostics, ParserError parserError, ParserRuleContext ctx) {
+        addDiagnostic(diagnostics, parserError.message, ctx, DiagnosticSeverity.Error);
+    }
+
     public static void addDiagnostic(List<Diagnostic> diagnostics, String message, ParserRuleContext ctx, DiagnosticSeverity severity) {
         Position start;
         Position end;
@@ -39,6 +43,10 @@ public class Diagnostics {
 
     public static void addDiagnostic(List<Diagnostic> diagnostics, String message, Token token) {
         addDiagnostic(diagnostics, message, token, DiagnosticSeverity.Error);
+    }
+
+    public static void addDiagnostic(List<Diagnostic> diagnostics, ParserError parserError, Token token) {
+        addDiagnostic(diagnostics, parserError.message, token, DiagnosticSeverity.Error);
     }
 
     public static void addDiagnostic(List<Diagnostic> diagnostics, String message, Token token, DiagnosticSeverity severity) {

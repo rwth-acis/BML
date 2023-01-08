@@ -11,8 +11,7 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 
 import java.util.*;
 
-import static i5.bml.parser.errors.ParserError.MISSING_PARAM;
-import static i5.bml.parser.errors.ParserError.PARAM_NOT_DEFINED;
+import static i5.bml.parser.errors.ParserError.*;
 
 public abstract class AbstractBMLType implements Type {
 
@@ -87,9 +86,16 @@ public abstract class AbstractBMLType implements Type {
                     .filter(p -> p.getName().equals(name))
                     .findAny();
 
+            // We either found an optional parameter fitting, or we didn't but need to find out
+            // whether it is a duplicate or is simply not known by the parameter list
             if (optionalParameter.isEmpty()) {
-                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        PARAM_NOT_DEFINED.format(name), invocationParameter.name);
+                if (requiredParameters.stream().anyMatch(p -> p.getName().equals(name))) {
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                            ALREADY_DEFINED.format(name), invocationParameter.name);
+                } else {
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                            PARAM_NOT_DEFINED.format(name), invocationParameter.name);
+                }
             } else {
                 // We can assume that parameter is present, so we expect the correct type
                 optionalParameter.get().setExprCtx(invocationParameter.expr);
