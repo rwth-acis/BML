@@ -40,8 +40,7 @@ public class Bot {
         ComponentRegistry.initComponents(threadPool, eventQueue);
 
         // Routines (internal event sources)
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(BotConfig.ROUTINE_COUNT);
-        RoutineEventHandler.registerEventHandler(scheduler);
+        RoutineEventHandler.registerEventHandler(new ScheduledThreadPoolExecutor(1));
     }
 
     public void run() {
