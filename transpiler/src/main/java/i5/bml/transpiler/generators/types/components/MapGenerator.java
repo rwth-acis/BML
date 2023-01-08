@@ -64,7 +64,7 @@ public class MapGenerator extends Generator {
     }
 
     private void addImportForClass(Type type, CompilationUnit compilationUnit, String outputPackage) {
-        var generator = GeneratorRegistry.getGeneratorForType(type);
+        var generator = GeneratorRegistry.generatorForType(type);
         if (generator instanceof HasBotClass botClassGenerator) {
             compilationUnit.addImport(Utils.renameImport(botClassGenerator.getBotClass(), outputPackage), false, false);
         }

@@ -44,8 +44,7 @@ public class BMLFunctionType extends AbstractBMLType {
 
     @Override
     public String getName() {
-        // TODO: Improve this
-        return "Function<Returns=%s>".formatted(returnType);
+        return "Function(required=%s, optional=%s) -> %s".formatted(requiredParameters, optionalParameters, returnType);
     }
 
     @Override

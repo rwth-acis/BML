@@ -119,7 +119,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         if (!ctx.dialogueAutomaton().isEmpty()) {
             // We populate the Session class with required dialogues (we can pick any dialogue from scope)
             var dialogueType = ((VariableSymbol) currentScope.resolve(ctx.dialogueAutomaton(0).head.name.getText())).getType();
-            GeneratorRegistry.getGeneratorForType(dialogueType).generateComponent(null, this);
+            GeneratorRegistry.generatorForType(dialogueType).generateComponent(null, this);
         }
 
         // Iterate over child nodes in body in procedural manner, i.e., as they appear in the source text
@@ -136,7 +136,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 visit(automatonContext);
             } else if (child instanceof BMLParser.FunctionDefinitionContext functionContext) {
                 for (var annotationContext : functionContext.annotation()) {
-                    var generator = GeneratorRegistry.getGeneratorForType(annotationContext.type);
+                    var generator = GeneratorRegistry.generatorForType(annotationContext.type);
                     generator.populateClassWithFunction(functionContext, annotationContext, this);
                 }
             }
@@ -157,7 +157,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitComponent(BMLParser.ComponentContext ctx) {
-        GeneratorRegistry.getGeneratorForType(ctx.type).generateComponent(ctx, this);
+        GeneratorRegistry.generatorForType(ctx.type).generateComponent(ctx, this);
         return null;
     }
 
@@ -289,14 +289,14 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 default -> throw new IllegalStateException("Unexpected value: " + ctx.op.getType());
             };
             if (symbol != null) {
-                var generator = GeneratorRegistry.getGeneratorForType(ctx.expr.type);
+                var generator = GeneratorRegistry.generatorForType(ctx.expr.type);
                 //noinspection OptionalGetWithoutIsPresent -> checked by above switch
                 return generator.generateArithmeticAssignmentToGlobal(ctx, op.toBinaryOperator().get(), this);
             } else {
                 // TODO: What about reassignments?
 
                 if (ctx.op.getType() == BMLParser.ADD_ASSIGN) {
-                    var generator = GeneratorRegistry.getGeneratorForType(ctx.expr.type);
+                    var generator = GeneratorRegistry.generatorForType(ctx.expr.type);
                     return generator.generateAddAssignment(ctx, this);
                 } else {
                     return new AssignExpr(new NameExpr(ctx.name.getText()), (Expression) visit(ctx.expr), op);
@@ -314,7 +314,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 case BMLParser.LBRACE -> new EnclosedExpr((Expression) visit(ctx.expr));
 
                 case BMLParser.DOT -> {
-                    Generator generator = GeneratorRegistry.getGeneratorForType(ctx.expr.type);
+                    Generator generator = GeneratorRegistry.generatorForType(ctx.expr.type);
                     if (ctx.Identifier() != null) {
                         yield generator.generateFieldAccess((Expression) visit(ctx.expr), ctx.Identifier());
                     } else { // functionCall
@@ -392,7 +392,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 }
 
                 symbol = (VariableSymbol) currentScope.resolve(atom);
-                yield GeneratorRegistry.getGeneratorForType(symbol.getType()).generateNameExpr(ctx);
+                yield GeneratorRegistry.generatorForType(symbol.getType()).generateNameExpr(ctx);
             }
             // This should never happen
             default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(atom, ctx));
@@ -401,18 +401,18 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitFunctionCall(BMLParser.FunctionCallContext ctx) {
-        var generator = GeneratorRegistry.getGeneratorForFunctionName(ctx.functionName.getText());
+        var generator = GeneratorRegistry.generatorForFunctionName(ctx.functionName.getText());
         return generator.generateFunctionCall(null, ctx, this);
     }
 
     @Override
     public Node visitMapInitializer(BMLParser.MapInitializerContext ctx) {
-        return GeneratorRegistry.getGeneratorForType(ctx.type).generateInitializer(ctx, this);
+        return GeneratorRegistry.generatorForType(ctx.type).generateInitializer(ctx, this);
     }
 
     @Override
     public Node visitListInitializer(BMLParser.ListInitializerContext ctx) {
-        return GeneratorRegistry.getGeneratorForType(ctx.type).generateInitializer(ctx, this);
+        return GeneratorRegistry.generatorForType(ctx.type).generateInitializer(ctx, this);
     }
 
     @Override
