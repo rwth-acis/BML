@@ -22,7 +22,7 @@ public class RasaComponent {
     private final OkHttpClient okHttpClient;
 
     public RasaComponent(String url) {
-        this.url = url;
+        this.url = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
         okHttpClient = new OkHttpClient.Builder()
                 .writeTimeout(10, TimeUnit.MINUTES)
                 .readTimeout(10, TimeUnit.MINUTES)
@@ -36,7 +36,9 @@ public class RasaComponent {
         var settings = PersistentStorage.getBotSettings();
         if (settings.rasaModelName() != null) {
             var rasaModelName = settings.rasaModelName();
-            if (!rasaModelName.equals(getLoadedModel())) {
+            var currentlyLoadedModel = getLoadedModel();
+            if (!rasaModelName.equals(currentlyLoadedModel)) {
+                LOGGER.info("Currently loaded model is {}, now loading desired model {}...", currentlyLoadedModel, rasaModelName);
                 loadModel(rasaModelName);
             } else {
                 LOGGER.info("Desired model is already loaded");
@@ -74,7 +76,7 @@ public class RasaComponent {
         handleResponse(request, code200Response -> {
             rasaModelName[0] = code200Response.headers().get("filename");
             if (rasaModelName[0] == null) {
-                throw new IllegalStateException("Rasa model training failed, response header, does not contain rasaModelName");
+                throw new IllegalStateException("Rasa model training failed, response header (%s), does not contain filename".formatted(code200Response.headers()));
             } else {
                 LOGGER.info("Model training done!");
             }

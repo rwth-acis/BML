@@ -15,6 +15,7 @@ import i5.bml.transpiler.bot.dialogue.DialogueHandler;
 import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
@@ -33,6 +34,9 @@ public class RasaGenerator extends Generator implements InitializableComponent {
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         var currentClass = visitor.currentClass();
+
+        // Copy required implementation for Slack
+        IOUtil.copyDirAndRenameImports("threads/rasa", visitor);
 
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(RasaComponent.class.getSimpleName());
