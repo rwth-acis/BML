@@ -9,7 +9,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.BMLFunctionType;
-import i5.bml.parser.types.BMLMap;
+import i5.bml.parser.types.components.BMLMap;
 import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.generators.CodeGenerator;

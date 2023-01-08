@@ -1,5 +1,7 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.types.annotations.BMLAnnotationType;
+import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.dialogue.BMLState;
 import org.antlr.symtab.Type;
 import org.reflections.Reflections;

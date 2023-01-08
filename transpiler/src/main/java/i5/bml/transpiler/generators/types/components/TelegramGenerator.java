@@ -1,22 +1,15 @@
 package i5.bml.transpiler.generators.types.components;
 
 import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.ReturnStmt;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.BMLTelegramComponent;
-import i5.bml.transpiler.bot.components.ComponentInitializer;
+import i5.bml.parser.types.components.BMLTelegramComponent;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.threads.telegram.TelegramBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
-import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
-
-import java.util.concurrent.ExecutorService;
 
 @CodeGenerator(typeClass = BMLTelegramComponent.class)
 public class TelegramGenerator implements Generator, InitializableComponent {

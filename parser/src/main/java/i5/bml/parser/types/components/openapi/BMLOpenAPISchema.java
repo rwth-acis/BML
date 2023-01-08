@@ -1,4 +1,4 @@
-package i5.bml.parser.types.openapi;
+package i5.bml.parser.types.components.openapi;
 
 import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.BMLType;

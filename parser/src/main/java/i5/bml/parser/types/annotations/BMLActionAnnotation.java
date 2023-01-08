@@ -1,6 +1,7 @@
 package i5.bml.parser.types.annotations;
 
 import i5.bml.parser.types.*;
+import i5.bml.parser.types.components.BMLList;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 @BMLType(name = BuiltinType.ACTION_ANNOTATION, isComplex = true)

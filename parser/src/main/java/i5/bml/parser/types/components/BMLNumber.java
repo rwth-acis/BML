@@ -1,4 +1,6 @@
-package i5.bml.parser.types;
+package i5.bml.parser.types.components;
+
+import i5.bml.parser.types.*;
 
 @BMLType(name = BuiltinType.NUMBER, isComplex = false)
 public class BMLNumber extends AbstractBMLType implements Summable {

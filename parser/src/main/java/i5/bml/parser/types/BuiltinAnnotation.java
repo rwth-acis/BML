@@ -1,5 +1,7 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.types.annotations.BMLAnnotationType;
+
 public enum BuiltinAnnotation {
 
     USER_STARTED_CHAT(BMLAnnotationType.MESSENGER),

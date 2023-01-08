@@ -6,12 +6,11 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.BMLSlackComponent;
+import i5.bml.parser.types.components.BMLSlackComponent;
 import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
-import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLSlackComponent.class)

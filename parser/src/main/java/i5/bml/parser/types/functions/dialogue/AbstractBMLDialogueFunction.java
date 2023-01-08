@@ -1,7 +1,7 @@
 package i5.bml.parser.types.functions.dialogue;
 
 import i5.bml.parser.types.BMLFunctionParameter;
-import i5.bml.parser.types.BMLList;
+import i5.bml.parser.types.components.BMLList;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.functions.BMLFunction;

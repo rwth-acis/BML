@@ -5,7 +5,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.SimpleName;
-import i5.bml.parser.types.openapi.BMLOpenAPISchema;
+import i5.bml.parser.types.components.openapi.BMLOpenAPISchema;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;

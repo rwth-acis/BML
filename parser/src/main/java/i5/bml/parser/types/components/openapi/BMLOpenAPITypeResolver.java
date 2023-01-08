@@ -1,6 +1,6 @@
-package i5.bml.parser.types.openapi;
+package i5.bml.parser.types.components.openapi;
 
-import i5.bml.parser.types.BMLList;
+import i5.bml.parser.types.components.BMLList;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import io.swagger.v3.oas.models.OpenAPI;

@@ -7,7 +7,7 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.BMLRasaComponent;
+import i5.bml.parser.types.components.BMLRasaComponent;
 import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
