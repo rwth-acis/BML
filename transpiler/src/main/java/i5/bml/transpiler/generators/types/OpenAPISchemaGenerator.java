@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
 @CodeGenerator(typeClass = BMLOpenAPISchema.class)
-public class OpenAPISchemaGenerator implements Generator {
+public class OpenAPISchemaGenerator extends Generator {
 
     public OpenAPISchemaGenerator(Type openAPISchema) {}
 

@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @CodeGenerator(typeClass = BMLDialogue.class)
-public class DialogueGenerator implements Generator {
+public class DialogueGenerator extends Generator {
 
     public DialogueGenerator(Type dialogueComponent) {}
 

@@ -13,7 +13,7 @@ import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 
 @CodeGenerator(typeClass = BMLNumberFunction.class)
-public class NumberFunctionGenerator implements Generator {
+public class NumberFunctionGenerator extends Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {

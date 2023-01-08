@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 @CodeGenerator(typeClass = BMLOpenAPIComponent.class)
-public class OpenAPIGenerator implements Generator {
+public class OpenAPIGenerator extends Generator {
 
     private final BMLOpenAPIComponent openAPIComponent;
 

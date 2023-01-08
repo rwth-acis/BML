@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
@@ -81,7 +82,8 @@ public class InputParser {
 
         // Copies source code to specified directory
         FileUtils.deleteDirectory(new File(outputDir));
-        FileUtils.copyDirectory(new File(BOT_DIR), new File(outputDir + "/src/main/java/" + outputPackage));
+        var filter = FileFilterUtils.notFileFilter(FileFilterUtils.and(FileFilterUtils.nameFileFilter("slack"), FileFilterUtils.directoryFileFilter()));
+        FileUtils.copyDirectory(new File(BOT_DIR), new File(outputDir + "/src/main/java/" + outputPackage), filter);
 
         for (File file : FileUtils.listFiles(new File(outputDir + "/src/main/java/" + outputPackage), null, true)) {
             PrinterUtil.readAndWriteJavaFile(file, file.getName().split("\\.")[0], javaFile -> {

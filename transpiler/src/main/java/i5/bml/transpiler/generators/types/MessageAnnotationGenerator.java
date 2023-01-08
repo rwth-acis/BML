@@ -18,7 +18,7 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLMessengerAnnotation.class)
-public class MessageAnnotationGenerator implements Generator {
+public class MessageAnnotationGenerator extends Generator {
 
     public MessageAnnotationGenerator(Type bmlMessengerAnnotation) {}
 

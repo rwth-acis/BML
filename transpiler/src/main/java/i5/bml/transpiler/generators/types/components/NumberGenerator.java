@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.concurrent.atomic.AtomicLong;
 
 @CodeGenerator(typeClass = BMLNumber.class)
-public class NumberGenerator implements Generator {
+public class NumberGenerator extends Generator {
 
     public NumberGenerator(Type numberType) {}
 

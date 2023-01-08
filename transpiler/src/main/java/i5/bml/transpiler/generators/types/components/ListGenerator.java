@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @CodeGenerator(typeClass = BMLList.class)
-public class ListGenerator implements Generator {
+public class ListGenerator extends Generator {
 
     public ListGenerator(Type listType) {}
 

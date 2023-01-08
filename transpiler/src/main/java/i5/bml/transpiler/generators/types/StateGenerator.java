@@ -12,7 +12,7 @@ import i5.bml.transpiler.generators.Generator;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLState.class)
-public class StateGenerator implements Generator {
+public class StateGenerator extends Generator {
 
     public StateGenerator(Type stateType) {}
 

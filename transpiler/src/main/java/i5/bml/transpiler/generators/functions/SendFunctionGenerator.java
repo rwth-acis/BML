@@ -14,7 +14,7 @@ import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.utils.Utils;
 
 @CodeGenerator(typeClass = BMLSendFunction.class)
-public class SendFunctionGenerator implements Generator {
+public class SendFunctionGenerator extends Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {

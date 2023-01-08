@@ -8,7 +8,7 @@ import i5.bml.transpiler.generators.HasBotClass;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLUser.class)
-public class UserGenerator implements Generator, HasBotClass {
+public class UserGenerator extends Generator implements HasBotClass {
 
     public UserGenerator(Type userType) {}
 

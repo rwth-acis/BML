@@ -8,38 +8,38 @@ import generatedParser.BMLParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-public interface Generator {
+public abstract class Generator {
 
-    default void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
+    public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of components");
     }
 
-    default Node generateFieldAccess(Expression object, TerminalNode field) {
+    public Node generateFieldAccess(Expression object, TerminalNode field) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of field accesses");
     }
 
-    default Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of function calls");
     }
 
-    default Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
+    public Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of initializers");
     }
 
-    default void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
+    public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
                                            BMLParser.AnnotationContext annotationContext, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the population of classes");
     }
 
-    default Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaTreeGenerator visitor) {
+    public Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of arithmetic assignments");
     }
 
-    default Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaTreeGenerator visitor) {
+    public Node generateAddAssignment(BMLParser.AssignmentContext ctx, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of `+=`");
     }
 
-    default Node generateNameExpr(BMLParser.AtomContext ctx) {
+    public Node generateNameExpr(BMLParser.AtomContext ctx) {
         return new NameExpr(ctx.token.getText());
     }
 }

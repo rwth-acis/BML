@@ -15,7 +15,7 @@ import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
 
 @CodeGenerator(typeClass = BMLString.class)
-public class StringGenerator implements Generator {
+public class StringGenerator extends Generator {
 
     public StringGenerator(Type stringType) {}
 

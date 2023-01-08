@@ -13,7 +13,7 @@ import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 
 @CodeGenerator(typeClass = BMLDialogueJumpToFunction.class)
-public class DialogueJumpToFunctionGenerator implements Generator {
+public class DialogueJumpToFunctionGenerator extends Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {

@@ -20,7 +20,7 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLRasaComponent.class)
-public class RasaGenerator implements Generator, InitializableComponent {
+public class RasaGenerator extends Generator implements InitializableComponent {
 
     private final BMLRasaComponent rasaComponent;
 

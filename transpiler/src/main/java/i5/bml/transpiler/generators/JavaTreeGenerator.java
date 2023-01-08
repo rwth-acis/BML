@@ -51,8 +51,6 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private Scope dialogueScope = new BlockScope(null);
 
-    private DialogueAutomatonGenerator dialogueAutomatonGenerator;
-
     private final Stack<ClassOrInterfaceDeclaration> classStack = new Stack<>();
 
     private boolean wrapAssignmentInTryStmt = false;
@@ -470,7 +468,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         dialogueScope = ctx.scope;
         pushScope(dialogueScope);
 
-        dialogueAutomatonGenerator = new DialogueAutomatonGenerator(this);
+        DialogueAutomatonGenerator dialogueAutomatonGenerator = new DialogueAutomatonGenerator(this);
         visitDialogueHead(ctx.head);
         dialogueAutomatonGenerator.visitDialogueBody(ctx.body, currentScope);
 

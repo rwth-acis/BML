@@ -24,7 +24,7 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLOpenAIComponent.class)
-public class OpenAIGenerator implements Generator {
+public class OpenAIGenerator extends Generator {
 
     private final BMLOpenAIComponent openAIComponent;
 

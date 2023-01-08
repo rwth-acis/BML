@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @CodeGenerator(typeClass = BMLMap.class)
-public class MapGenerator implements Generator {
+public class MapGenerator extends Generator {
 
     public MapGenerator(Type mapType) {}
 

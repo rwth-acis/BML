@@ -19,7 +19,7 @@ import org.antlr.symtab.Type;
 import java.util.concurrent.TimeUnit;
 
 @CodeGenerator(typeClass = BMLRoutineAnnotation.class)
-public class RoutineAnnotationGenerator implements Generator {
+public class RoutineAnnotationGenerator extends Generator {
 
     private final BMLRoutineAnnotation bmlRoutineAnnotation;
 
