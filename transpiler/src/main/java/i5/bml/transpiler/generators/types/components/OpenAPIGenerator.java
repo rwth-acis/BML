@@ -20,6 +20,7 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -39,10 +40,10 @@ public class OpenAPIGenerator implements Generator {
         apiName = ctx.name.getText() + "client";
 
         // Generate swagger client code
-        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.getUrl(), visitor.outputPackage(), apiName, visitor.botOutputPath());
+        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.url(), visitor.outputPackage(), apiName, visitor.botOutputPath());
 
         // Generate fields with getters in `ComponentRegistry`
-        openAPIComponent.getTagOperationIdPairs().values().stream().map(Pair::getLeft).distinct().forEach(tag -> {
+        openAPIComponent.tagOperationIdPairs().values().stream().map(Pair::getLeft).distinct().forEach(tag -> {
             var clientClassName = "%sApi".formatted(StringUtils.capitalize(tag));
 
             // Add field for API
@@ -90,7 +91,7 @@ public class OpenAPIGenerator implements Generator {
 
         var key = ctx.functionName.getText()
                 + ((StringLiteralExpr) visitor.visit(pathParameter.get().getExprCtx())).asString();
-        var tagOperationIdPair = openAPIComponent.getTagOperationIdPairs().get(key.toLowerCase());
+        var tagOperationIdPair = openAPIComponent.tagOperationIdPairs().get(key.toLowerCase());
         var tag = StringUtils.capitalize(tagOperationIdPair.getLeft());
         var operationId = tagOperationIdPair.getRight();
         String methodCall = "ComponentRegistry.get%sApi().%s".formatted(tag, operationId);
@@ -117,7 +118,7 @@ public class OpenAPIGenerator implements Generator {
         compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
 
         // Import for `ApiException`
-        var packageName = getOpenAPIImport(visitor, "ApiException");
+        var packageName = getOpenAPIImport(visitor);
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
         visitor.currentClass().findCompilationUnit().get().addImport(packageName, false, false);
 
@@ -132,15 +133,16 @@ public class OpenAPIGenerator implements Generator {
         return methodCallExpr;
     }
 
-    private String getOpenAPIImport(JavaTreeGenerator visitor, String clientClassName) {
+    private String getOpenAPIImport(JavaTreeGenerator visitor) {
         // Add import for %sApi
         if (!visitor.outputPackage().isEmpty()) {
-            return visitor.outputPackage() + ".openapi." + apiName + "." + clientClassName;
+            return visitor.outputPackage() + ".openapi." + apiName + "." + "ApiException";
         } else {
-            return "openapi." + apiName + "." + clientClassName;
+            return "openapi." + apiName + "." + "ApiException";
         }
     }
 
+    @NotNull
     private String getModelImport(JavaTreeGenerator visitor, String clientClassName) {
         if (!visitor.outputPackage().isEmpty()) {
             return visitor.outputPackage() + ".openapi." + apiName + ".models." + clientClassName;
