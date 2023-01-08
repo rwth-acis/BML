@@ -24,8 +24,6 @@ public class OpenAIGenerator extends Generator {
 
     private final BMLOpenAIComponent openAIComponent;
 
-    private String fieldName;
-
     public OpenAIGenerator(Type openAIComponent) {
         this.openAIComponent = (BMLOpenAIComponent) openAIComponent;
     }
@@ -39,8 +37,9 @@ public class OpenAIGenerator extends Generator {
 
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(OpenAIComponent.class.getSimpleName());
-        fieldName = ctx.name.getText();
-        var initializer = new ObjectCreationExpr(null, type, new NodeList<>(new StringLiteralExpr(openAIComponent.key()), new StringLiteralExpr(openAIComponent.model())));
+        var fieldName = "openAI";
+        var initializer = new ObjectCreationExpr(null, type,
+                new NodeList<>(new StringLiteralExpr(openAIComponent.key()), new StringLiteralExpr(openAIComponent.model()), new IntegerLiteralExpr(openAIComponent.tokens())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName, initializer,
                 Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
@@ -63,9 +62,7 @@ public class OpenAIGenerator extends Generator {
         compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
         compilationUnit.addImport(Utils.renameImport(MessageHelper.class, visitor.outputPackage()), false, false);
 
-        var messageEvent = new MethodCallExpr(new NameExpr("ctx"), "event");
-        var invokeModelExpr = new MethodCallExpr("ComponentRegistry.%s().invokeModel".formatted(fieldName), messageEvent);
-        return new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                new NodeList<>(new NameExpr("ctx"), invokeModelExpr)));
+        var call = "MessageHelper.replyToMessenger(ctx, ComponentRegistry.openAI().invokeModel(ctx.event()))";
+        return StaticJavaParser.parseExpression(call);
     }
 }

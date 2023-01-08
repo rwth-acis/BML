@@ -9,10 +9,10 @@ import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 public class Utils {
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static String extractConstStringFromParameter(DiagnosticsCollector diagnosticsCollector,
                                                          BMLParser.ElementExpressionPairListContext ctx,
                                                          String name) {
-        //noinspection OptionalGetWithoutIsPresent
         var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals(name)).findAny().get().expr;
         var atom = expr.atom();
         if (atom == null || atom.StringLiteral() == null) {

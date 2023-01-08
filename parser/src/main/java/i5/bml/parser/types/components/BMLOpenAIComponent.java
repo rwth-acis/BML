@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
+import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 @BMLType(name = BuiltinType.OPENAI, isComplex = true)
 public class BMLOpenAIComponent extends AbstractBMLType {
@@ -22,6 +23,9 @@ public class BMLOpenAIComponent extends AbstractBMLType {
 
     @BMLComponentParameter(name = "model", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String model;
+
+    @BMLComponentParameter(name = "tokens", expectedBMLType = BuiltinType.NUMBER, isRequired = false)
+    private String tokens;
 
     @Override
     public void initializeType(ParserRuleContext ctx) {
@@ -40,6 +44,17 @@ public class BMLOpenAIComponent extends AbstractBMLType {
 
         key = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "key");
         model = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "model");
+
+        var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals("tokens")).findAny();
+        if (expr.isPresent()) {
+            var atom = expr.get().expr.atom();
+            if (atom == null || atom.IntegerLiteral() == null) {
+                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                        PARAM_REQUIRES_CONSTANT.format("tokens", BuiltinType.NUMBER), expr.get());
+            } else {
+                tokens = atom.getText();
+            }
+        }
     }
 
     @Override
@@ -63,5 +78,9 @@ public class BMLOpenAIComponent extends AbstractBMLType {
 
     public String model() {
         return model;
+    }
+
+    public String tokens() {
+        return tokens;
     }
 }
