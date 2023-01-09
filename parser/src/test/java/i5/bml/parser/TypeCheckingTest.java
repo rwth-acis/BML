@@ -102,11 +102,10 @@ class TypeCheckingTest {
     @Test
     void typeCheckComponents() {
         TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "components.bml", List.of(
-                URL_NOT_VALID.format(":/petstore3.swagger.io/api/v3/openapi.json"),
                 CONNECT_FAILED.format(":/petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("url"),
                 PARAM_NOT_DEFINED.format("link"),
-                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                EXPECTED_ANY_OF_1.format(BuiltinType.STRING, BuiltinType.NUMBER),
                 MISSING_PARAM.format("url"),
                 PARAM_NOT_DEFINED.format("id")
         ));

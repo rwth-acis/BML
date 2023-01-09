@@ -108,7 +108,7 @@ public abstract class AbstractBMLType implements Type {
         }
     }
 
-    private void addTypeErrorMessage(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairContext invocationParameter,
+    protected void addTypeErrorMessage(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairContext invocationParameter,
                                      BMLFunctionParameter parameter) {
         var errorMessage = new StringBuilder();
         errorMessage.append("Expected any of ");

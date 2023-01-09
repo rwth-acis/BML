@@ -61,16 +61,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 var invocationParameterType = invocationParameter.get().expr.type;
                 if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
                     // TODO: Convert to map object
-                    var errorMessage = new StringBuilder();
-                    errorMessage.append("Expected any of ");
-                    for (Type allowedType : requiredParameter.getAllowedTypes()) {
-                        errorMessage.append("´").append(allowedType).append("´, ");
-                    }
-                    var i = errorMessage.lastIndexOf(", ");
-                    errorMessage.delete(i, i + 2);
-                    errorMessage.append(" but found ´").append(invocationParameterType).append("`");
-                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), errorMessage.toString(),
-                            invocationParameter.get());
+                    addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
                 }
 
                 parameterListMutable.remove(invocationParameter.get());
