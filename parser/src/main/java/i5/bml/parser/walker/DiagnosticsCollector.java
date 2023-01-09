@@ -167,6 +167,20 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
+    public void enterMapInitializer(BMLParser.MapInitializerContext ctx) {
+        // Check: Keys have distinct names
+        if (ctx.params != null) {
+            var keys = new HashSet<String>();
+            for (var elementExpressionPairContext : ctx.params.elementExpressionPair()) {
+                var name = elementExpressionPairContext.name.getText();
+                if (!keys.add(name)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, ALREADY_DEFINED.format(name), elementExpressionPairContext.name);
+                }
+            }
+        }
+    }
+
+    @Override
     public void exitDialogueAutomaton(BMLParser.DialogueAutomatonContext ctx) {
         var typeName = ctx.head.typeName.getText();
         var dialogueName = ctx.head.name.getText();
@@ -623,7 +637,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
         if (params == null) {
             var map = new BMLMap();
             map.initializeType(null);
-            ctx.type = tryToResolveElseRegister(map);
+            TypeRegistry.registerType(map);
+            ctx.type = map;
         } else {
             var elementExpressionPairs = params.elementExpressionPair();
             Map<String, Type> supportedAccesses = new HashMap<>();
@@ -646,7 +661,8 @@ public class DiagnosticsCollector extends BMLBaseListener {
             var valueType = sameValueType ? firstType : TypeRegistry.resolveType(BuiltinType.OBJECT);
             var map = new BMLMap(TypeRegistry.resolveType(BuiltinType.STRING), valueType, supportedAccesses);
             map.initializeType(null);
-            ctx.type = tryToResolveElseRegister(map);
+            TypeRegistry.registerType(map);
+            ctx.type = map;
         }
     }
 

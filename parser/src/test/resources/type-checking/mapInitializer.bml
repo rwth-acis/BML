@@ -3,7 +3,7 @@ Bot(host="localhost", port=8080) {
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
     @Routine(rate="1h")
-    initializeMap(data) {
+    initializeMap(context) {
         a = {
             a = 1,
             b = 2,
@@ -12,7 +12,7 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    badMapInitialization(data) {
+    badMapInitialization(context) {
         a = {
             a = 1,
             b = 2,
@@ -21,7 +21,7 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    initializeMapDifferentValueTypes(data) {
+    initializeMapDifferentValueTypes(context) {
         a = {
             a = 1,
             b = [1, 2, 3],
@@ -30,7 +30,7 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    accessMapFields(data) {
+    accessMapFields(context) {
         a = {
             a = 1,
             b = [1, 2, 3],
@@ -41,7 +41,7 @@ Bot(host="localhost", port=8080) {
     }
 
     @Routine(rate="1h")
-    badAccessMapFields(data) {
+    badAccessMapFields(context) {
         a = {
             a = 1,
             b = [1, 2, 3],
