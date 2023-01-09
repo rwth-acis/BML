@@ -3,7 +3,6 @@ package i5.bml.parser.types.components;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.types.*;
-import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -16,7 +15,7 @@ import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
 import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 @BMLType(name = BuiltinType.OPENAI, isComplex = true)
-public class BMLOpenAIComponent extends AbstractBMLType {
+public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulateParameters {
 
     @BMLComponentParameter(name = "key", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String key;
@@ -42,8 +41,8 @@ public class BMLOpenAIComponent extends AbstractBMLType {
             return;
         }
 
-        key = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "key");
-        model = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "model");
+        key = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "key", false);
+        model = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "model", false);
 
         var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals("tokens")).findAny();
         if (expr.isPresent()) {
@@ -55,6 +54,7 @@ public class BMLOpenAIComponent extends AbstractBMLType {
                 tokens = atom.getText();
             }
         }
+        tokens = extractConstFromOptionalParameter(diagnosticsCollector, ctx, "tokens", true);
     }
 
     @Override

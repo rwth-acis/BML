@@ -2,17 +2,13 @@ package i5.bml.parser.types.annotations;
 
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
-import i5.bml.parser.types.AbstractBMLType;
-import i5.bml.parser.types.BMLComponentParameter;
-import i5.bml.parser.types.BMLType;
-import i5.bml.parser.types.BuiltinType;
-import i5.bml.parser.utils.Utils;
+import i5.bml.parser.types.*;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
 import java.util.concurrent.TimeUnit;
 
 @BMLType(name = BuiltinType.ROUTINE_ANNOTATION, isComplex = true)
-public class BMLRoutineAnnotation extends AbstractBMLType {
+public class BMLRoutineAnnotation extends AbstractBMLType implements CanPopulateParameters {
 
     @BMLComponentParameter(name = "rate", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String rate;
@@ -29,7 +25,7 @@ public class BMLRoutineAnnotation extends AbstractBMLType {
         }
 
         var expr = ctx.elementExpressionPair(0).expr;
-        rate = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "rate").replaceAll(" ", "");
+        rate = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "rate", false).replaceAll(" ", "");
         if (!rate.matches("[0-9]+[a-zA-Z]+")) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                     "Can't recognize format, required format is <number><timeUnit>", expr);

@@ -1,15 +1,11 @@
 package i5.bml.parser.types.components;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.types.AbstractBMLType;
-import i5.bml.parser.types.BMLComponentParameter;
-import i5.bml.parser.types.BMLType;
-import i5.bml.parser.types.BuiltinType;
-import i5.bml.parser.utils.Utils;
+import i5.bml.parser.types.*;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
 @BMLType(name = BuiltinType.TELEGRAM, isComplex = true)
-public class BMLTelegramComponent extends AbstractBMLType {
+public class BMLTelegramComponent extends AbstractBMLType implements CanPopulateParameters {
 
     @BMLComponentParameter(name = "botName", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String botName;
@@ -24,8 +20,8 @@ public class BMLTelegramComponent extends AbstractBMLType {
             return;
         }
 
-        botName = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "botName");
-        botToken = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "botToken");
+        botName = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "botName", false);
+        botToken = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "botToken", false);
     }
 
     public String getBotName() {

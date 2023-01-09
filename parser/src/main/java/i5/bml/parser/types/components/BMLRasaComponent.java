@@ -1,15 +1,11 @@
 package i5.bml.parser.types.components;
 
 import generatedParser.BMLParser;
-import i5.bml.parser.types.AbstractBMLType;
-import i5.bml.parser.types.BMLComponentParameter;
-import i5.bml.parser.types.BMLType;
-import i5.bml.parser.types.BuiltinType;
-import i5.bml.parser.utils.Utils;
+import i5.bml.parser.types.*;
 import i5.bml.parser.walker.DiagnosticsCollector;
 
 @BMLType(name = BuiltinType.RASA, isComplex = false)
-public class BMLRasaComponent extends AbstractBMLType {
+public class BMLRasaComponent extends AbstractBMLType implements CanPopulateParameters {
 
     @BMLComponentParameter(name = "url", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String url;
@@ -21,7 +17,7 @@ public class BMLRasaComponent extends AbstractBMLType {
             return;
         }
 
-        url = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "url");
+        url = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "url", false);
     }
 
     @Override

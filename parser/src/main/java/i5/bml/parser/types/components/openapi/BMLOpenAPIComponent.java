@@ -4,7 +4,6 @@ import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.types.*;
 import i5.bml.parser.utils.Measurements;
-import i5.bml.parser.utils.Utils;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -23,7 +22,7 @@ import java.util.*;
 import static i5.bml.parser.errors.ParserError.*;
 
 @BMLType(name = BuiltinType.OPENAPI, isComplex = true)
-public class BMLOpenAPIComponent extends AbstractBMLType {
+public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateParameters {
 
     @BMLComponentParameter(name = "url", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String url;
@@ -78,7 +77,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
             return;
         }
 
-        url = Utils.extractConstStringFromParameter(diagnosticsCollector, ctx, "url");
+        url = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "url", false);
     }
 
     @Override

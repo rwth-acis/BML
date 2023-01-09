@@ -1,6 +1,8 @@
 package i5.bml.parser.types;
 
 public enum BuiltinType {
+    BOT("Bot", true),
+
     /*
      * Primitives
      */
