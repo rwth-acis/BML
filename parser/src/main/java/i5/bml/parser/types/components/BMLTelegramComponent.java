@@ -1,8 +1,6 @@
 package i5.bml.parser.types.components;
 
-import generatedParser.BMLParser;
 import i5.bml.parser.types.*;
-import i5.bml.parser.walker.DiagnosticsCollector;
 
 @BMLType(name = BuiltinType.TELEGRAM, isComplex = true)
 public class BMLTelegramComponent extends AbstractBMLType implements CanPopulateParameters {

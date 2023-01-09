@@ -2,8 +2,8 @@ package i5.bml.parser.utils;
 
 import i5.bml.parser.Parser;
 import i5.bml.parser.errors.SyntaxErrorListener;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import io.swagger.v3.parser.exception.ReadContentException;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
@@ -37,6 +37,9 @@ public class TestUtils {
     }
 
     public static List<Diagnostic> collectSyntaxErrors(String fileName) {
+        TypeRegistry.clear();
+        TypeRegistry.init();
+
         var diagnosticsCollector = new DiagnosticsCollector();
         var syntaxErrorListener = new SyntaxErrorListener();
         var pair = Parser.parse(TestUtils.readFileIntoString(fileName));
@@ -51,6 +54,9 @@ public class TestUtils {
     }
 
     public static void assertErrors(String relativeFilePath, List<String> expectedErrors) {
+        TypeRegistry.clear();
+        TypeRegistry.init();
+
         var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();
         try {
@@ -68,7 +74,7 @@ public class TestUtils {
         });
         diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage()));
 
-        Assertions.assertTrue(diagnostics.isEmpty(), () -> "Unexpected diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
+        Assertions.assertTrue(diagnostics.isEmpty(), () -> "Unexpected diagnostics in %s:\n%s".formatted(relativeFilePath, TestUtils.prettyPrintDiagnostics(diagnostics)));
     }
 
     public static String prettyPrintDiagnostics(List<Diagnostic> diagnostics) {

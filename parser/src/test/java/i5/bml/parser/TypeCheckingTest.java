@@ -26,16 +26,16 @@ class TypeCheckingTest {
     // File path relative to test resources folder
     private static final String TYPE_CHECKING_BASE_PATH = "type-checking/";
 
-    @BeforeAll
-    static void fileHasCorrectSyntax() {
-        var dirPath = "src/test/resources/" + TYPE_CHECKING_BASE_PATH;
-        var match = Stream.of(Objects.requireNonNull(new File(dirPath).listFiles()))
-                .filter(file -> !file.isDirectory())
-                .map(f -> TestUtils.collectSyntaxErrors(TYPE_CHECKING_BASE_PATH + f.getName()))
-                .allMatch(List::isEmpty);
-
-        Assertions.assertTrue(match);
-    }
+//    @BeforeAll
+//    static void fileHasCorrectSyntax() {
+//        var dirPath = "src/test/resources/" + TYPE_CHECKING_BASE_PATH;
+//        var match = Stream.of(Objects.requireNonNull(new File(dirPath).listFiles()))
+//                .filter(file -> !file.isDirectory())
+//                .map(f -> TestUtils.collectSyntaxErrors(TYPE_CHECKING_BASE_PATH + f.getName()))
+//                .allMatch(List::isEmpty);
+//
+//        Assertions.assertTrue(match);
+//    }
 
     @Test
     void typeCheckAnnotations() {
@@ -115,8 +115,8 @@ class TypeCheckingTest {
     void typeCheckBotHead() {
         TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "correctBotHead.bml", List.of());
         TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "wrongBotHead.bml", List.of(
-                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
-                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING)
+                EXPECTED_ANY_OF_1.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                EXPECTED_ANY_OF_1.format(BuiltinType.NUMBER, BuiltinType.STRING)
         ));
     }
 

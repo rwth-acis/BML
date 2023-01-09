@@ -208,6 +208,12 @@ public class DiagnosticsCollector extends BMLBaseListener {
     /*
      * Type Checking
      */
+
+    @Override
+    public void exitBotHead(BMLParser.BotHeadContext ctx) {
+        typeCheckQualifiedName("Bot", ctx, ctx.params);
+    }
+
     @Override
     public void exitComponent(BMLParser.ComponentContext ctx) {
         var typeName = ctx.typeName.getText();
