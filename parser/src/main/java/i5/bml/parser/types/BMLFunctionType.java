@@ -31,6 +31,7 @@ public class BMLFunctionType extends AbstractBMLType {
 
     private void deepCopyParameter(BMLFunctionParameter p, List<BMLFunctionParameter> parameters) {
         BMLFunctionParameter newParameter = new BMLFunctionParameter(p.getName());
+        newParameter.superSetType(p.getType());
 
         for (Type allowedType : p.getAllowedTypes()) {
             newParameter.addType(((AbstractBMLType) allowedType).deepCopy());

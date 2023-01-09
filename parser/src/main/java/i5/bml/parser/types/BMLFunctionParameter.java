@@ -28,6 +28,10 @@ public class BMLFunctionParameter extends ParameterSymbol {
         allowedTypes.add(type);
     }
 
+    public void superSetType(Type type) {
+        super.setType(type);
+    }
+
     public void addType(Type type) {
         allowedTypes.add(type);
     }
