@@ -3,6 +3,7 @@ package i5.bml.transpiler.generators.types;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
+import i5.bml.parser.types.components.BMLList;
 import i5.bml.parser.types.components.BMLNumber;
 
 public class BMLTypeResolver {
@@ -12,14 +13,23 @@ public class BMLTypeResolver {
             case "Number" -> {
                 var number = (BMLNumber) type;
                 if (number.isFloatingPoint()) {
-                    yield PrimitiveType.floatType();
+                    yield StaticJavaParser.parseType("Float");
                 } else if (number.isLong()) {
-                    yield PrimitiveType.longType();
+                    yield StaticJavaParser.parseType("Long");
                 } else {
-                    yield PrimitiveType.intType();
+                    yield StaticJavaParser.parseType("Integer");
                 }
             }
-            default -> StaticJavaParser.parseClassOrInterfaceType(type.getName());
+            default -> {
+                if (type instanceof BMLList listType) {
+                    var listTypeString = "List<";
+                    var itemType = resolveBMLTypeToJavaType(listType.getItemType());
+                    listTypeString += itemType.asString() + ">";
+                    yield StaticJavaParser.parseClassOrInterfaceType(listTypeString);
+                } else {
+                    yield StaticJavaParser.parseClassOrInterfaceType(type.getName());
+                }
+            }
         };
     }
 }

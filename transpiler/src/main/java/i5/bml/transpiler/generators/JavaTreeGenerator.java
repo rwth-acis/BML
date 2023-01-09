@@ -378,11 +378,9 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
             case BMLParser.Identifier -> {
                 // Check global scope
                 var symbol = (VariableSymbol) globalScope.getSymbol(atom);
-                if (symbol != null
-                        && (symbol.getType() instanceof BMLBoolean
-                        || symbol.getType() instanceof BMLNumber)) {
+                if (symbol != null) {
                     // We have a global variable -> needs thread-safety
-                    yield new MethodCallExpr(new NameExpr(atom), "getAcquire");
+                    yield GeneratorRegistry.generatorForType(symbol.getType()).generateGlobalNameExpr(ctx);
                 }
 
                 // Check dialogue scope, not function scope, only "global" dialogue scope

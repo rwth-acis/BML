@@ -15,9 +15,11 @@ import i5.bml.transpiler.generators.types.BMLTypeResolver;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -26,7 +28,11 @@ import java.util.stream.Stream;
 @CodeGenerator(typeClass = BMLMap.class)
 public class MapGenerator extends Generator {
 
-    public MapGenerator(Type mapType) {}
+    private final BMLMap mapType;
+
+    public MapGenerator(Type mapType) {
+        this.mapType = (BMLMap) mapType;
+    }
 
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
@@ -63,6 +69,14 @@ public class MapGenerator extends Generator {
         getter.addModifier(Modifier.Keyword.STATIC);
     }
 
+    @Override
+    public Node generateFieldAccess(Expression object, TerminalNode field) {
+        var valueType = mapType.getSupportedAccesses().get(field.getText());
+        var javaType = BMLTypeResolver.resolveBMLTypeToJavaType(valueType);
+        var getCall = new MethodCallExpr(object, "get", new NodeList<>(new StringLiteralExpr(field.getText())));
+        return new EnclosedExpr(new CastExpr(javaType, getCall));
+    }
+
     private void addImportForClass(Type type, CompilationUnit compilationUnit, String outputPackage) {
         var generator = GeneratorRegistry.generatorForType(type);
         if (generator instanceof HasBotClass botClassGenerator) {
@@ -94,7 +108,7 @@ public class MapGenerator extends Generator {
     }
 
     @Override
-    public Node generateNameExpr(BMLParser.AtomContext ctx) {
+    public Node generateGlobalNameExpr(BMLParser.AtomContext ctx) {
         return new MethodCallExpr("ComponentRegistry.get%s".formatted(StringUtils.capitalize(ctx.token.getText())));
     }
 }

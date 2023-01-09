@@ -39,6 +39,10 @@ public abstract class Generator {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the generation of `+=`");
     }
 
+    public Node generateGlobalNameExpr(BMLParser.AtomContext ctx) {
+        return new NameExpr(ctx.token.getText());
+    }
+
     public Node generateNameExpr(BMLParser.AtomContext ctx) {
         return new NameExpr(ctx.token.getText());
     }
