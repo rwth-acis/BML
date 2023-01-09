@@ -12,6 +12,7 @@ public enum ParserError {
     PARAM_NOT_DEFINED("Parameter `%s` is not defined"),
     NOT_DEFINED_FOR("`%s` is not defined for `%s`"),
     ALREADY_DEFINED("`%s` is already defined in scope"),
+    DUP_ANNOTATION("`%s` is already annotated for function"),
     MISSING_PARAM("Missing parameter `%s`"),
     CANT_RESOLVE_IN("Can't resolve `%s` in `%s`"),
     CANNOT_APPLY_OP("Operator `%s` can't be applied to `%s`, `%s`"),

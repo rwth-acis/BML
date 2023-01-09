@@ -89,7 +89,17 @@ public class DiagnosticsCollector extends BMLBaseListener {
 
     @Override
     public void exitFunctionDefinition(BMLParser.FunctionDefinitionContext ctx) {
-        ctx.annotations = ctx.annotation().stream().map(a -> a.name.getText()).toList();
+        // Check: Annotation can only be present once
+        var presentAnnotations = new HashSet<String>();
+        for (var a : ctx.annotation()) {
+            var name = a.name.getText();
+            if (!presentAnnotations.add(name)) {
+                Diagnostics.addDiagnostic(collectedDiagnostics, DUP_ANNOTATION.format(name), a);
+            }
+        }
+
+        ctx.annotations = new ArrayList<>(presentAnnotations);
+
         popScope();
     }
 

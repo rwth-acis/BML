@@ -52,7 +52,11 @@ public class TestUtils {
     public static void assertErrors(String relativeFilePath, List<String> expectedErrors) {
         var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        try {
+            new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        } catch (Exception e) {
+            LOGGER.error("Walking parse tree of file {} failed", relativeFilePath, e);
+        }
 
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 

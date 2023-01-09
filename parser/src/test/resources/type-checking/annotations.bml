@@ -9,4 +9,10 @@ Bot(host="localhost", port=8080) {
     correctTypeForRoutineAnnotation(data) {
 
     }
+
+    @UserSentMessage
+    @UserSentMessage
+    duplicateAnnotation(data) {
+
+    }
 }
