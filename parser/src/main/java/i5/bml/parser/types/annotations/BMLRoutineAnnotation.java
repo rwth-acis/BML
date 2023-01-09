@@ -25,7 +25,7 @@ public class BMLRoutineAnnotation extends AbstractBMLType implements CanPopulate
         }
 
         var expr = ctx.elementExpressionPair(0).expr;
-        rate = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "rate", false).replaceAll(" ", "");
+        rate = extractConstFromParameter(diagnosticsCollector, ctx, "rate", false).replaceAll(" ", "");
         if (!rate.matches("[0-9]+[a-zA-Z]+")) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                     "Can't recognize format, required format is <number><timeUnit>", expr);

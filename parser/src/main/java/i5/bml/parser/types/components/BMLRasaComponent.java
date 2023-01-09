@@ -17,7 +17,7 @@ public class BMLRasaComponent extends AbstractBMLType implements CanPopulatePara
             return;
         }
 
-        url = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "url", false);
+        url = extractConstFromParameter(diagnosticsCollector, ctx, "url", false);
     }
 
     @Override

@@ -41,20 +41,9 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
             return;
         }
 
-        key = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "key", false);
-        model = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "model", false);
-
-        var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals("tokens")).findAny();
-        if (expr.isPresent()) {
-            var atom = expr.get().expr.atom();
-            if (atom == null || atom.IntegerLiteral() == null) {
-                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        PARAM_REQUIRES_CONSTANT.format("tokens", BuiltinType.NUMBER), expr.get());
-            } else {
-                tokens = atom.getText();
-            }
-        }
-        tokens = extractConstFromOptionalParameter(diagnosticsCollector, ctx, "tokens", true);
+        key = extractConstFromParameter(diagnosticsCollector, ctx, "key", false);
+        model = extractConstFromParameter(diagnosticsCollector, ctx, "model", false);
+        tokens = extractConstFromParameter(diagnosticsCollector, ctx, "tokens", true);
     }
 
     @Override

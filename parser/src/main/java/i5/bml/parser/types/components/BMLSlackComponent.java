@@ -20,8 +20,8 @@ public class BMLSlackComponent extends AbstractBMLType implements CanPopulatePar
             return;
         }
 
-        botToken = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "botToken", false);
-        appToken = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "appToken", false);
+        botToken = extractConstFromParameter(diagnosticsCollector, ctx, "botToken", false);
+        appToken = extractConstFromParameter(diagnosticsCollector, ctx, "appToken", false);
     }
 
     public String getBotToken() {

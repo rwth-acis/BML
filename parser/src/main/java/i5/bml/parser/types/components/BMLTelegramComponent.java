@@ -20,8 +20,8 @@ public class BMLTelegramComponent extends AbstractBMLType implements CanPopulate
             return;
         }
 
-        botName = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "botName", false);
-        botToken = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "botToken", false);
+        botName = extractConstFromParameter(diagnosticsCollector, ctx, "botName", false);
+        botToken = extractConstFromParameter(diagnosticsCollector, ctx, "botToken", false);
     }
 
     public String getBotName() {

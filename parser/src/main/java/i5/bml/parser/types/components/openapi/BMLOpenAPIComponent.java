@@ -77,7 +77,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
             return;
         }
 
-        url = extractConstFromRequiredParameter(diagnosticsCollector, ctx, "url", false);
+        url = extractConstFromParameter(diagnosticsCollector, ctx, "url", false);
     }
 
     @Override

@@ -8,26 +8,7 @@ import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 public interface CanPopulateParameters {
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    default String extractConstFromRequiredParameter(DiagnosticsCollector diagnosticsCollector,
-                                                         BMLParser.ElementExpressionPairListContext ctx,
-                                                         String name, boolean isInteger) {
-        var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals(name)).findAny().get().expr;
-        var atom = expr.atom();
-        if (atom == null || (!isInteger && atom.StringLiteral() == null) || (isInteger && atom.IntegerLiteral() == null)) {
-            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                    PARAM_REQUIRES_CONSTANT.format(name, BuiltinType.STRING), expr);
-            return "";
-        } else {
-            if (isInteger) {
-                return atom.getText();
-            } else {
-                return atom.getText().substring(1, atom.getText().length() - 1);
-            }
-        }
-    }
-
-    default String extractConstFromOptionalParameter(DiagnosticsCollector diagnosticsCollector,
+    default String extractConstFromParameter(DiagnosticsCollector diagnosticsCollector,
                                                      BMLParser.ElementExpressionPairListContext ctx,
                                                      String name, boolean isInteger) {
         var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals(name)).findAny();
