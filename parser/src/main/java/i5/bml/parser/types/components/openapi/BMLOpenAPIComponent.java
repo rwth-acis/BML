@@ -242,13 +242,20 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
                 .filter(p -> p.name.getText().equals("path"))
                 .findAny();
 
-        // Covered by parameter checks
+        // Not covered by normal parameter checks since we cannot invoke them without a function type
         if (pathParameter.isEmpty()) {
+            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format("path"), functionCallCtx);
+            return TypeRegistry.resolveType(BuiltinType.OBJECT);
+        } else if (!pathParameter.get().expression().type.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
+            Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                    EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER), functionCallCtx);
             return TypeRegistry.resolveType(BuiltinType.OBJECT);
         }
 
         var path = pathParameter.get().expression().getText();
-        path = path.substring(1, path.length() - 1);
+        if (path.startsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
 
         if (!routes.contains(path)) {
             Diagnostics.addDiagnostic(diagnostics, NO_PATH_FOR_API.format(path, url), pathParameter.get().expression());

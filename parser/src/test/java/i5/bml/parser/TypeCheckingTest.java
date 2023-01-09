@@ -180,7 +180,6 @@ class TypeCheckingTest {
                 METHOD_NOT_SUPPORTED.format("/pet", "get", "https://petstore3.swagger.io/api/v3/openapi.json"),
                 MISSING_PARAM.format("path"),
                 EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER),
-                PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING),
                 PARAM_REQUIRES_CONSTANT.format("url", BuiltinType.STRING)
         ));
     }

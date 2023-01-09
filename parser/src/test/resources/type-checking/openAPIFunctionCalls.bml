@@ -2,6 +2,8 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
+    OpenAPI petStore2(url="https://petstore3.swagger.io/api/v3/openapi.json" + "asdf")
+
     @Routine(rate="1h")
     unknownPath(data) {
         petStore.get(path="/pet/{petId}/get", petId="1")
@@ -14,7 +16,7 @@ Bot(host="localhost", port=8080) {
 
     @Routine(rate="1h")
     pathNotSpecified(data) {
-        petStore.get(pat="/pet/{petId}/get", petId=1)
+        petStore.get(pat="/pet/{petId}", petId=1)
     }
 
     @Routine(rate="1h")

@@ -60,13 +60,13 @@ public class TestUtils {
         }
 
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
+        diagnostics.removeIf(d -> d.getSeverity() != DiagnosticSeverity.Error);
 
         expectedErrors.forEach(e -> {
             Assertions.assertTrue(diagnostics.stream().anyMatch(d -> d.getMessage().equals(e)),
                     () -> "Expected error: %s\nFound instead:\n%s:".formatted(e, TestUtils.prettyPrintDiagnostics(diagnostics)));
         });
-        diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage())
-                || d.getSeverity() != DiagnosticSeverity.Error);
+        diagnostics.removeIf(d -> expectedErrors.contains(d.getMessage()));
 
         Assertions.assertTrue(diagnostics.isEmpty(), () -> "Unexpected diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
     }
