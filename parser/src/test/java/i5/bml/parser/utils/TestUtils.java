@@ -3,6 +3,7 @@ package i5.bml.parser.utils;
 import i5.bml.parser.Parser;
 import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import io.swagger.v3.parser.exception.ReadContentException;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.eclipse.lsp4j.Diagnostic;
@@ -43,9 +44,9 @@ public class TestUtils {
         pair.getRight().addErrorListener(syntaxErrorListener);
         try {
             new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
-        } catch (Exception e) {
+        } catch (RecognitionException e) {
             LOGGER.error("Walking parse tree of file {} failed", fileName, e);
-        }
+        } catch (RuntimeException ignore) {}
         return syntaxErrorListener.getCollectedSyntaxErrors();
     }
 

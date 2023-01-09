@@ -189,8 +189,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType {
         var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(schema, "Parameter", parameterName);
         var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
 
-        var parameter = new BMLFunctionParameter(parameterName);
-        parameter.setType(resolvedBMLType);
+        var parameter = new BMLFunctionParameter(parameterName, resolvedBMLType);
         arguments.add(parameter);
     }
 

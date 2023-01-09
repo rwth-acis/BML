@@ -23,7 +23,9 @@ public enum ParserError {
     PARAM_REQUIRES_CONSTANT("Parameter `%s` requires a constant `%s`"),
     UNKNOWN_ANNOTATION("Unknown annotation `%s`"),
     CANT_ASSIGN_GLOBAL("Can't assign a global variable"),
-    CANT_ASSIGN_VOID("Can't assign expression returning `void`");
+    CANT_ASSIGN_VOID("Can't assign expression returning `void`"),
+    EXPECTED_ANY_OF_1("Expected any of `%s` but found `%s`"),
+    EXPECTED_ANY_OF_2("Expected any of `%s`, `%s` but found `%s`");
 
     public final String message;
 

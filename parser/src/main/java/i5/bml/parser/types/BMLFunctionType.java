@@ -5,6 +5,7 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @BMLType(name = BuiltinType.FUNCTION, isComplex = true)
@@ -23,20 +24,17 @@ public class BMLFunctionType extends AbstractBMLType {
 
     public BMLFunctionType(BMLFunctionType functionType) {
         this.returnType = ((AbstractBMLType) functionType.getReturnType()).deepCopy();
-        functionType.getRequiredParameters().forEach(p -> deepCopyParameters(p, super.requiredParameters));
-        functionType.getOptionalParameters().forEach(p -> deepCopyParameters(p, super.optionalParameters));
+
+        functionType.getRequiredParameters().forEach(p -> deepCopyParameter(p, super.requiredParameters));
+
+        functionType.getOptionalParameters().forEach(p -> deepCopyParameter(p, super.optionalParameters));
     }
 
-    private void deepCopyParameters(BMLFunctionParameter p, List<BMLFunctionParameter> parameters) {
-        BMLFunctionParameter newParameter;
-        if (p.getType() != null) {
-            newParameter = new BMLFunctionParameter(p.getName(), ((AbstractBMLType) p.getType()).deepCopy());
-        } else {
-            newParameter = new BMLFunctionParameter(p.getName());
-        }
+    private void deepCopyParameter(BMLFunctionParameter p, List<BMLFunctionParameter> parameters) {
+        BMLFunctionParameter newParameter = new BMLFunctionParameter(p.getName());
 
         for (Type allowedType : p.getAllowedTypes()) {
-            newParameter.addType(allowedType);
+            newParameter.addType(((AbstractBMLType) allowedType).deepCopy());
         }
 
         parameters.add(newParameter);

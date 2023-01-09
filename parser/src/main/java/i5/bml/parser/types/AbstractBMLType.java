@@ -63,15 +63,16 @@ public abstract class AbstractBMLType implements Type {
 
             if (invocationParameter.isEmpty()) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format(name), ctx);
-            } else {
-                requiredParameter.setExprCtx(invocationParameter.get().expr);
-                var invocationParameterType = invocationParameter.get().expr.type;
-                if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
-                    addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
-                }
-
-                parameterListMutable.remove(invocationParameter.get());
+                continue;
             }
+
+            requiredParameter.setExprCtx(invocationParameter.get().expr);
+            var invocationParameterType = invocationParameter.get().expr.type;
+            if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
+            }
+
+            parameterListMutable.remove(invocationParameter.get());
         }
 
         checkOptionalParameters(diagnosticsCollector, parameterListMutable);

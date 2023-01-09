@@ -1,6 +1,7 @@
 package i5.bml.parser;
 
 import generatedParser.BMLParser;
+import i5.bml.parser.types.BuiltinAnnotation;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.components.BMLNumber;
@@ -39,7 +40,8 @@ class TypeCheckingTest {
     @Test
     void typeCheckAnnotations() {
         TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "annotations.bml", List.of(
-                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, BuiltinType.NUMBER)
+                EXPECTED_ANY_OF_1.format(BuiltinType.STRING, BuiltinType.NUMBER),
+                DUP_ANNOTATION.format(BuiltinAnnotation.USER_SENT_MESSAGE)
         ));
     }
 
@@ -141,7 +143,7 @@ class TypeCheckingTest {
     @Test
     void typeCheckFunctionCalls() {
         TestUtils.assertErrors(TYPE_CHECKING_BASE_PATH + "functionCalls.bml", List.of(
-                EXPECTED_BUT_FOUND.format(BuiltinType.NUMBER, BuiltinType.STRING),
+                EXPECTED_ANY_OF_1.format(BuiltinType.LONG_NUMBER, BuiltinType.STRING),
                 PARAM_NOT_DEFINED.format("name"),
                 MISSING_PARAM.format("petId"),
                 NOT_DEFINED.format("do")
