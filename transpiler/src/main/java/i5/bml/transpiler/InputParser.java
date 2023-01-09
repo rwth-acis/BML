@@ -11,6 +11,7 @@ import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
@@ -147,6 +148,7 @@ public class InputParser {
             connection.newBuild()
                     .forTasks("jar")
                     .setStandardOutput(System.out)
+                    .setStandardError(System.err)
                     .run(new ResultHandler<>() {
                         @Override
                         public void onComplete(Void result) {
@@ -155,7 +157,7 @@ public class InputParser {
 
                         @Override
                         public void onFailure(GradleConnectionException failure) {
-                            LOGGER.info("Compilation process failed:\n{}", failure.toString());
+                            LOGGER.info("Compilation process failed", failure);
                         }
                     });
         } catch (IllegalStateException e) {

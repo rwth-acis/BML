@@ -393,30 +393,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
     }
 
     @Override
-    public void exitAtom(BMLParser.AtomContext ctx) {
-        ctx.type = switch (ctx.token.getType()) {
-            case BMLParser.IntegerLiteral -> TypeRegistry.resolveType(BuiltinType.NUMBER);
-            case BMLParser.FloatingPointLiteral -> TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER);
-            case BMLParser.StringLiteral -> TypeRegistry.resolveType(BuiltinType.STRING);
-            case BMLParser.BooleanLiteral -> TypeRegistry.resolveType(BuiltinType.BOOLEAN);
-            case BMLParser.Identifier -> {
-                var name = ctx.token.getText();
-                var resolvedSymbol = currentScope.resolve(name);
-                if (!(resolvedSymbol instanceof VariableSymbol)) {
-                    Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.token);
-                    // We don't know the type, so we go with Object
-                    yield TypeRegistry.resolveType(BuiltinType.OBJECT);
-                } else {
-                    yield ((VariableSymbol) resolvedSymbol).getType();
-                }
-            }
-            // This should never happen
-            default ->
-                    throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
-        };
-    }
-
-    @Override
     public void exitExpression(BMLParser.ExpressionContext ctx) {
         if (ctx.atom() != null) {
             ctx.type = ctx.atom().type;
@@ -583,6 +559,29 @@ public class DiagnosticsCollector extends BMLBaseListener {
         } else { // Initializers
             ctx.type = ctx.initializer().type;
         }
+    }
+
+    @Override
+    public void exitAtom(BMLParser.AtomContext ctx) {
+        ctx.type = switch (ctx.token.getType()) {
+            case BMLParser.IntegerLiteral -> TypeRegistry.resolveType(BuiltinType.NUMBER);
+            case BMLParser.FloatingPointLiteral -> TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER);
+            case BMLParser.StringLiteral -> TypeRegistry.resolveType(BuiltinType.STRING);
+            case BMLParser.BooleanLiteral -> TypeRegistry.resolveType(BuiltinType.BOOLEAN);
+            case BMLParser.Identifier -> {
+                var name = ctx.token.getText();
+                var resolvedSymbol = currentScope.resolve(name);
+                if (!(resolvedSymbol instanceof VariableSymbol)) {
+                    Diagnostics.addDiagnostic(collectedDiagnostics, NOT_DEFINED.format(name), ctx.token);
+                    // We don't know the type, so we go with Object
+                    yield TypeRegistry.resolveType(BuiltinType.OBJECT);
+                } else {
+                    yield ((VariableSymbol) resolvedSymbol).getType();
+                }
+            }
+            // This should never happen
+            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(ctx.getText(), ctx));
+        };
     }
 
     // TODO: Dialogue type checking:

@@ -17,6 +17,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
@@ -28,6 +30,8 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
     private String url;
 
     private OpenAPI openAPI;
+
+    private String openAPISpec;
 
     private Set<String> routes;
 
@@ -76,7 +80,12 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
             return;
         }
 
-        var result = Measurements.measure("OpenAPI parser", () -> new OpenAPIParser().readLocation(url, null, null));
+        var success = Measurements.measure("Fetching OpenAPI spec", this::getOpenAPISpec);
+        if (!success) {
+            return;
+        }
+
+        var result = Measurements.measure("OpenAPI spec parser", () -> new OpenAPIParser().readContents(openAPISpec, null, null));
 
         openAPI = result.getOpenAPI();
 
@@ -95,7 +104,17 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         // Set valid OpenAPI routes
         routes = openAPI.getPaths().keySet();
 
-        Measurements.measure("Parsing OpenAPI spec", this::parseOpenAPISpec);
+        Measurements.measure("Generating types from OpenAPI spec", this::parseOpenAPISpec);
+    }
+
+    private boolean getOpenAPISpec() {
+        try (var s = new Scanner(new URL(url).openStream(), StandardCharsets.UTF_8)) {
+            openAPISpec = s.useDelimiter("\\A").next();
+            return true;
+        } catch (Exception e) {
+            super.cacheDiagnostic(CONNECT_FAILED.format(url), DiagnosticSeverity.Error);
+            return false;
+        }
     }
 
     private void parseOpenAPISpec() {
@@ -263,8 +282,8 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         return new BMLFunctionType((BMLFunctionType) functionType);
     }
 
-    public String url() {
-        return url;
+    public String openAPISpec() {
+        return openAPISpec;
     }
 
     public Map<String, Pair<String, String>> tagOperationIdPairs() {
