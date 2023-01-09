@@ -71,16 +71,6 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
     }
 
     @Override
-    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        // Missing parameters, but it has been reported by `checkParameters`
-        if (ctx == null) {
-            return;
-        }
-
-        url = extractConstFromParameter(diagnosticsCollector, ctx, "url", false);
-    }
-
-    @Override
     public void initializeType(ParserRuleContext ctx) {
         if (url == null) { // Missing URL parameter, but it has been reported by `checkParameters`
             return;

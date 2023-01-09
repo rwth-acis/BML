@@ -8,12 +8,16 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 import static i5.bml.parser.errors.ParserError.*;
 
-public abstract class AbstractBMLType implements Type {
+public abstract class AbstractBMLType implements Type, CanPopulateParameters {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBMLType.class);
 
     protected Map<String, Type> supportedAccesses = new HashMap<>();
 
@@ -123,6 +127,25 @@ public abstract class AbstractBMLType implements Type {
     }
 
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        // Missing parameters, but it has been reported by `checkParameters`
+        if (ctx == null) {
+            return;
+        }
+
+        Arrays.stream(this.getClass().getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
+                .forEach(f -> {
+                    var isFieldAccessible = f.canAccess(this);
+                    var expectedType = f.getAnnotation(BMLComponentParameter.class).expectedBMLType();
+                    var value = extractConstValueFromParameter(diagnosticsCollector, ctx, f.getName(), expectedType == BuiltinType.NUMBER);
+                    try {
+                        f.setAccessible(true);
+                        f.set(this, value);
+                        f.setAccessible(isFieldAccessible);
+                    } catch (IllegalAccessException e) {
+                        LOGGER.error("Failed to populate parameter {}", f.getName(), e);
+                    }
+                });
     }
 
     public void initializeType(ParserRuleContext ctx) {

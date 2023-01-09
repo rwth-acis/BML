@@ -13,17 +13,6 @@ public class BMLSlackComponent extends AbstractBMLType implements CanPopulatePar
     @BMLComponentParameter(name = "appToken", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String appToken;
 
-    @Override
-    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        // Missing parameters, but it has been reported by `checkParameters`
-        if (ctx == null) {
-            return;
-        }
-
-        botToken = extractConstFromParameter(diagnosticsCollector, ctx, "botToken", false);
-        appToken = extractConstFromParameter(diagnosticsCollector, ctx, "appToken", false);
-    }
-
     public String getBotToken() {
         return botToken;
     }

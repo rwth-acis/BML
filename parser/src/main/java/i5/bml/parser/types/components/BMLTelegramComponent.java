@@ -13,17 +13,6 @@ public class BMLTelegramComponent extends AbstractBMLType implements CanPopulate
     @BMLComponentParameter(name = "botToken", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String botToken;
 
-    @Override
-    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        // Missing parameters, but it has been reported by `checkParameters`
-        if (ctx == null) {
-            return;
-        }
-
-        botName = extractConstFromParameter(diagnosticsCollector, ctx, "botName", false);
-        botToken = extractConstFromParameter(diagnosticsCollector, ctx, "botToken", false);
-    }
-
     public String getBotName() {
         return botName;
     }

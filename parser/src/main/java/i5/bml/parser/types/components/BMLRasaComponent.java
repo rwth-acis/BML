@@ -11,16 +11,6 @@ public class BMLRasaComponent extends AbstractBMLType implements CanPopulatePara
     private String url;
 
     @Override
-    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        // Missing parameters, but it has been reported by `checkParameters`
-        if (ctx == null) {
-            return;
-        }
-
-        url = extractConstFromParameter(diagnosticsCollector, ctx, "url", false);
-    }
-
-    @Override
     public String encodeToString() {
         return "%s{url='%s'}".formatted(getName(), url);
     }

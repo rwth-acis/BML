@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
-import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 @BMLType(name = BuiltinType.OPENAI, isComplex = true)
 public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulateParameters {
@@ -32,18 +31,6 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
         var contextParameter = new BMLFunctionParameter("context", contextType);
         var processFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), List.of(contextParameter), new ArrayList<>());
         supportedAccesses.put("process", processFunction);
-    }
-
-    @Override
-    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        // Missing parameters, but it has been reported by `checkParameters`
-        if (ctx == null) {
-            return;
-        }
-
-        key = extractConstFromParameter(diagnosticsCollector, ctx, "key", false);
-        model = extractConstFromParameter(diagnosticsCollector, ctx, "model", false);
-        tokens = extractConstFromParameter(diagnosticsCollector, ctx, "tokens", true);
     }
 
     @Override

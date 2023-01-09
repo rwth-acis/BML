@@ -8,9 +8,9 @@ import static i5.bml.parser.errors.ParserError.PARAM_REQUIRES_CONSTANT;
 
 public interface CanPopulateParameters {
 
-    default String extractConstFromParameter(DiagnosticsCollector diagnosticsCollector,
-                                                     BMLParser.ElementExpressionPairListContext ctx,
-                                                     String name, boolean isInteger) {
+    default String extractConstValueFromParameter(DiagnosticsCollector diagnosticsCollector,
+                                                  BMLParser.ElementExpressionPairListContext ctx,
+                                                  String name, boolean isInteger) {
         var expr = ctx.elementExpressionPair().stream().filter(p -> p.name.getText().equals(name)).findAny();
         if (expr.isEmpty()) {
             return "";
