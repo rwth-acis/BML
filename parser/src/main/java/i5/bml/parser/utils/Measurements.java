@@ -11,8 +11,9 @@ public class Measurements {
 
     private static long nestedMeasurement = 0;
 
-    public static <T> T measure(String name, Supplier<T> actionToMeasure) {
+    private Measurements() {}
 
+    public static <T> T measure(String name, Supplier<T> actionToMeasure) {
         var prev = nestedMeasurement;
 
         var start = System.currentTimeMillis();

@@ -27,7 +27,7 @@ public class GeneratorRegistry {
 
     static {
         var generatorClasses = Measurements.measure("Collecting generator classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, USER_DIR, "transpiler", "transpiler/src/main/java/i5/bml/transpiler/generators");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, USER_DIR, "transpiler", "/transpiler/src/main/java/i5/bml/transpiler/generators");
         });
 
         TypeRegistry.getRegisteredTypes().forEach((encodedTypeName, typeGenerator) -> {

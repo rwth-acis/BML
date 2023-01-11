@@ -20,15 +20,13 @@ public class BMLState extends AbstractBMLType {
     public void initializeType(ParserRuleContext ctx) {
         var functionCallContext = (BMLParser.FunctionCallContext) ctx;
         for (var elementExpressionPairContext : functionCallContext.params.elementExpressionPair()) {
-            switch (elementExpressionPairContext.name.getText()) {
-                case "intent" -> {
-                    var atom = elementExpressionPairContext.expr.atom().token.getText();
-                    intent = atom.substring(1, atom.length() - 1);
-                }
-                case "action" -> {
-                    action = elementExpressionPairContext.expr;
-                    actionType = elementExpressionPairContext.expr.type;
-                }
+            String text = elementExpressionPairContext.name.getText();
+            if (text.equals("intent")) {
+                var atom = elementExpressionPairContext.expr.atom().token.getText();
+                intent = atom.substring(1, atom.length() - 1);
+            } else if (text.equals("action")) {
+                action = elementExpressionPairContext.expr;
+                actionType = elementExpressionPairContext.expr.type;
             }
         }
     }

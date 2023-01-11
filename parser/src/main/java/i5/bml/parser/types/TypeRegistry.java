@@ -92,7 +92,7 @@ public class TypeRegistry {
         }
 
         var classes = Measurements.measure("Collecting type classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir, "parser", "parser/src/main/java/i5/bml/parser/types");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir, "parser", "/parser/src/main/java/i5/bml/parser/types");
         });
 
         for (Class<?> clazz : classes) {

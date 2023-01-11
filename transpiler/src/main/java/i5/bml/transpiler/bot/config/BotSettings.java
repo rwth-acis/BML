@@ -6,8 +6,6 @@ public class BotSettings {
 
     private String rasaModelName;
 
-    public BotSettings() {}
-
     public String rasaModelName() {
         return rasaModelName;
     }

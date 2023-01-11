@@ -15,6 +15,8 @@ public class ComponentRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ComponentRegistry.class);
 
+    private ComponentRegistry() {}
+
     public static void initComponents(ExecutorService threadPool, PriorityBlockingQueue<Event> eventQueue) {
         var futures = Arrays.stream(ComponentRegistry.class.getDeclaredMethods())
                 .filter(m -> m.isAnnotationPresent(ComponentInitializer.class))

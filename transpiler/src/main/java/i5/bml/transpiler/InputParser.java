@@ -54,7 +54,6 @@ public class InputParser {
         try {
             parseArguments(options, args);
         } catch (ParseException e) {
-            System.err.println(e.getMessage());
             new HelpFormatter().printHelp("bmlc", options);
             return;
         }

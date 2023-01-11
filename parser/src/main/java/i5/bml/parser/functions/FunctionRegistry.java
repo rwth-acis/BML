@@ -32,7 +32,7 @@ public class FunctionRegistry {
 
     public static void init(String userDir) {
         var classes = Measurements.measure("Collecting function classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir,  "parser", "parser/src/main/java/i5/bml/parser/functions");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir,  "parser", "/parser/src/main/java/i5/bml/parser/functions");
         });
 
         for (var clazz : classes) {
