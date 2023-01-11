@@ -222,7 +222,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
     /*
      * Type Checking
      */
-
     @Override
     public void exitBotHead(BMLParser.BotHeadContext ctx) {
         typeCheckQualifiedName("Bot", ctx, ctx.params);

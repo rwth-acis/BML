@@ -1,6 +1,5 @@
 package i5.bml.parser;
 
-import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.TestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,8 +18,7 @@ class ScopeTest {
 
     @BeforeEach
     void clearCache() {
-        TypeRegistry.clear();
-        TypeRegistry.init();
+        TestUtils.clearRegistries();
     }
 
     @BeforeAll

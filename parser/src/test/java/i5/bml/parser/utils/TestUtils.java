@@ -2,6 +2,7 @@ package i5.bml.parser.utils;
 
 import i5.bml.parser.Parser;
 import i5.bml.parser.errors.SyntaxErrorListener;
+import i5.bml.parser.functions.FunctionRegistry;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.runtime.RecognitionException;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -23,6 +25,13 @@ import java.util.stream.Collectors;
 public class TestUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+
+    public static void clearRegistries() {
+        TypeRegistry.clear();
+        TypeRegistry.init(new File(System.getProperty("user.dir")).getParent());
+        FunctionRegistry.clear();
+        FunctionRegistry.init(new File(System.getProperty("user.dir")).getParent());
+    }
 
     public static String readFileIntoString(String fileName) {
         var inputString = "";
@@ -37,8 +46,7 @@ public class TestUtils {
     }
 
     public static List<Diagnostic> collectSyntaxErrors(String fileName) {
-        TypeRegistry.clear();
-        TypeRegistry.init();
+        clearRegistries();
 
         var diagnosticsCollector = new DiagnosticsCollector();
         var syntaxErrorListener = new SyntaxErrorListener();
@@ -54,8 +62,7 @@ public class TestUtils {
     }
 
     public static void assertErrors(String relativeFilePath, List<String> expectedErrors) {
-        TypeRegistry.clear();
-        TypeRegistry.init();
+        clearRegistries();
 
         var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();

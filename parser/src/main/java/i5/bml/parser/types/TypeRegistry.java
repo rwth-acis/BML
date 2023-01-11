@@ -14,6 +14,8 @@ public class TypeRegistry {
 
     private static final ClassLoader CLASS_LOADER = TypeRegistry.class.getClassLoader();
 
+    private static final String USER_DIR = System.getProperty("user.dir");
+
     private static final Map<String, Type> registeredTypes = new HashMap<>();
 
     private static final Set<String> builtinTypes = new HashSet<>();
@@ -27,7 +29,7 @@ public class TypeRegistry {
     private TypeRegistry() {}
 
     static {
-        init();
+        init(USER_DIR);
     }
 
     public static Type resolveType(String typeName) {
@@ -78,7 +80,7 @@ public class TypeRegistry {
         return complexTypeBlueprints.containsKey(typeName.toLowerCase());
     }
 
-    public static void init() {
+    public static void init(String userDir) {
         for (var value : BuiltinType.values()) {
             if (!value.isInternal()) {
                 builtinTypes.add(value.name().toLowerCase());
@@ -90,7 +92,7 @@ public class TypeRegistry {
         }
 
         var classes = Measurements.measure("Collecting type classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "parser", "parser/src/main/java/i5/bml/parser/types");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir, "parser", "parser/src/main/java/i5/bml/parser/types");
         });
 
         for (Class<?> clazz : classes) {

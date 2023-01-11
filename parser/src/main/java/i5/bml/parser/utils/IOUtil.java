@@ -17,10 +17,8 @@ public class IOUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtil.class);
 
-    private static final String USER_DIR = System.getProperty("user.dir");
-
-    public static List<Class<?>> collectClassesFromPackage(ClassLoader classLoader, String moduleName, String pathToPackage) {
-        var typesDir = new File(USER_DIR + "/" + pathToPackage);
+    public static List<Class<?>> collectClassesFromPackage(ClassLoader classLoader, String userDir, String moduleName, String pathToPackage) {
+        var typesDir = new File(userDir + "/" + pathToPackage);
         var packageNames = new ArrayList<String>();
         packageNames.add("i5.bml." + moduleName);
         var classes = new ArrayList<Class<?>>();

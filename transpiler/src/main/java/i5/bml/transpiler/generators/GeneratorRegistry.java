@@ -19,13 +19,15 @@ public class GeneratorRegistry {
 
     private static final ClassLoader CLASS_LOADER = GeneratorRegistry.class.getClassLoader();
 
+    private static final String USER_DIR = System.getProperty("user.dir");
+
     private static final Map<String, Generator> registeredGenerators = new HashMap<>();
 
     private static final Map<String, Generator> registeredFunctionGenerators = new HashMap<>();
 
     static {
         var generatorClasses = Measurements.measure("Collecting generator classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "transpiler", "transpiler/src/main/java/i5/bml/transpiler/generators");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, USER_DIR, "transpiler", "transpiler/src/main/java/i5/bml/transpiler/generators");
         });
 
         TypeRegistry.getRegisteredTypes().forEach((encodedTypeName, typeGenerator) -> {

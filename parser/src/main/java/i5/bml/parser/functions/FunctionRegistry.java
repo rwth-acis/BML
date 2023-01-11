@@ -13,13 +13,27 @@ public class FunctionRegistry {
 
     private static final ClassLoader CLASS_LOADER = FunctionRegistry.class.getClassLoader();
 
+    private static final String USER_DIR = System.getProperty("user.dir");
+
     private static final Map<BMLFunctionScope, Set<BMLFunction>> registeredFunctionsInScope = new HashMap<>();
 
     private static final Map<String, BMLFunction> registeredFunctions = new HashMap<>();
 
     static {
+        init(USER_DIR);
+    }
+
+    public static Set<BMLFunction> getFunctionsForScope(BMLFunctionScope bmlFunctionScope) {
+        return registeredFunctionsInScope.get(bmlFunctionScope);
+    }
+
+    public static Map<String, BMLFunction> getRegisteredFunctions() {
+        return registeredFunctions;
+    }
+
+    public static void init(String userDir) {
         var classes = Measurements.measure("Collecting function classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "parser", "parser/src/main/java/i5/bml/parser/functions");
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir,  "parser", "parser/src/main/java/i5/bml/parser/functions");
         });
 
         for (var clazz : classes) {
@@ -49,11 +63,8 @@ public class FunctionRegistry {
         }
     }
 
-    public static Set<BMLFunction> getFunctionsForScope(BMLFunctionScope bmlFunctionScope) {
-        return registeredFunctionsInScope.get(bmlFunctionScope);
-    }
-
-    public static Map<String, BMLFunction> getRegisteredFunctions() {
-        return registeredFunctions;
+    public static void clear() {
+        registeredFunctionsInScope.clear();;
+        registeredFunctions.clear();
     }
 }
