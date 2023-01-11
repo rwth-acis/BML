@@ -13,8 +13,6 @@ import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLBaseVisitor;
 import generatedParser.BMLParser;
 import i5.bml.parser.symbols.BlockScope;
-import i5.bml.parser.types.components.BMLBoolean;
-import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.components.BMLString;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.config.BotConfig;

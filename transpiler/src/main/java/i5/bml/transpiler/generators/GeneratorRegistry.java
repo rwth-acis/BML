@@ -1,12 +1,11 @@
 package i5.bml.transpiler.generators;
 
+import i5.bml.parser.functions.FunctionRegistry;
 import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.TypeRegistry;
-import i5.bml.parser.functions.FunctionRegistry;
 import i5.bml.parser.utils.IOUtil;
 import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

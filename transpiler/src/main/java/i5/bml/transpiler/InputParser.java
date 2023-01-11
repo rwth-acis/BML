@@ -3,7 +3,6 @@ package i5.bml.transpiler;
 import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import i5.bml.transpiler.bot.BotMain;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -12,7 +11,6 @@ import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
@@ -22,13 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 
-import java.io.*;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 public class InputParser {
 

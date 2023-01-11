@@ -1,6 +1,5 @@
 package i5.bml.parser.types;
 
-import i5.bml.parser.functions.FunctionRegistry;
 import i5.bml.parser.types.annotations.BMLAnnotationType;
 import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.dialogue.BMLState;

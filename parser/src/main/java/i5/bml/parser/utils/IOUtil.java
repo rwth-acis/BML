@@ -1,6 +1,5 @@
 package i5.bml.parser.utils;
 
-import i5.bml.parser.functions.FunctionRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
