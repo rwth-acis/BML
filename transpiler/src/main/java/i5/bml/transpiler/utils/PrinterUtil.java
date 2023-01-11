@@ -7,11 +7,9 @@ import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithName;
-import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.printer.DefaultPrettyPrinter;
 import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
-import com.github.javaparser.printer.configuration.PrinterConfiguration;
 import i5.bml.transpiler.generators.JavaTreeVisitor;
 import org.apache.commons.io.FileUtils;
 
@@ -21,15 +19,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.Comparator;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class PrinterUtil {
 
-    private static final PrinterConfiguration configuration = new DefaultPrinterConfiguration();
-
-    private static final Function<PrinterConfiguration, VoidVisitor<Void>> visitorFactory = JavaTreeVisitor::new;
-
-    private static final Printer printer = new DefaultPrettyPrinter(visitorFactory, configuration);
+    private static final Printer PRINTER = new DefaultPrettyPrinter(JavaTreeVisitor::new, new DefaultPrinterConfiguration());
 
     static {
         StaticJavaParser.setConfiguration(new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17));
@@ -47,31 +40,13 @@ public class PrinterUtil {
 
             //noinspection OptionalGetWithoutIsPresent -> We can assume presence
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
-            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
 
             fileOutputStream.close();
         } catch (NoSuchFileException | FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(filePath), e);
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
-        }
-    }
-
-    public static void readAndWriteJavaFile(File file, String className, Consumer<TypeDeclaration<?>> c) {
-        try (var fileOutputStream = new FileOutputStream(file)) {
-            CompilationUnit compilationUnit = StaticJavaParser.parse(file);
-
-            if (compilationUnit.getPrimaryType().isPresent()) {
-                c.accept(compilationUnit.getPrimaryType().get());
-            } else {
-                throw new IllegalStateException("%s doesn't seem to have a primary type declaration (i.e., class, enum, etc.)".formatted(className));
-            }
-
-            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()), e);
-        } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(file.getAbsolutePath(), e.getMessage()), e);
         }
     }
 
@@ -91,7 +66,7 @@ public class PrinterUtil {
             var clazz = compilationUnit.getClassByName(className).get();
             c.accept(clazz);
             sortClassMembersAndImports(clazz);
-            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
         }
@@ -152,7 +127,7 @@ public class PrinterUtil {
         var javaFile = new File(javaFilePath);
         try (var fileOutputStream = new FileOutputStream(javaFile)) {
             sortClassMembersAndImports(clazz);
-            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
         }
