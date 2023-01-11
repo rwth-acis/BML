@@ -3,6 +3,7 @@ package i5.bml.transpiler;
 import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import i5.bml.transpiler.bot.BotMain;
 import i5.bml.transpiler.generators.JavaTreeGenerator;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -21,11 +22,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class InputParser {
 
@@ -41,6 +44,14 @@ public class InputParser {
 
     private String outputFormat;
 
+    private final IOFileFilter componentDirFilter;
+
+    public InputParser() {
+        var componentPackageNames = new String[]{"slack", "telegram", "openapi", "rasa", "dialogue", "openai"};
+        var componentNameFilter = FileFilterUtils.or(Arrays.stream(componentPackageNames).map(FileFilterUtils::nameFileFilter).toArray(IOFileFilter[]::new));
+        componentDirFilter = FileFilterUtils.notFileFilter(FileFilterUtils.and(componentNameFilter, FileFilterUtils.directoryFileFilter()));
+    }
+
     public void parse(String[] args) throws IOException {
         // Parse options
         var options = initOptions();
@@ -51,6 +62,8 @@ public class InputParser {
             new HelpFormatter().printHelp("bmlc", options);
             return;
         }
+
+        var start = System.currentTimeMillis();
 
         // Start processing input file
         var inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
@@ -74,28 +87,28 @@ public class InputParser {
         }
 
         if (!containsError) {
-            invokeCodeGeneration(tree);
+            invokeCodeGeneration(tree, start);
         }
     }
 
-    private void invokeCodeGeneration(ParseTree tree) throws IOException {
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private void invokeCodeGeneration(ParseTree tree, Long start) throws IOException {
         // Prepare output directory
         outputPackage = outputPackage.replaceAll("\\.", "/");
 
-        // Copy source code to specified directory
+        // Delete old files, in case they exist
         FileUtils.deleteDirectory(new File(outputDir));
-        var filter = filterComponentSpecificPackages();
-        var srcDir = new File(outputDir + "/src/main/java/" + outputPackage);
-        FileUtils.copyDirectory(new File(BOT_DIR), srcDir, filter);
-        IOUtil.renameImportsForFilesInDir(srcDir, outputPackage);
 
         // Create "project" folders
-        //noinspection ResultOfMethodCallIgnored
-        new File(outputDir + "/src/main/resources/").mkdir();
-        //noinspection ResultOfMethodCallIgnored
-        new File(outputDir + "/src/test/java/").mkdir();
-        //noinspection ResultOfMethodCallIgnored
-        new File(outputDir + "/src/test/resources/").mkdir();
+        new File(outputDir + "/src/main/java/").mkdirs();
+        new File(outputDir + "/src/main/resources/").mkdirs();
+        new File(outputDir + "/src/test/java/").mkdirs();
+        new File(outputDir + "/src/test/resources/").mkdirs();
+
+        // Copy files (from transpiler bot directory) that will be copied regardless of what components are present
+        var srcDir = new File(BOT_DIR);
+        var destDir = new File(outputDir + "/src/main/java/" + outputPackage);
+        Measurements.measure("Copying files", () -> IOUtil.copyFiles(srcDir, destDir, outputPackage , componentDirFilter));
 
         // Copy build file template
         var gradleTemplate = Files.readString(new File("transpiler/src/main/resources/build_template").toPath(), Charset.defaultCharset());
@@ -126,15 +139,13 @@ public class InputParser {
         // Copy SLF4J SimpleLogger config
         FileUtils.copyFile(new File("transpiler/src/main/resources/simplelogger.properties"), new File(outputDir + "/src/main/resources/simplelogger.properties"));
 
-        if (outputFormat.equals("jar")) {
-            Measurements.measure("Compiling generated code", this::outputJar);
-        }
-    }
+        var end = System.currentTimeMillis();
 
-    private IOFileFilter filterComponentSpecificPackages() {
-        var componentPackageNames = new String[]{"slack", "telegram", "openapi", "rasa", "dialogue", "openai"};
-        var componentFilter = FileFilterUtils.or(Arrays.stream(componentPackageNames).map(FileFilterUtils::nameFileFilter).toArray(IOFileFilter[]::new));
-        return FileFilterUtils.notFileFilter(FileFilterUtils.and(componentFilter, FileFilterUtils.directoryFileFilter()));
+        LOGGER.info("Compiling BML code took {} ms", end - start);
+
+        if (outputFormat.equals("jar")) {
+            Measurements.measure("Compiling generated Java code to JAR", this::outputJar);
+        }
     }
 
     private void outputJar() {

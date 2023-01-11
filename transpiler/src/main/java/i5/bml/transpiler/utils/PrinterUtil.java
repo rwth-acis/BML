@@ -15,9 +15,8 @@ import com.github.javaparser.printer.configuration.PrinterConfiguration;
 import i5.bml.transpiler.generators.JavaTreeVisitor;
 import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.Comparator;
@@ -38,14 +37,19 @@ public class PrinterUtil {
 
     public static void writeClass(String path, String fileName, CompilationUnit compilationUnit) {
         var filePath = "%s/%s.java".formatted(path, fileName);
+        var javaFile = new File(filePath);
         try {
-            var javaFile = new File(filePath);
             var javaFilePath = javaFile.toPath();
             Files.createDirectories(javaFilePath.getParent());
             Files.createFile(javaFilePath);
+
+            var fileOutputStream = new FileOutputStream(javaFile);
+
             //noinspection OptionalGetWithoutIsPresent -> We can assume presence
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
-            Files.write(javaFilePath, printer.print(compilationUnit).getBytes());
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
+
+            fileOutputStream.close();
         } catch (NoSuchFileException | FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(filePath), e);
         } catch (IOException e) {
@@ -54,7 +58,7 @@ public class PrinterUtil {
     }
 
     public static void readAndWriteJavaFile(File file, String className, Consumer<TypeDeclaration<?>> c) {
-        try {
+        try (var fileOutputStream = new FileOutputStream(file)) {
             CompilationUnit compilationUnit = StaticJavaParser.parse(file);
 
             if (compilationUnit.getPrimaryType().isPresent()) {
@@ -63,7 +67,7 @@ public class PrinterUtil {
                 throw new IllegalStateException("%s doesn't seem to have a primary type declaration (i.e., class, enum, etc.)".formatted(className));
             }
 
-            Files.write(file.toPath(), printer.print(compilationUnit).getBytes());
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
         } catch (FileNotFoundException e) {
             throw new IllegalStateException("Could not find %s".formatted(file.getAbsolutePath()), e);
         } catch (IOException e) {
@@ -73,16 +77,21 @@ public class PrinterUtil {
 
     public static void readAndWriteClass(String path, String fileName, String className, Consumer<ClassOrInterfaceDeclaration> c) {
         var javaFilePath = "%s/%s.java".formatted(path, fileName);
+        var javaFile = new File(javaFilePath);
+
+        CompilationUnit compilationUnit = null;
         try {
-            var javaFile = new File(javaFilePath);
-            CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+            compilationUnit = StaticJavaParser.parse(javaFile);
+        } catch (FileNotFoundException e) {
+            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
+        }
+
+        try (var fileOutputStream = new FileOutputStream(javaFile)) {
             //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
             var clazz = compilationUnit.getClassByName(className).get();
             c.accept(clazz);
             sortClassMembersAndImports(clazz);
-            Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
-        } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
         }
@@ -140,10 +149,10 @@ public class PrinterUtil {
 
     public static void writeClass(String path, CompilationUnit compilationUnit, ClassOrInterfaceDeclaration clazz) {
         var javaFilePath = "%s/%s.java".formatted(path, clazz.getName());
-        try {
-            var javaFile = new File(javaFilePath);
+        var javaFile = new File(javaFilePath);
+        try (var fileOutputStream = new FileOutputStream(javaFile)) {
             sortClassMembersAndImports(clazz);
-            Files.write(javaFile.toPath(), printer.print(compilationUnit).getBytes());
+            fileOutputStream.getChannel().write(ByteBuffer.wrap(printer.print(compilationUnit).getBytes()));
         } catch (IOException e) {
             throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
         }
