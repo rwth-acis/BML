@@ -2,7 +2,9 @@ package i5.bml.transpiler.generators;
 
 import i5.bml.parser.types.AbstractBMLType;
 import i5.bml.parser.types.TypeRegistry;
-import i5.bml.parser.types.functions.FunctionRegistry;
+import i5.bml.parser.functions.FunctionRegistry;
+import i5.bml.parser.utils.IOUtil;
+import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -16,17 +18,23 @@ public class GeneratorRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GeneratorRegistry.class);
 
+    private static final ClassLoader CLASS_LOADER = GeneratorRegistry.class.getClassLoader();
+
     private static final Map<String, Generator> registeredGenerators = new HashMap<>();
 
     private static final Map<String, Generator> registeredFunctionGenerators = new HashMap<>();
 
     static {
-        Reflections reflections = new Reflections("i5.bml.transpiler.generators");
-        var types = reflections.getTypesAnnotatedWith(CodeGenerator.class);
+        var generatorClasses = Measurements.measure("Collecting generator classes", () -> {
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "transpiler", "transpiler/src/main/java/i5/bml/transpiler/generators");
+        });
 
         TypeRegistry.getRegisteredTypes().forEach((encodedTypeName, typeGenerator) -> {
-            var generatorClass = types.stream()
-                    .filter(a -> a.getAnnotation(CodeGenerator.class).typeClass().isInstance(typeGenerator))
+            var generatorClass = generatorClasses.stream()
+                    .filter(a -> {
+                        var annotation = a.getAnnotation(CodeGenerator.class);
+                        return annotation != null && annotation.typeClass().isInstance(typeGenerator);
+                    })
                     .findAny();
 
             if (generatorClass.isEmpty()) {
@@ -48,11 +56,12 @@ public class GeneratorRegistry {
             }
         });
 
-        var functions = new Reflections("i5.bml.transpiler.generators.functions").getTypesAnnotatedWith(CodeGenerator.class);
-
         FunctionRegistry.getRegisteredFunctions().forEach((functionName, functionGenerator) -> {
-            var generatorClass = functions.stream()
-                    .filter(a -> a.getAnnotation(CodeGenerator.class).typeClass().isInstance(functionGenerator))
+            var generatorClass = generatorClasses.stream()
+                    .filter(a -> {
+                        var annotation = a.getAnnotation(CodeGenerator.class);
+                        return annotation != null && annotation.typeClass().isInstance(functionGenerator);
+                    })
                     .findAny();
 
             if (generatorClass.isEmpty()) {
