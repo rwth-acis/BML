@@ -7,6 +7,8 @@ import i5.bml.parser.types.components.BMLNumber;
 
 public class BMLTypeResolver {
 
+    private BMLTypeResolver() {}
+
     public static Type resolveBMLTypeToJavaType(org.antlr.symtab.Type type) {
         return switch (type.getName()) {
             case "Number" -> {

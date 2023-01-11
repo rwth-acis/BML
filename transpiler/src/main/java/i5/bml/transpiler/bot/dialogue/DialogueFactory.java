@@ -10,6 +10,8 @@ public class DialogueFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DialogueFactory.class);
 
+    private DialogueFactory() {}
+
     public static List<DialogueAutomaton> createDialogue(MessageEventType messageEventType) {
         return switch (messageEventType) {
             default -> {

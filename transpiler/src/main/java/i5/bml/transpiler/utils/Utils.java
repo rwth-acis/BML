@@ -14,6 +14,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class Utils {
 
+    private Utils() {}
+
     public static boolean isJavaHomeDefined() {
         String javaHome = System.getenv("JAVA_HOME");
         return javaHome != null;

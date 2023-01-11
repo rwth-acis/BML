@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ public class EventHandlerRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventHandlerRegistry.class);
 
-    private static final Map<MessageEventType, Method> messageEventHandler = new HashMap<>();
+    private static final Map<MessageEventType, Method> messageEventHandler = new EnumMap<>(MessageEventType.class);
 
     private EventHandlerRegistry() {}
 

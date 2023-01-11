@@ -8,6 +8,8 @@ public class MessageHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageHelper.class);
 
+    private MessageHelper() {}
+
     public static void replyToMessenger(User user, String msg) {
 
     }

@@ -12,6 +12,8 @@ public class OpenAPIUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenAPIUtils.class);
 
+    private OpenAPIUtils() {}
+
     public static void generateOpenAPIClientCode(String openAPISpec, String outputPackage, String apiName, String botOutputPath) {
         var swaggerBinary = "swagger-codegen-cli-3.0.36.jar";
         var url = OpenAPIUtils.class.getClassLoader().getResource(swaggerBinary);

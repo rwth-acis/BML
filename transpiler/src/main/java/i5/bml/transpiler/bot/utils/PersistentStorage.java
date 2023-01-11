@@ -21,6 +21,8 @@ public class PersistentStorage {
 
     private static File settingsFile;
 
+    private PersistentStorage() {}
+
     static {
         try {
             var jarExecutionFile = PersistentStorage.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();

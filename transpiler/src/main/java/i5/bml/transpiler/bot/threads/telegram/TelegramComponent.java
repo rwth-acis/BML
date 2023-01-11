@@ -44,11 +44,6 @@ public class TelegramComponent extends TelegramLongPollingBot {
     }
 
     @Override
-    public void onRegister() {
-        super.onRegister();
-    }
-
-    @Override
     public void onUpdateReceived(Update update) {
         try {
             MessageEvent telegramEvent = new MessageEvent(EventSource.TELEGRAM, update.getMessage().getDate());

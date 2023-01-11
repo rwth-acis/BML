@@ -20,11 +20,13 @@ public class IOUtil {
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    private IOUtil() {}
+
     public static void forceDeleteFile(String botOutputPath, Class<?> clazz) {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replaceAll("\\.", "/");
+                .replace("\\.", "/");
         File file = null;
         try {
             file = new File("%s%s/%s.java".formatted(botOutputPath, packageName, clazz.getSimpleName()));

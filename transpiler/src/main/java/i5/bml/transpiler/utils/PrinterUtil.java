@@ -11,6 +11,9 @@ import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import i5.bml.transpiler.generators.JavaTreeVisitor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,13 +21,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.util.Comparator;
 import java.util.function.Consumer;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class PrinterUtil {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrinterUtil.class);
+
     private static final Printer PRINTER = new DefaultPrettyPrinter(JavaTreeVisitor::new, new DefaultPrinterConfiguration());
+
+    private PrinterUtil() {}
 
     static {
         StaticJavaParser.setConfiguration(new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17));
@@ -40,15 +47,12 @@ public class PrinterUtil {
 
             var fileOutputStream = new FileOutputStream(javaFile);
 
-            //noinspection OptionalGetWithoutIsPresent -> We can assume presence
             sortClassMembersAndImports(compilationUnit.getClassByName(fileName).get());
             fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
 
             fileOutputStream.close();
-        } catch (NoSuchFileException | FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(filePath), e);
         } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s".formatted(filePath), e);
+            LOGGER.error("Error writing class {}", filePath, ExceptionUtils.getRootCause(e));
         }
     }
 
@@ -56,21 +60,21 @@ public class PrinterUtil {
         var javaFilePath = "%s/%s.java".formatted(path, fileName);
         var javaFile = new File(javaFilePath);
 
-        CompilationUnit compilationUnit = null;
+        CompilationUnit compilationUnit;
         try {
             compilationUnit = StaticJavaParser.parse(javaFile);
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
+            LOGGER.error("Error reading class {}", javaFilePath, ExceptionUtils.getRootCause(e));
+            return;
         }
 
         try (var fileOutputStream = new FileOutputStream(javaFile)) {
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
             var clazz = compilationUnit.getClassByName(className).get();
             c.accept(clazz);
             sortClassMembersAndImports(clazz);
             fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
         } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
+            LOGGER.error("Error writing class {}", javaFilePath, ExceptionUtils.getRootCause(e));
         }
     }
 
@@ -79,7 +83,6 @@ public class PrinterUtil {
                 .thenComparing(BodyDeclaration::isConstructorDeclaration)
                 .thenComparing(BodyDeclaration::isFieldDeclaration));
 
-        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         clazz.findCompilationUnit().get().getImports().sort(Comparator.comparing(NodeWithName::getNameAsString));
     }
 
@@ -91,7 +94,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replaceAll("\\.", "/");
+                .replace("\\.", "/");
         readAndWriteClass(botOutputPath + packageName, fileName, clazz.getSimpleName(), c);
     }
 
@@ -100,10 +103,10 @@ public class PrinterUtil {
         try {
             var javaFile = new File(javaFilePath);
             CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
-            //noinspection OptionalGetWithoutIsPresent -> We can assume that the class is present
             return compilationUnit.getClassByName(className).get();
         } catch (FileNotFoundException e) {
-            throw new IllegalStateException("Could not find %s".formatted(javaFilePath), e);
+            LOGGER.error("Error reading class {}", javaFilePath, ExceptionUtils.getRootCause(e));
+            return new ClassOrInterfaceDeclaration();
         }
     }
 
@@ -111,7 +114,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replaceAll("\\.", "/");
+                .replace("\\.", "/");
         return readClass(botOutputPath + packageName, clazz.getSimpleName());
     }
 
@@ -119,8 +122,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replaceAll("\\.", "/");
-        //noinspection OptionalGetWithoutIsPresent -> We can assume presence
+                .replace("\\.", "/");
         writeClass(path + packageName, classToWrite.findCompilationUnit().get(), classToWrite);
     }
 
@@ -131,7 +133,7 @@ public class PrinterUtil {
             sortClassMembersAndImports(clazz);
             fileOutputStream.getChannel().write(ByteBuffer.wrap(PRINTER.print(compilationUnit).getBytes()));
         } catch (IOException e) {
-            throw new IllegalStateException("Error writing to file %s: %s".formatted(javaFilePath, e.getMessage()), e);
+            LOGGER.error("Error writing class {}", javaFilePath, ExceptionUtils.getRootCause(e));
         }
     }
 
@@ -143,7 +145,7 @@ public class PrinterUtil {
                 clazz.getConstructors().forEach(c -> c.setName(newName));
             });
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.error("Error copying class {} at {}", oldName, path, ExceptionUtils.getRootCause(e));
         }
     }
 }
