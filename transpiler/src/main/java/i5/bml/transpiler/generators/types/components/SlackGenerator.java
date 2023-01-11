@@ -29,8 +29,7 @@ public class SlackGenerator extends Generator implements InitializableComponent,
                 try {
                     slackClient.getSlack().methods().chatPostMessage(r -> r.token(botToken).channel(channelId).text(msg));
                 } catch (IOException | SlackApiException e) {
-                  LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the slack bot:
-                                {}", msg, channelId, e.getMessage());
+                  LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the slack bot:\\n{}", msg, channelId, e.getMessage());
                 }
             }""";
 

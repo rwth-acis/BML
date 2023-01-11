@@ -31,8 +31,7 @@ public class TelegramGenerator extends Generator implements InitializableCompone
                     send.setText(msg);
                     telegramComponent.execute(send);
                 } catch (TelegramApiException e) {
-                    LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the telegram bot {}:
-                                  {}", msg, chatId, telegramComponent.getBotUsername(), e.getMessage());
+                    LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the telegram bot {}:\\n{}", msg, chatId, telegramComponent.getBotUsername(), e.getMessage());
                 }
             }""";
 

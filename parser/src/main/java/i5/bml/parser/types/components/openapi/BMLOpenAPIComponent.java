@@ -82,7 +82,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         }
 
         var success = Measurements.measure("Fetching OpenAPI spec", this::getOpenAPISpec);
-        if (Boolean.TRUE.equals(success)) {
+        if (Boolean.FALSE.equals(success)) {
             return;
         }
 

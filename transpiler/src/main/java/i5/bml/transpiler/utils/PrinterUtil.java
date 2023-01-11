@@ -94,7 +94,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replace("\\.", "/");
+                .replaceAll("\\.", "/");
         readAndWriteClass(botOutputPath + packageName, fileName, clazz.getSimpleName(), c);
     }
 
@@ -114,7 +114,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replace("\\.", "/");
+                .replaceAll("\\.", "/");
         return readClass(botOutputPath + packageName, clazz.getSimpleName());
     }
 
@@ -122,7 +122,7 @@ public class PrinterUtil {
         var packageName = clazz.getPackageName()
                 .replace("i5.bml.transpiler.bot", "")
                 .replaceFirst("\\.", "")
-                .replace("\\.", "/");
+                .replaceAll("\\.", "/");
         writeClass(path + packageName, classToWrite.findCompilationUnit().get(), classToWrite);
     }
 

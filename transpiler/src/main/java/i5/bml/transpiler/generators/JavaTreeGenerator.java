@@ -26,7 +26,9 @@ import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
 import org.stringtemplate.v4.ST;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,7 +47,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     private Scope dialogueScope = new BlockScope(null);
 
-    private final Stack<ClassOrInterfaceDeclaration> classStack = new Stack<>();
+    private final Deque<ClassOrInterfaceDeclaration> classStack = new ArrayDeque<>();
 
     private boolean wrapAssignmentInTryStmt = false;
 
@@ -75,7 +77,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         return gradleFile;
     }
 
-    public Stack<ClassOrInterfaceDeclaration> classStack() {
+    public Deque<ClassOrInterfaceDeclaration> classStack() {
         return classStack;
     }
 

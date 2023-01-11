@@ -15,6 +15,8 @@ public class IOUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtil.class);
 
+    private IOUtil() {}
+
     public static String getResourceFileAsString(String fileName) throws IOException {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try (var reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(classLoader.getResourceAsStream(fileName))))) {
