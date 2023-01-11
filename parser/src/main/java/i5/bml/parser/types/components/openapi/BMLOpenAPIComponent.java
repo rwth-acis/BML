@@ -2,6 +2,7 @@ package i5.bml.parser.types.components.openapi;
 
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
+import i5.bml.parser.functions.BMLFunctionParameter;
 import i5.bml.parser.types.*;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;

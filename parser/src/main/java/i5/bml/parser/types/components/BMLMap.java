@@ -2,6 +2,7 @@ package i5.bml.parser.types.components;
 
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
+import i5.bml.parser.functions.BMLFunctionParameter;
 import i5.bml.parser.types.*;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;

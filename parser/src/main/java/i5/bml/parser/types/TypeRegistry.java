@@ -1,18 +1,19 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.functions.FunctionRegistry;
 import i5.bml.parser.types.annotations.BMLAnnotationType;
 import i5.bml.parser.types.components.BMLNumber;
 import i5.bml.parser.types.dialogue.BMLState;
+import i5.bml.parser.utils.IOUtil;
+import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
-import org.reflections.Reflections;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class TypeRegistry {
 
-    private TypeRegistry() {
-    }
+    private static final ClassLoader CLASS_LOADER = TypeRegistry.class.getClassLoader();
 
     private static final Map<String, Type> registeredTypes = new HashMap<>();
 
@@ -23,6 +24,8 @@ public class TypeRegistry {
     private static final Map<String, Class<?>> complexTypeBlueprints = new HashMap<>();
 
     private static int typeIndex = 0;
+
+    private TypeRegistry() {}
 
     static {
         init();
@@ -87,9 +90,17 @@ public class TypeRegistry {
             builtinAnnotations.put(value.name().replaceAll("_", "").toLowerCase(), value.annotationType);
         }
 
-        var annotated = new Reflections("i5.bml.parser.types").getTypesAnnotatedWith(BMLType.class);
-        for (Class<?> clazz : annotated) {
+        var classes = Measurements.measure("Collecting type classes", () -> {
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "parser", "parser/src/main/java/i5/bml/parser/types");
+        });
+
+        for (Class<?> clazz : classes) {
             BMLType type = clazz.getAnnotation(BMLType.class);
+
+            // Ignore interfaces or helper classes present in types package
+            if (type == null) {
+                continue;
+            }
 
             // Check: class extends AbstractBMLType
             if (!AbstractBMLType.class.isAssignableFrom(clazz)) {

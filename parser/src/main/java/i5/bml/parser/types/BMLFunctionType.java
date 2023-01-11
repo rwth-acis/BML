@@ -1,5 +1,6 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.functions.BMLFunctionParameter;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;

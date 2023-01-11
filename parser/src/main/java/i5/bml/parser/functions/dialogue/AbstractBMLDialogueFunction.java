@@ -1,10 +1,10 @@
-package i5.bml.parser.types.functions.dialogue;
+package i5.bml.parser.functions.dialogue;
 
-import i5.bml.parser.types.BMLFunctionParameter;
+import i5.bml.parser.functions.BMLFunction;
+import i5.bml.parser.functions.BMLFunctionParameter;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.components.BMLList;
-import i5.bml.parser.types.functions.BMLFunction;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.Type;
 import org.antlr.symtab.VariableSymbol;

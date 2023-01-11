@@ -1,4 +1,4 @@
-package i5.bml.parser.types;
+package i5.bml.parser.functions;
 
 import generatedParser.BMLParser;
 import org.antlr.symtab.ParameterSymbol;

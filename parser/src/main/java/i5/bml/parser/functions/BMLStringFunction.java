@@ -1,6 +1,5 @@
-package i5.bml.parser.types.functions;
+package i5.bml.parser.functions;
 
-import i5.bml.parser.types.BMLFunctionParameter;
 import i5.bml.parser.types.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;

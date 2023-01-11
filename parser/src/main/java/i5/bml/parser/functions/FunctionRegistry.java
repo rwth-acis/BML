@@ -1,6 +1,7 @@
-package i5.bml.parser.types.functions;
+package i5.bml.parser.functions;
 
-import org.reflections.Reflections;
+import i5.bml.parser.utils.IOUtil;
+import i5.bml.parser.utils.Measurements;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -10,14 +11,23 @@ import java.util.Set;
 
 public class FunctionRegistry {
 
+    private static final ClassLoader CLASS_LOADER = FunctionRegistry.class.getClassLoader();
+
     private static final Map<BMLFunctionScope, Set<BMLFunction>> registeredFunctionsInScope = new HashMap<>();
 
     private static final Map<String, BMLFunction> registeredFunctions = new HashMap<>();
 
     static {
-        var annotated = new Reflections("i5.bml.parser.types.functions").getTypesAnnotatedWith(BMLFunctionAnnotation.class);
-        for (var clazz : annotated) {
+        var classes = Measurements.measure("Collecting function classes", () -> {
+            return IOUtil.collectClassesFromPackage(CLASS_LOADER, "parser", "parser/src/main/java/i5/bml/parser/functions");
+        });
+
+        for (var clazz : classes) {
             BMLFunctionAnnotation functionAnnotation = clazz.getAnnotation(BMLFunctionAnnotation.class);
+            // Ignore interfaces or helper classes present in types package
+            if (functionAnnotation == null) {
+                continue;
+            }
 
             BMLFunction functionInstance;
             try {
