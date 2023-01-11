@@ -38,11 +38,15 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class DialogueAutomatonGenerator {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAutomatonGenerator.class);
 
     private int stateCounter = 1;
 
@@ -180,7 +184,7 @@ public class DialogueAutomatonGenerator {
                     var intents = stateType.getIntent().split(",");
                     for (String intent : intents) {
                         var transitionExpr = new MethodCallExpr(new NameExpr("s"), "addTransition",
-                                new NodeList<>(new StringLiteralExpr(intent.replaceAll(" ", "")), new NameExpr(sinkName)));
+                                new NodeList<>(new StringLiteralExpr(intent.replace(" ", "")), new NameExpr(sinkName)));
                         forExprBody.addStatement(transitionExpr);
                     }
 
@@ -276,7 +280,7 @@ public class DialogueAutomatonGenerator {
     private void addTransition(BlockStmt block, String from, String to, String withIntent) {
         var intents = withIntent.split(",");
         for (String intent : intents) {
-            intent = intent.replaceAll(" ", "");
+            intent = intent.replace(" ", "");
             Expression intentExpr;
             if (intent.equals("fallback")) {
                 intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
@@ -457,7 +461,9 @@ public class DialogueAutomatonGenerator {
                     addTransition(stmts, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
                 }
             }
-            default -> {}
+            default -> {
+                LOGGER.error("Encountered unexpected function name {} while visiting {}", functionName, functionCallContext.getText());
+            }
         }
 
         return new ImmutablePair<>(stmts, actionLambdaExpr);

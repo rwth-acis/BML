@@ -89,7 +89,7 @@ public class InputParser {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void invokeCodeGeneration(ParseTree tree, Long start) throws IOException {
         // Prepare output directory
-        outputPackage = outputPackage.replaceAll("\\.", "/");
+        outputPackage = outputPackage.replace("\\.", "/");
 
         // Delete old files, in case they exist
         FileUtils.deleteDirectory(new File(outputDir));
@@ -191,13 +191,13 @@ public class InputParser {
                 .build();
         options.addOption(outputOption);
 
-        var outputPackage = Option.builder("p")
+        var packageName = Option.builder("p")
                 .longOpt("package")
                 .argName("package-names")
                 .hasArg()
                 .desc("define your package name, e.g., com.example.project")
                 .build();
-        options.addOption(outputPackage);
+        options.addOption(packageName);
 
         var formatOption = Option.builder("f")
                 .longOpt("format")

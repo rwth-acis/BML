@@ -1,6 +1,5 @@
 package i5.bml.transpiler.bot.events.routines;
 
-import i5.bml.transpiler.bot.components.ComponentRegistry;
 import i5.bml.transpiler.bot.events.RoutineEventHandlerMethod;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -8,13 +7,11 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class RoutineEventHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ComponentRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RoutineEventHandler.class);
 
     private RoutineEventHandler() {}
 

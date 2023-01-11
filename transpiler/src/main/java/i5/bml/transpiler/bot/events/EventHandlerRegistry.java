@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 public class EventHandlerRegistry {
@@ -32,19 +31,23 @@ public class EventHandlerRegistry {
     }
 
     public static void dispatchEventHandler(Event event) {
-        switch (event.eventSource()) {
-            case SLACK, TELEGRAM -> {
-                var messageEvent = (MessageEvent) event;
+        EventSource eventSource = event.eventSource();
+        if (eventSource == null) {
+            LOGGER.error("Event {} unexpectedly had null as event source. Not executing any event handlers.", event);
+            return;
+        }
 
-                var handler = messageEventHandler.get(messageEvent.messageEventType());
-                if (handler == null) {
-                    LOGGER.warn("No handler registered for message event {}", messageEvent.messageEventType());
-                } else {
-                    try {
-                        handler.invoke(null, new MessageEventContext(messageEvent));
-                    } catch (Exception e) {
-                        LOGGER.error("Execution of handler for message event {} failed", messageEvent.messageEventType(), ExceptionUtils.getRootCause(e));
-                    }
+        if (eventSource == EventSource.SLACK || eventSource == EventSource.TELEGRAM) {
+            var messageEvent = (MessageEvent) event;
+
+            var handler = messageEventHandler.get(messageEvent.messageEventType());
+            if (handler == null) {
+                LOGGER.warn("No handler registered for message event {}", messageEvent.messageEventType());
+            } else {
+                try {
+                    handler.invoke(null, new MessageEventContext(messageEvent));
+                } catch (Exception e) {
+                    LOGGER.error("Execution of handler for message event {} failed", messageEvent.messageEventType(), ExceptionUtils.getRootCause(e));
                 }
             }
         }
