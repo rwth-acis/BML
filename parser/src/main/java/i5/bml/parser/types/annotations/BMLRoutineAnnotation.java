@@ -26,14 +26,14 @@ public class BMLRoutineAnnotation extends AbstractBMLType implements CanPopulate
 
         var expr = ctx.elementExpressionPair(0).expr;
         rate = extractConstValueFromParameter(diagnosticsCollector, ctx, "rate", false).replaceAll(" ", "");
-        if (!rate.matches("[0-9]+[a-zA-Z]+")) {
+        if (!rate.matches("\\d+[a-zA-Z]+")) {
             Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
                     "Can't recognize format, required format is <number><timeUnit>", expr);
             return;
         }
 
         period = rate.split("[a-zA-Z]+")[0];
-        timeUnit = switch (rate.split("[0-9]+")[1]) {
+        timeUnit = switch (rate.split("\\d+")[1]) {
             case "ns" -> TimeUnit.NANOSECONDS;
             case "µs" -> TimeUnit.MICROSECONDS;
             case "ms" -> TimeUnit.MILLISECONDS;

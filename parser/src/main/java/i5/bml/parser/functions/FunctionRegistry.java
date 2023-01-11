@@ -4,10 +4,7 @@ import i5.bml.parser.utils.IOUtil;
 import i5.bml.parser.utils.Measurements;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class FunctionRegistry {
 
@@ -15,9 +12,11 @@ public class FunctionRegistry {
 
     private static final String USER_DIR = System.getProperty("user.dir");
 
-    private static final Map<BMLFunctionScope, Set<BMLFunction>> registeredFunctionsInScope = new HashMap<>();
+    private static final Map<BMLFunctionScope, Set<BMLFunction>> registeredFunctionsInScope = new EnumMap<>(BMLFunctionScope.class);
 
     private static final Map<String, BMLFunction> registeredFunctions = new HashMap<>();
+
+    private FunctionRegistry() {}
 
     static {
         init(USER_DIR);
@@ -64,7 +63,7 @@ public class FunctionRegistry {
     }
 
     public static void clear() {
-        registeredFunctionsInScope.clear();;
+        registeredFunctionsInScope.clear();
         registeredFunctions.clear();
     }
 }

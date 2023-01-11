@@ -88,7 +88,7 @@ public class TypeRegistry {
         }
 
         for (var value : BuiltinAnnotation.values()) {
-            builtinAnnotations.put(value.name().replaceAll("_", "").toLowerCase(), value.annotationType);
+            builtinAnnotations.put(value.name().replace("_", "").toLowerCase(), value.annotationType);
         }
 
         var classes = Measurements.measure("Collecting type classes", () -> {

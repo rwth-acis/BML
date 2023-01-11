@@ -49,7 +49,9 @@ public class BMLMap extends AbstractBMLType {
     }
 
     @Override
-    public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {}
+    public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        throw new UnsupportedOperationException("%s doesn't support checking parameters".formatted(getName()));
+    }
 
     @Override
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {

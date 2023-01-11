@@ -6,6 +6,7 @@ import org.antlr.symtab.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class BMLFunctionParameter extends ParameterSymbol {
 
@@ -46,5 +47,25 @@ public class BMLFunctionParameter extends ParameterSymbol {
 
     public List<Type> getAllowedTypes() {
         return allowedTypes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        BMLFunctionParameter that = (BMLFunctionParameter) o;
+
+        if (!Objects.equals(exprCtx, that.exprCtx)) return false;
+        return allowedTypes.equals(that.allowedTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (exprCtx != null ? exprCtx.hashCode() : 0);
+        result = 31 * result + allowedTypes.hashCode();
+        return result;
     }
 }
