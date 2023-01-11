@@ -37,24 +37,6 @@ public class TelegramComponent extends TelegramLongPollingBot {
         this.eventQueue = eventQueue;
         this.botName = botName;
         this.botToken = botToken;
-
-        // We check for inactive sessions every day
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
-            var keys = new HashSet<>(activeSessions.keySet());
-            for (Long chatId : keys) {
-                var chatAction = new SendChatAction();
-                chatAction.setChatId(chatId);
-                chatAction.setAction(ActionType.TYPING);
-                try {
-                    // We remove a session should the request be unsuccessful
-                    if (!sendApiMethod(chatAction)) {
-                        activeSessions.remove(chatId);
-                    }
-                    // We sleep 33 ms, since only 30 sendChatActions / second are allowed
-                    Thread.sleep(33);
-                } catch (TelegramApiException | InterruptedException ignore) {}
-            }
-        }, 1, 1, TimeUnit.DAYS);
     }
 
     @Override

@@ -71,7 +71,8 @@ public class Bot {
                     threadPool.execute(() -> EventHandlerRegistry.dispatchEventHandler(event));
                 }
             } catch (InterruptedException e) {
-                LOGGER.error("Execution of event main loop was interrupted: {}", ExceptionUtils.getRootCause(e).getMessage());
+                LOGGER.error("Execution of event main loop was interrupted", ExceptionUtils.getRootCause(e));
+                Thread.currentThread().interrupt();
             }
         }
     }

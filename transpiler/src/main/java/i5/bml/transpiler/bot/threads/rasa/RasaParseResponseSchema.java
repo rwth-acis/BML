@@ -17,6 +17,14 @@ public record RasaParseResponseSchema(Entity[] entities, Intent intent, Intent[]
     }
 
     @Override
+    public int hashCode() {
+        int result = Objects.hash(intent, text);
+        result = 31 * result + Arrays.hashCode(entities);
+        result = 31 * result + Arrays.hashCode(intent_ranking);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "RasaParseResponseSchema[" +
                 "entities=" + Arrays.toString(entities) + ", " +
