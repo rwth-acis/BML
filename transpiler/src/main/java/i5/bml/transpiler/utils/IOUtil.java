@@ -1,5 +1,6 @@
 package i5.bml.transpiler.utils;
 
+import i5.bml.parser.utils.Measurements;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class IOUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtil.class);
@@ -43,7 +45,6 @@ public class IOUtil {
         COMPONENT_DIR_FILTER = FileFilterUtils.notFileFilter(FileFilterUtils.and(componentNameFilter, FileFilterUtils.directoryFileFilter()));
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void deleteDirectory(File directoryToBeDeleted) {
         var children = directoryToBeDeleted.listFiles();
         if (children != null) {
@@ -86,7 +87,6 @@ public class IOUtil {
                             return FileVisitResult.SKIP_SUBTREE;
                         }
 
-                        //noinspection ResultOfMethodCallIgnored
                         new File(destDir.getAbsolutePath() + "/" + srcFile).mkdir();
 
                         return FileVisitResult.CONTINUE;
@@ -102,19 +102,19 @@ public class IOUtil {
                             return FileVisitResult.CONTINUE;
                         }
 
-                        copyFileAndRenameImports(stream, new File(destDir.getAbsolutePath() + "/" + srcFile), outputPackage);
+                        Measurements.measure("NEW", () -> copyFileAndRenameImports(stream, new File(destDir.getAbsolutePath() + "/" + srcFile), outputPackage));
 
                         stream.close();
                         return FileVisitResult.CONTINUE;
                     }
 
                     @Override
-                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) {
                         return FileVisitResult.CONTINUE;
                     }
 
                     @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                         return FileVisitResult.CONTINUE;
                     }
                 });
@@ -175,39 +175,10 @@ public class IOUtil {
     }
 
     public static void copyFileAndRenameImports(File srcFile, File destFile, String outputPackage) {
-        try {
-            destFile.createNewFile();
+        try (var stream = new FileInputStream(srcFile)) {
+            copyFileAndRenameImports(stream, destFile, outputPackage);
         } catch (IOException e) {
-            LOGGER.error("Failed to create file {}", destFile, e);
-        }
-
-        try (var srcFileStream = new FileInputStream(srcFile); var destFileStream = new FileOutputStream(destFile)) {
-            var destChannel = destFileStream.getChannel();
-            var src = new BufferedReader(new FileReader(srcFile));
-
-            String line = src.readLine();
-            int position = 0;
-            do {
-                // We add +1 for the line separator that is discarded by readLine()
-                position += line.length() + 1;
-                var matcher = IMPORT_PATTERN.matcher(line);
-                if (matcher.matches()) {
-                    var trailingPackageName = matcher.group(2);
-                    if (trailingPackageName.startsWith(".") && outputPackage.isEmpty()) {
-                        destChannel.write(ByteBuffer.wrap((matcher.group(1) + outputPackage + trailingPackageName.substring(1) + LINE_SEPARATOR).getBytes()));
-                    } else if (!trailingPackageName.startsWith(";")) {
-                        destChannel.write(ByteBuffer.wrap((matcher.group(1) + outputPackage + trailingPackageName + LINE_SEPARATOR).getBytes()));
-                    }
-                } else {
-                    destChannel.write(ByteBuffer.wrap((line + LINE_SEPARATOR).getBytes()));
-                }
-
-                line = src.readLine();
-            } while (!line.startsWith("pu"));
-
-            destChannel.transferFrom(srcFileStream.getChannel().position(position), destChannel.position(), Long.MAX_VALUE);
-        } catch (Exception e) {
-            LOGGER.error("Failed to copy file {}", srcFile, e);
+            LOGGER.error("Failed to copy files from {} to {}", srcFile, destFile, e);
         }
     }
 
@@ -259,7 +230,7 @@ public class IOUtil {
                 destFile.mkdir();
                 copyFiles(srcFile, destFile, outputPackage, filter);
             } else {
-                IOUtil.copyFileAndRenameImports(srcFile, destFile, outputPackage);
+                Measurements.measure("OLD", () -> IOUtil.copyFileAndRenameImports(srcFile, destFile, outputPackage));
             }
         }
     }
