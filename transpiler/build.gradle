@@ -55,6 +55,13 @@ dependencies {
     implementation project(':parser')
 }
 
+compileJava {
+    copy {
+        from "$projectDir/src/main/java/i5/bml/transpiler/bot"
+        into "$projectDir/src/main/resources/bot"
+    }
+}
+
 jar {
     dependsOn(':parser:jar')
 

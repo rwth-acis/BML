@@ -3,7 +3,6 @@ package i5.bml.transpiler;
 import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import i5.bml.transpiler.generators.GeneratorRegistry;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -19,10 +18,18 @@ import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
+import java.nio.file.*;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public class InputParser {
 
@@ -32,19 +39,9 @@ public class InputParser {
 
     private String outputPackage;
 
-    public static final String BOT_DIR = "transpiler/src/main/java/i5/bml/transpiler/bot";
-
     private String inputFilePath;
 
     private String outputFormat;
-
-    private final IOFileFilter componentDirFilter;
-
-    public InputParser() {
-        var componentPackageNames = new String[]{"slack", "telegram", "openapi", "rasa", "dialogue", "openai"};
-        var componentNameFilter = FileFilterUtils.or(Arrays.stream(componentPackageNames).map(FileFilterUtils::nameFileFilter).toArray(IOFileFilter[]::new));
-        componentDirFilter = FileFilterUtils.notFileFilter(FileFilterUtils.and(componentNameFilter, FileFilterUtils.directoryFileFilter()));
-    }
 
     public void parse(String[] args) throws IOException {
         // Parse options
@@ -56,7 +53,7 @@ public class InputParser {
             return;
         }
 
-        var start = System.currentTimeMillis();
+        var start = System.nanoTime();
 
         // Start processing input file
         var inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
@@ -67,7 +64,9 @@ public class InputParser {
         var diagnosticsCollector = new DiagnosticsCollector();
         try {
             Measurements.measure("Type checking", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            LOGGER.error("Type checking failed", e);
+        }
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         var containsError = false;
@@ -81,13 +80,13 @@ public class InputParser {
             }
         }
 
+        if (!containsError) {
             invokeCodeGeneration(tree, start);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void invokeCodeGeneration(ParseTree tree, Long start) throws IOException {
-        System.out.println(GeneratorRegistry.registeredGenerators());
-
         // Prepare output directory
         outputPackage = outputPackage.replace("\\.", "/");
 
@@ -100,17 +99,14 @@ public class InputParser {
         new File(outputDir + "/src/test/java/").mkdirs();
         new File(outputDir + "/src/test/resources/").mkdirs();
 
-        // Copy files (from transpiler bot directory) that will be copied regardless of what components are present
-        var srcDir = new File(BOT_DIR);
+        // Copy files (bot code template) that will be copied regardless of what components are present, hence dirFilter
         var destDir = new File(outputDir + "/src/main/java/" + outputPackage);
-        Measurements.measure("Copying files", () -> IOUtil.copyFiles(srcDir, destDir, outputPackage , componentDirFilter));
-
-        // Copy build file template
-        var gradleTemplate = Files.readString(new File("transpiler/src/main/resources/build_template").toPath(), Charset.defaultCharset());
-        FileUtils.copyFile(new File("transpiler/src/main/resources/example_training_data.yml"),
-                new File(outputDir + "/src/main/resources/example_training_data.yml"));
+        var componentNames = new String[]{"dialogue", "threads/openai", "threads/rasa", "threads/slack", "threads/telegram"};
+        Predicate<String> dirFilter = srcFile -> Arrays.stream(componentNames).anyMatch(srcFile::startsWith);
+        Measurements.measure("Copying files", () -> IOUtil.copyFiles("bot", destDir, outputPackage, dirFilter));
 
         // Replace templates in build.gradle template
+        var gradleTemplate = IOUtil.getResourceAsString("build_template");
         ST gradleFile = new ST(gradleTemplate);
         gradleFile.add("groupId", outputPackage);
         gradleFile.add("needsDot", outputPackage.isEmpty() ? "" : ".");
@@ -125,18 +121,26 @@ public class InputParser {
         // Emit code into output directory
         Measurements.measure("Code generation", () -> new JavaTreeGenerator(outputDir + "/src/main/java/", outputPackage, gradleFile).visit(tree));
 
-        // Write back gradle file after templating
+        // Write back gradle file after templating, we do this AFTER the JavaTreeGenerator
+        // since it might switch some settings, before rendering
         Files.write(new File(outputDir + "/build.gradle").toPath(), gradleFile.render().getBytes());
 
         // Copy gitignore
-        FileUtils.copyFile(new File("transpiler/src/main/resources/gitignore_template"), new File(outputDir + "/.gitignore"));
+        var gitignoreStream = IOUtil.getResourceAsStream("gitignore_template");
+        Files.copy(gitignoreStream, new File(outputDir + "/.gitignore").toPath());
+        gitignoreStream.close();
 
         // Copy SLF4J SimpleLogger config
-        FileUtils.copyFile(new File("transpiler/src/main/resources/simplelogger.properties"), new File(outputDir + "/src/main/resources/simplelogger.properties"));
+        var simpleLoggerStream = IOUtil.getResourceAsStream("simplelogger.properties");
+        Files.copy(simpleLoggerStream, new File(outputDir + "/simplelogger.properties").toPath());
+        simpleLoggerStream.close();
 
-        var end = System.currentTimeMillis();
+        // TODO: Copy training data for Rasa
+        //FileUtils.copyFile(new File("transpiler/src/main/resources/example_training_data.yml"), new File(outputDir + "/src/main/resources/example_training_data.yml"));
 
-        LOGGER.info("Compiling BML code took {} ms", end - start);
+        var end = System.nanoTime();
+
+        LOGGER.info("Compiling BML code took %.2f ms".formatted((end - start) / 1_000_000d));
 
         if (outputFormat.equals("jar")) {
             Measurements.measure("Compiling generated Java code to JAR", this::outputJar);
@@ -153,9 +157,7 @@ public class InputParser {
         try (connection) {
             connection.newBuild()
                     .forTasks("jar")
-                    .addProgressListener((ProgressListener) event -> System.out.println(event.getDescription()))
                     .setColorOutput(true)
-                    .setStandardOutput(System.out)
                     .setStandardError(System.err)
                     .run(new ResultHandler<>() {
                         @Override
