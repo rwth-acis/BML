@@ -1,6 +1,6 @@
 package i5.bml.parser.functions;
 
-import i5.bml.parser.types.BMLFunctionType;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import org.antlr.symtab.Scope;

@@ -1,7 +1,7 @@
 package i5.bml.transpiler.utils;
 
 import i5.bml.transpiler.InputParser;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;

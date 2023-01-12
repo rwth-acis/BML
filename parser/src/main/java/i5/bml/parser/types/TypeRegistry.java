@@ -1,8 +1,22 @@
 package i5.bml.parser.types;
 
+import i5.bml.parser.types.annotations.BMLActionAnnotation;
 import i5.bml.parser.types.annotations.BMLAnnotationType;
-import i5.bml.parser.types.components.BMLNumber;
+import i5.bml.parser.types.annotations.BMLMessengerAnnotation;
+import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
+import i5.bml.parser.types.components.*;
+import i5.bml.parser.types.components.messenger.BMLSlackComponent;
+import i5.bml.parser.types.components.messenger.BMLTelegramComponent;
+import i5.bml.parser.types.components.messenger.BMLUser;
+import i5.bml.parser.types.components.nlu.BMLOpenAIComponent;
+import i5.bml.parser.types.components.nlu.BMLRasaComponent;
+import i5.bml.parser.types.components.openapi.BMLOpenAPIComponent;
+import i5.bml.parser.types.components.openapi.BMLOpenAPISchema;
+import i5.bml.parser.types.components.primitives.*;
+import i5.bml.parser.types.dialogue.BMLDialogue;
 import i5.bml.parser.types.dialogue.BMLState;
+import i5.bml.parser.types.functions.BMLFunctionType;
+import i5.bml.parser.types.functions.BMLVoid;
 import i5.bml.parser.utils.IOUtil;
 import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
@@ -11,10 +25,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class TypeRegistry {
-
-    private static final ClassLoader CLASS_LOADER = TypeRegistry.class.getClassLoader();
-
-    private static final String USER_DIR = System.getProperty("user.dir");
 
     private static final Map<String, Type> registeredTypes = new HashMap<>();
 
@@ -29,7 +39,7 @@ public class TypeRegistry {
     private TypeRegistry() {}
 
     static {
-        init(USER_DIR);
+        init();
     }
 
     public static Type resolveType(String typeName) {
@@ -57,7 +67,8 @@ public class TypeRegistry {
         Type complexTypeInstance;
         try {
             complexTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
             throw new IllegalStateException(e);
         }
         return complexTypeInstance;
@@ -80,7 +91,38 @@ public class TypeRegistry {
         return complexTypeBlueprints.containsKey(typeName.toLowerCase());
     }
 
-    public static void init(String userDir) {
+    private static void registerType(Class<?> typeClass) {
+        BMLType type = typeClass.getAnnotation(BMLType.class);
+
+        // Check: class extends AbstractBMLType
+//        if (!AbstractBMLType.class.isAssignableFrom(typeClass)) {
+//            throw new IllegalStateException("Class %s does not does not extend %s".formatted(typeClass.getName(), AbstractBMLType.class.getName()));
+//        }
+
+        // Check: class has default constructor with no parameters
+//        boolean hasDefaultConstructor = Arrays.stream(typeClass.getDeclaredConstructors())
+//                .anyMatch(constructor -> constructor.getParameterCount() == 0);
+//        if (!hasDefaultConstructor) {
+//            throw new IllegalStateException("Class %s does not have an empty default constructor".formatted(typeClass.getName()));
+//        }
+
+        if (type.isComplex()) {
+            complexTypeBlueprints.put(type.name().toString().toLowerCase(), typeClass);
+        } else {
+            Type primitiveTypeInstance;
+            try {
+                primitiveTypeInstance = (Type) typeClass.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
+                throw new IllegalStateException(e);
+            }
+
+            ((AbstractBMLType) primitiveTypeInstance).setTypeIndex(typeIndex++);
+            registeredTypes.put(type.name().toString().toLowerCase(), primitiveTypeInstance);
+        }
+    }
+
+    public static void init() {
         for (var value : BuiltinType.values()) {
             if (!value.isInternal()) {
                 builtinTypes.add(value.name().toLowerCase());
@@ -91,45 +133,47 @@ public class TypeRegistry {
             builtinAnnotations.put(value.name().replace("_", "").toLowerCase(), value.annotationType);
         }
 
-        var classes = Measurements.measure("Collecting type classes", () -> {
-            return IOUtil.collectClassesFromPackage(CLASS_LOADER, userDir, "parser", "/parser/src/main/java/i5/bml/parser/types");
+        Measurements.measure("Registering types", () -> {
+            // - Types
+            registerType(BMLBot.class);
+            registerType(BMLObject.class);
+
+            // -- Annotation types
+            registerType(BMLActionAnnotation.class);
+            registerType(BMLMessengerAnnotation.class);
+            registerType(BMLRoutineAnnotation.class);
+
+            // -- Component types
+            registerType(BMLContext.class);
+
+            // --- Messenger component types
+            registerType(BMLUser.class);
+            registerType(BMLTelegramComponent.class);
+            registerType(BMLSlackComponent.class);
+
+            // --- NLU component types
+            registerType(BMLRasaComponent.class);
+            registerType(BMLOpenAIComponent.class);
+
+            // --- OpenAPI component types
+            registerType(BMLOpenAPIComponent.class);
+            registerType(BMLOpenAPISchema.class);
+
+            // --- Primitive component types
+            registerType(BMLBoolean.class);
+            registerType(BMLNumber.class);
+            registerType(BMLString.class);
+            registerType(BMLList.class);
+            registerType(BMLMap.class);
+
+            // -- Dialogue types
+            registerType(BMLDialogue.class);
+            registerType(BMLState.class);
+
+            // -- Function types
+            registerType(BMLVoid.class);
+            registerType(BMLFunctionType.class);
         });
-
-        for (Class<?> clazz : classes) {
-            BMLType type = clazz.getAnnotation(BMLType.class);
-
-            // Ignore interfaces or helper classes present in types package
-            if (type == null) {
-                continue;
-            }
-
-            // Check: class extends AbstractBMLType
-            if (!AbstractBMLType.class.isAssignableFrom(clazz)) {
-                throw new IllegalStateException("Class %s does not does not extend %s".formatted(clazz.getName(), AbstractBMLType.class.getName()));
-            }
-
-            // Check: class has default constructor with no parameters
-            boolean hasDefaultConstructor = Arrays.stream(clazz.getDeclaredConstructors())
-                    .anyMatch(constructor -> constructor.getParameterCount() == 0);
-            if (!hasDefaultConstructor) {
-                throw new IllegalStateException("Class %s does not have an empty default constructor".formatted(clazz.getName()));
-            }
-
-            if (type.isComplex()) {
-                complexTypeBlueprints.put(type.name().toString().toLowerCase(), clazz);
-            } else {
-                Type primitiveTypeInstance;
-                try {
-                    primitiveTypeInstance = (Type) clazz.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                         NoSuchMethodException e) {
-                    throw new IllegalStateException(e);
-                }
-
-                ((AbstractBMLType) primitiveTypeInstance).setTypeIndex(typeIndex++);
-                registeredTypes.put(type.name().toString().toLowerCase(), primitiveTypeInstance);
-            }
-        }
 
         // Explicitly add BuiltinTypes.FLOAT_NUMBER.toString() as Type
         BMLNumber type = new BMLNumber(true);

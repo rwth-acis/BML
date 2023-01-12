@@ -28,9 +28,9 @@ public class TestUtils {
 
     public static void clearRegistries() {
         TypeRegistry.clear();
-        TypeRegistry.init(new File(System.getProperty("user.dir")).getParent());
+        TypeRegistry.init();
         FunctionRegistry.clear();
-        FunctionRegistry.init(new File(System.getProperty("user.dir")).getParent());
+        FunctionRegistry.init();
     }
 
     public static String readFileIntoString(String fileName) {

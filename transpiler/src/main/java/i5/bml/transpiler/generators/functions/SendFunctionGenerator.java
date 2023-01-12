@@ -6,11 +6,11 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.functions.BMLSendFunction;
-import i5.bml.parser.types.BMLFunctionType;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.transpiler.bot.events.messenger.MessageHelper;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.utils.Utils;
 
 @CodeGenerator(typeClass = BMLSendFunction.class)

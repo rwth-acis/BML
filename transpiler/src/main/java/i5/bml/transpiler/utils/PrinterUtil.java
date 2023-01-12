@@ -9,7 +9,7 @@ import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.printer.DefaultPrettyPrinter;
 import com.github.javaparser.printer.Printer;
 import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
-import i5.bml.transpiler.generators.JavaTreeVisitor;
+import i5.bml.transpiler.generators.java.JavaTreeVisitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;

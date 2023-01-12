@@ -2,7 +2,7 @@ package i5.bml.parser.types.components.openapi;
 
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
-import i5.bml.parser.types.components.BMLList;
+import i5.bml.parser.types.components.primitives.BMLList;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;

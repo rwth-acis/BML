@@ -2,8 +2,8 @@ package i5.bml.transpiler.generators.types;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.type.Type;
-import i5.bml.parser.types.components.BMLList;
-import i5.bml.parser.types.components.BMLNumber;
+import i5.bml.parser.types.components.primitives.BMLList;
+import i5.bml.parser.types.components.primitives.BMLNumber;
 
 public class BMLTypeResolver {
 

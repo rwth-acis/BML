@@ -16,9 +16,6 @@ public class TranspilerMain {
             return;
         }
 
-        var start = System.currentTimeMillis();
         new InputParser().parse(args);
-        var end = System.currentTimeMillis();
-        LOGGER.info("Process took {} ms", (end - start));
     }
 }

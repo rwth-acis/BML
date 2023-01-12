@@ -3,7 +3,8 @@ package i5.bml.transpiler;
 import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import i5.bml.transpiler.generators.JavaTreeGenerator;
+import i5.bml.transpiler.generators.GeneratorRegistry;
+import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -12,10 +13,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.gradle.tooling.GradleConnectionException;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.ResultHandler;
+import org.gradle.tooling.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
@@ -67,7 +65,9 @@ public class InputParser {
 
         // Collect diagnostics from parse tree
         var diagnosticsCollector = new DiagnosticsCollector();
-        Measurements.measure("Type checking", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
+        try {
+            Measurements.measure("Type checking", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
+        } catch (Exception e) {}
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         var containsError = false;
@@ -81,13 +81,13 @@ public class InputParser {
             }
         }
 
-        if (!containsError) {
             invokeCodeGeneration(tree, start);
-        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void invokeCodeGeneration(ParseTree tree, Long start) throws IOException {
+        System.out.println(GeneratorRegistry.registeredGenerators());
+
         // Prepare output directory
         outputPackage = outputPackage.replace("\\.", "/");
 
@@ -153,6 +153,8 @@ public class InputParser {
         try (connection) {
             connection.newBuild()
                     .forTasks("jar")
+                    .addProgressListener((ProgressListener) event -> System.out.println(event.getDescription()))
+                    .setColorOutput(true)
                     .setStandardOutput(System.out)
                     .setStandardError(System.err)
                     .run(new ResultHandler<>() {
