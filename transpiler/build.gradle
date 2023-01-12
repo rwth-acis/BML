@@ -84,3 +84,37 @@ test {
 
     useJUnitPlatform()
 }
+
+abstract class ExecutableJarTask extends DefaultTask {
+    // This custom task will prepend the content of a
+    // bash launch script at the beginning of a jar,
+    // and make it executable (chmod +x)
+
+    @InputFiles
+    ConfigurableFileTree originalJars = project.fileTree("${project.buildDir}/libs") { include("*.jar") }
+
+    @OutputDirectory
+    File outputDir = new File("${project.rootDir}")
+
+    @InputFile
+    File launchScript = new File("${project.rootDir}/launch.sh")
+
+    @TaskAction
+    void createExecutableJars() {
+        originalJars.forEach { jar ->
+            def jarName = "$outputDir/${jar.name}";
+            def jarFile = new File(jarName.subSequence(0, jarName.length() - 4) as String)
+            jarFile.withOutputStream { out ->
+                out.write(launchScript.bytes)
+                out.write(jar.bytes)
+            }
+            jarFile.setExecutable(true)
+            println("created executable: $jarFile.path")
+        }
+    }
+}
+
+
+tasks.register('executableJar', ExecutableJarTask) {
+    dependsOn("jar")
+}

@@ -64,3 +64,6 @@ generated-bot
 **/*/Example_with_tokens*
 transpiler/src/main/resources/bot_template/
 transpiler/src/main/resources/bot/
+
+# Binaries
+bmlc
