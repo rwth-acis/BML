@@ -1,6 +1,5 @@
 package i5.bml.transpiler.utils;
 
-import i5.bml.parser.utils.Measurements;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -102,7 +101,7 @@ public class IOUtil {
                             return FileVisitResult.CONTINUE;
                         }
 
-                        Measurements.measure("NEW", () -> copyFileAndRenameImports(stream, new File(destDir.getAbsolutePath() + "/" + srcFile), outputPackage));
+                        copyFileAndRenameImports(stream, new File(destDir.getAbsolutePath() + "/" + srcFile), outputPackage);
 
                         stream.close();
                         return FileVisitResult.CONTINUE;
@@ -230,7 +229,7 @@ public class IOUtil {
                 destFile.mkdir();
                 copyFiles(srcFile, destFile, outputPackage, filter);
             } else {
-                Measurements.measure("OLD", () -> IOUtil.copyFileAndRenameImports(srcFile, destFile, outputPackage));
+                IOUtil.copyFileAndRenameImports(srcFile, destFile, outputPackage);
             }
         }
     }
