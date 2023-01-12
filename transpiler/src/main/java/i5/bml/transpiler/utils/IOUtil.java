@@ -167,7 +167,7 @@ public class IOUtil {
     public static void copyDirAndRenameImports(String packageName, JavaTreeGenerator visitor) {
         try {
             var destDir = new File(visitor.botOutputPath() + visitor.outputPackage() + packageName);
-            destDir.mkdirs();
+            destDir.mkdir();
             IOUtil.copyFiles("bot/" + packageName, destDir, visitor.outputPackage(), s -> true);
         } catch (Exception e) {
             LOGGER.error("Failed to copy from package {}", packageName, e);

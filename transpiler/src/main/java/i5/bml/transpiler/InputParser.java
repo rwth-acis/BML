@@ -103,7 +103,7 @@ public class InputParser {
         var destDir = new File(outputDir + "/src/main/java/" + outputPackage);
         var componentNames = new String[]{"dialogue", "threads/openai", "threads/rasa", "threads/slack", "threads/telegram"};
         Predicate<String> dirFilter = srcFile -> Arrays.stream(componentNames).anyMatch(srcFile::startsWith);
-        Measurements.measure("Copying files", () -> IOUtil.copyFiles("bot", destDir, outputPackage, dirFilter));
+        Measurements.measure("Copying bot template files", () -> IOUtil.copyFiles("bot", destDir, outputPackage, dirFilter));
 
         // Replace templates in build.gradle template
         var gradleTemplate = IOUtil.getResourceAsString("build_template");
@@ -143,7 +143,7 @@ public class InputParser {
         LOGGER.info("Compiling BML code took %.2f ms".formatted((end - start) / 1_000_000d));
 
         if (outputFormat.equals("jar")) {
-            Measurements.measure("Compiling generated Java code to JAR", this::outputJar);
+            Measurements.measure("Compiling & packaging generated Java code to JAR", this::outputJar);
         }
     }
 
