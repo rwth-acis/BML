@@ -1,7 +1,6 @@
 package i5.bml.parser.functions;
 
 import i5.bml.parser.functions.dialogue.*;
-import i5.bml.parser.utils.IOUtil;
 import i5.bml.parser.utils.Measurements;
 
 import java.lang.reflect.InvocationTargetException;

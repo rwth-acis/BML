@@ -17,7 +17,6 @@ import i5.bml.parser.types.dialogue.BMLDialogue;
 import i5.bml.parser.types.dialogue.BMLState;
 import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.types.functions.BMLVoid;
-import i5.bml.parser.utils.IOUtil;
 import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
 
