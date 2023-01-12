@@ -91,7 +91,7 @@ public class InputParser {
         outputPackage = outputPackage.replace("\\.", "/");
 
         // Delete old files, in case they exist
-        FileUtils.deleteDirectory(new File(outputDir));
+        IOUtil.deleteDirectory(new File(outputDir));
 
         // Create "project" folders
         new File(outputDir + "/src/main/java/").mkdirs();

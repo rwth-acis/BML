@@ -43,6 +43,17 @@ public class IOUtil {
         COMPONENT_DIR_FILTER = FileFilterUtils.notFileFilter(FileFilterUtils.and(componentNameFilter, FileFilterUtils.directoryFileFilter()));
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void deleteDirectory(File directoryToBeDeleted) {
+        var children = directoryToBeDeleted.listFiles();
+        if (children != null) {
+            for (File file : children) {
+                deleteDirectory(file);
+            }
+        }
+        directoryToBeDeleted.delete();
+    }
+
     public static void copyFiles(String resourceName, File destDir, String outputPackage, Predicate<String> dirFilter) {
         var resource = IOUtil.class.getClassLoader().getResource(resourceName);
         if (resource == null) {
