@@ -1,7 +1,10 @@
 package i5.bml.parser.types.dialogue;
 
 import i5.bml.parser.functions.BMLFunctionParameter;
-import i5.bml.parser.types.*;
+import i5.bml.parser.types.AbstractBMLType;
+import i5.bml.parser.types.BMLType;
+import i5.bml.parser.types.BuiltinType;
+import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.functions.BMLFunctionType;
 import org.antlr.v4.runtime.ParserRuleContext;
 

@@ -4,7 +4,7 @@ import i5.bml.parser.types.annotations.BMLActionAnnotation;
 import i5.bml.parser.types.annotations.BMLAnnotationType;
 import i5.bml.parser.types.annotations.BMLMessengerAnnotation;
 import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
-import i5.bml.parser.types.components.*;
+import i5.bml.parser.types.components.BMLContext;
 import i5.bml.parser.types.components.messenger.BMLSlackComponent;
 import i5.bml.parser.types.components.messenger.BMLTelegramComponent;
 import i5.bml.parser.types.components.messenger.BMLUser;
@@ -21,7 +21,10 @@ import i5.bml.parser.utils.Measurements;
 import org.antlr.symtab.Type;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class TypeRegistry {
 

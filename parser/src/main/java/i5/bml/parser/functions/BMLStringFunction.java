@@ -1,8 +1,8 @@
 package i5.bml.parser.functions;
 
-import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
 
