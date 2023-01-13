@@ -116,7 +116,7 @@ public class DialogueAutomatonGenerator {
      * We simply prepare everything for the code generation to start, the classes that will have code injected are
      * {@link DialogueAutomatonTemplate} and `[dialogueName]Actions`.
      *
-     * @param ctx The current {@link BMLParser.DialogueHeadContext} gives us the dialogue name
+     * @param ctx The current {@link BMLParser.DialogueHeadContext} gives us the dialogue name.
      */
     public void init(BMLParser.DialogueHeadContext ctx) {
         // Copy required implementation for dialogues
@@ -139,16 +139,25 @@ public class DialogueAutomatonGenerator {
     }
 
     /**
-     * This is the class's workhorse.
+     * This is the class's workhorse. We iterate over {@code ctx}'s children and dispatch the desired visitor methods.
+     * Note that we have to forward declare named states such that they are available for
+     * the whole automaton initialization method.
+     * As last step of the method, we add all sink states transition (outgoing edges to eligible states) and
+     * fallback transitions (i.e., NLU fails to infer intent)
      *
-     * @param ctx
-     * @param currentScope
+     * @param ctx The current {@link BMLParser.DialogueBodyContext}. We use it to iterate over its children and dispatch
+     *            the desired visitor methods.
+     * @param currentScope The current scope we are in. This is used to resolve named states which have already
+     *                     been added to the scope by
+     *                     {@link DialogueAutomatonGenerator#visitDialogueTransition(BMLParser.DialogueTransitionContext, Scope)}
+     *                     and {@link DialogueAutomatonGenerator#visitDialogueTransitionList(BMLParser.DialogueTransitionListContext, Scope)}.
      */
     public void visitDialogueBody(BMLParser.DialogueBodyContext ctx, Scope currentScope) {
         dialogueCompilationUnit = dialogueClass.findCompilationUnit().get();
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
         initMethodBody = dialogueClass.getMethodsByName("initTransitions").get(0).getBody().get();
 
+        // TODO: Is this really necessary?
         // Forward named states such that they are available at all points in `initTransitions`
         for (var assignmentContext : ctx.dialogueAssignment()) {
             if (assignmentContext.assignment().expr.type instanceof BMLState) {
@@ -267,6 +276,116 @@ public class DialogueAutomatonGenerator {
         // Finally, write back action and dialogue classes
         PrinterUtil.writeClass(dialogueOutputPath, dialogueCompilationUnit, dialogueClass);
         PrinterUtil.writeClass(dialogueOutputPath, actionCompilationUnit, actionClass);
+    }
+
+    public Pair<List<DialogueState>, List<DialogueState>> visitDialogueTransition(BMLParser.DialogueTransitionContext ctx, Scope currentScope) {
+        List<DialogueState> prevStates = new ArrayList<>();
+        List<DialogueState> startStates = new ArrayList<>();
+        var transitionBlock = new BlockStmt();
+
+        for (var child : ctx.children) {
+            if (child.getText().equals("->")) {
+                continue;
+            }
+
+            if (child instanceof BMLParser.DialogueTransitionListContext dialogueTransitionListContext) {
+                var stateListPair = visitDialogueTransitionList(dialogueTransitionListContext, currentScope);
+                var transitionStartStates = stateListPair.getLeft();
+                var transitionEndStates = stateListPair.getRight();
+
+                for (var prevState : prevStates) {
+                    for (var transitionStartState : transitionStartStates) {
+                        addTransition(transitionBlock, prevState.name(), transitionStartState.name(), transitionStartState.intent());
+                    }
+                }
+
+                if (startStates.isEmpty()) {
+                    startStates = transitionStartStates;
+                }
+
+                prevStates = transitionEndStates;
+            } else {
+                String currentStateIntent = "";
+                String currentStateName = "";
+
+                if (child instanceof BMLParser.FunctionCallContext functionCallContext) {
+                    var pair = addAnonymousStateForFunctionCall(functionCallContext);
+                    currentStateName = pair.getLeft().stream()
+                            .filter(n -> n instanceof VariableDeclarationExpr)
+                            .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
+                            .findAny().get();
+                    currentStateIntent = ((BMLState) ((BMLFunctionType) functionCallContext.type).getReturnType()).getIntent();
+
+                    stateActions.put(currentStateName, pair.getRight().getBody().asBlockStmt());
+
+                    transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
+                } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
+                    currentStateName = node.getText();
+                    currentStateIntent = ((BMLState) ((VariableSymbol) currentScope.resolve(currentStateName)).getType()).getIntent();
+                    currentStateName += "State";
+                }
+
+                for (var prevState : prevStates) {
+                    addTransition(transitionBlock, prevState.name(), currentStateName, currentStateIntent);
+                }
+
+                prevStates = List.of(new DialogueState(currentStateName, currentStateIntent));
+
+                if (startStates.isEmpty()) {
+                    startStates = prevStates;
+                }
+            }
+        }
+
+        // Add jump to default state (without executing action)
+        for (var prevState : prevStates) {
+            var block = stateActions.get(prevState.name());
+            if (block != null) {
+                addJumpToDefaultStateIfNotPresent(block);
+            }
+        }
+
+        initMethodBody.getStatements().addAll(transitionBlock.getStatements());
+
+        return new ImmutablePair<>(startStates, prevStates);
+    }
+
+    public Pair<List<DialogueState>, List<DialogueState>> visitDialogueTransitionList(BMLParser.DialogueTransitionListContext ctx, Scope currentScope) {
+        List<DialogueState> startStates = new ArrayList<>();
+        List<DialogueState> endStates = new ArrayList<>();
+        var transitionBlock = new BlockStmt();
+
+        for (var child : ctx.dialogueTransitionListItem()) {
+            if (child.dialogueTransition() != null) {
+                var stateListPair = visitDialogueTransition(child.dialogueTransition(), currentScope);
+                startStates.addAll(stateListPair.getLeft());
+                endStates.addAll(stateListPair.getRight());
+            } else if (child.functionCall() != null) {
+                var pair = addAnonymousStateForFunctionCall(child.functionCall());
+                var stateName = pair.getLeft().stream()
+                        .filter(n -> n instanceof VariableDeclarationExpr)
+                        .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
+                        .findAny().get();
+
+                transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
+
+                var intent = ((BMLState) ((BMLFunctionType) child.functionCall().type).getReturnType()).getIntent();
+                var currentState = new DialogueState(stateName, intent);
+                startStates.add(currentState);
+                endStates.add(currentState);
+
+                stateActions.put(stateName, pair.getRight().getBody().asBlockStmt());
+            } else { // Identifier
+                var intent = ((BMLState) ((VariableSymbol) currentScope.resolve(child.getText())).getType()).getIntent();
+                var currentState = new DialogueState(child.getText() + "State", intent);
+                startStates.add(currentState);
+                endStates.add(currentState);
+            }
+        }
+
+        initMethodBody.getStatements().addAll(transitionBlock.getStatements());
+
+        return new ImmutablePair<>(startStates, endStates);
     }
 
     private void addJumpToDefaultStateIfNotPresent(BlockStmt block) {
@@ -426,78 +545,6 @@ public class DialogueAutomatonGenerator {
         };
     }
 
-    public Pair<List<DialogueState>, List<DialogueState>> visitDialogueTransition(BMLParser.DialogueTransitionContext ctx, Scope currentScope) {
-        List<DialogueState> prevStates = new ArrayList<>();
-        List<DialogueState> startStates = new ArrayList<>();
-        var transitionBlock = new BlockStmt();
-
-        for (var child : ctx.children) {
-            if (child.getText().equals("->")) {
-                continue;
-            }
-
-            if (child instanceof BMLParser.DialogueTransitionListContext dialogueTransitionListContext) {
-                var stateListPair = visitDialogueTransitionList(dialogueTransitionListContext, currentScope);
-                var transitionStartStates = stateListPair.getLeft();
-                var transitionEndStates = stateListPair.getRight();
-
-                for (var prevState : prevStates) {
-                    for (var transitionStartState : transitionStartStates) {
-                        addTransition(transitionBlock, prevState.name(), transitionStartState.name(), transitionStartState.intent());
-                    }
-                }
-
-                if (startStates.isEmpty()) {
-                    startStates = transitionStartStates;
-                }
-
-                prevStates = transitionEndStates;
-            } else {
-                String currentStateIntent = "";
-                String currentStateName = "";
-
-                if (child instanceof BMLParser.FunctionCallContext functionCallContext) {
-                    var pair = addAnonymousStateForFunctionCall(functionCallContext);
-                    currentStateName = pair.getLeft().stream()
-                            .filter(n -> n instanceof VariableDeclarationExpr)
-                            .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
-                            .findAny().get();
-                    currentStateIntent = ((BMLState) ((BMLFunctionType) functionCallContext.type).getReturnType()).getIntent();
-
-                    stateActions.put(currentStateName, pair.getRight().getBody().asBlockStmt());
-
-                    transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
-                } else if (child instanceof TerminalNode node && node.getSymbol().getType() == BMLParser.Identifier) {
-                    currentStateName = node.getText();
-                    currentStateIntent = ((BMLState) ((VariableSymbol) currentScope.resolve(currentStateName)).getType()).getIntent();
-                    currentStateName += "State";
-                }
-
-                for (var prevState : prevStates) {
-                    addTransition(transitionBlock, prevState.name(), currentStateName, currentStateIntent);
-                }
-
-                prevStates = List.of(new DialogueState(currentStateName, currentStateIntent));
-
-                if (startStates.isEmpty()) {
-                    startStates = prevStates;
-                }
-            }
-        }
-
-        // Add jump to default state (without executing action)
-        for (var prevState : prevStates) {
-            var block = stateActions.get(prevState.name());
-            if (block != null) {
-                addJumpToDefaultStateIfNotPresent(block);
-            }
-        }
-
-        initMethodBody.getStatements().addAll(transitionBlock.getStatements());
-
-        return new ImmutablePair<>(startStates, prevStates);
-    }
-
     private Pair<BlockStmt, LambdaExpr> addAnonymousStateForFunctionCall(BMLParser.FunctionCallContext functionCallContext) {
         var functionType = (BMLFunctionType) functionCallContext.type;
         var functionName = functionCallContext.functionName.getText();
@@ -530,43 +577,5 @@ public class DialogueAutomatonGenerator {
         }
 
         return new ImmutablePair<>(stmts, actionLambdaExpr);
-    }
-
-    public Pair<List<DialogueState>, List<DialogueState>> visitDialogueTransitionList(BMLParser.DialogueTransitionListContext ctx, Scope currentScope) {
-        List<DialogueState> startStates = new ArrayList<>();
-        List<DialogueState> endStates = new ArrayList<>();
-        var transitionBlock = new BlockStmt();
-
-        for (var child : ctx.dialogueTransitionListItem()) {
-            if (child.dialogueTransition() != null) {
-                var stateListPair = visitDialogueTransition(child.dialogueTransition(), currentScope);
-                startStates.addAll(stateListPair.getLeft());
-                endStates.addAll(stateListPair.getRight());
-            } else if (child.functionCall() != null) {
-                var pair = addAnonymousStateForFunctionCall(child.functionCall());
-                var stateName = pair.getLeft().stream()
-                        .filter(n -> n instanceof VariableDeclarationExpr)
-                        .map(n -> ((VariableDeclarationExpr) n).getVariable(0).getNameAsString())
-                        .findAny().get();
-
-                transitionBlock.getStatements().addAll(pair.getLeft().getStatements());
-
-                var intent = ((BMLState) ((BMLFunctionType) child.functionCall().type).getReturnType()).getIntent();
-                var currentState = new DialogueState(stateName, intent);
-                startStates.add(currentState);
-                endStates.add(currentState);
-
-                stateActions.put(stateName, pair.getRight().getBody().asBlockStmt());
-            } else { // Identifier
-                var intent = ((BMLState) ((VariableSymbol) currentScope.resolve(child.getText())).getType()).getIntent();
-                var currentState = new DialogueState(child.getText() + "State", intent);
-                startStates.add(currentState);
-                endStates.add(currentState);
-            }
-        }
-
-        initMethodBody.getStatements().addAll(transitionBlock.getStatements());
-
-        return new ImmutablePair<>(startStates, endStates);
     }
 }
