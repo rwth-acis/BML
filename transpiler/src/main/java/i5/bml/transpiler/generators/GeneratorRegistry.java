@@ -87,26 +87,22 @@ public class GeneratorRegistry {
 
     private static void registerTypeGenerator(Class<?> generatorClass) {
         var annotation = generatorClass.getAnnotation(CodeGenerator.class);
-        var typeGenerator = TypeRegistry.getRegisteredTypes().entrySet().stream()
+        TypeRegistry.getRegisteredTypes().entrySet().stream()
                 .filter(e -> annotation.typeClass().isInstance(e.getValue()))
-                .findAny();
+                .forEach(typeRegistryEntry -> {
+                    try {
+//                        var constructors = generatorClass.getDeclaredConstructors();
+//                        if (Arrays.stream(constructors).noneMatch(c -> c.getParameters().length > 0 && c.getParameterTypes()[0].equals(Type.class))) {
+//                            LOGGER.error("Class {} does not have a constructor with a Type parameter", generatorClass.get().getName());
+//                            return;
+//                        }
 
-        if (typeGenerator.isEmpty()) {
-            return;
-        }
-
-        try {
-//            var constructors = generatorClass.getDeclaredConstructors();
-//                if (Arrays.stream(constructors).noneMatch(c -> c.getParameters().length > 0 && c.getParameterTypes()[0].equals(Type.class))) {
-//                    LOGGER.error("Class {} does not have a constructor with a Type parameter", generatorClass.get().getName());
-//                    return;
-//                }
-
-            var generatorInstance = (Generator) generatorClass.getDeclaredConstructor(Type.class).newInstance(typeGenerator.get().getValue());
-            registeredGenerators.put(typeGenerator.get().getKey(), generatorInstance);
-        } catch (Exception e) {
-            LOGGER.error("Failed to create new instance of generator {}", typeGenerator.get().getKey(), e);
-        }
+                        var generatorInstance = (Generator) generatorClass.getDeclaredConstructor(Type.class).newInstance(typeRegistryEntry.getValue());
+                        registeredGenerators.put(typeRegistryEntry.getKey(), generatorInstance);
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to create new instance of generator {}", typeRegistryEntry.getKey(), e);
+                    }
+                });
     }
 
     private static void registerFunctionGenerator(Class<?> generatorClass) {
