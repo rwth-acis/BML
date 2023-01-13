@@ -60,6 +60,19 @@ public class DialogueAutomatonGenerator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAutomatonGenerator.class);
 
     /**
+     * This variable comes into play when there are several dialogues defined, e.g.:
+     * <pre>
+     *     Dialogue a() { ... }
+     *     Dialogue b() { ... }
+     * </pre>
+     * In this case we do not want to copy the <b>whole</b> dialogue package from the bot template again.
+     * Instead, we can just copy the templates {@link DialogueAutomatonTemplate}.
+     * <p>
+     * This variable tracks exactly that.
+     */
+    private static boolean copiedDialoguePackage = false;
+
+    /**
      * The field is used to name anonymous states in the generated automaton code.
      * We need it to be a field since it is present in two methods of this class.
      */
@@ -99,9 +112,20 @@ public class DialogueAutomatonGenerator {
         dialogueOutputPath = javaTreeGenerator.botOutputPath() + "dialogue";
     }
 
+    /**
+     * We simply prepare everything for the code generation to start, the classes that will have code injected are
+     * {@link DialogueAutomatonTemplate} and `[dialogueName]Actions`.
+     *
+     * @param ctx The current {@link BMLParser.DialogueHeadContext} gives us the dialogue name
+     */
     public void init(BMLParser.DialogueHeadContext ctx) {
         // Copy required implementation for dialogues
-        IOUtil.copyDirAndRenameImports("dialogue", javaTreeGenerator);
+        if (!copiedDialoguePackage) {
+            IOUtil.copyDirAndRenameImports("dialogue", javaTreeGenerator);
+            copiedDialoguePackage = true;
+        } else {
+            // TODO: Only copy DialogueAutomatonTemplate, not whole package
+        }
 
         // Duplicate templates for DialogueAutomaton and Actions
         var newDialogueClassName = "%sDialogueAutomaton".formatted(StringUtils.capitalize(ctx.name.getText()));
@@ -114,6 +138,12 @@ public class DialogueAutomatonGenerator {
         actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
     }
 
+    /**
+     * This is the class's workhorse.
+     *
+     * @param ctx
+     * @param currentScope
+     */
     public void visitDialogueBody(BMLParser.DialogueBodyContext ctx, Scope currentScope) {
         dialogueCompilationUnit = dialogueClass.findCompilationUnit().get();
         var actionCompilationUnit = actionClass.findCompilationUnit().get();
