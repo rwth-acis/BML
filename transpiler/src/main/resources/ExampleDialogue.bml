@@ -2,7 +2,7 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
-    Rasa rasa(url="")
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de")
 
     Telegram telegram(botToken="", botName="")
 
@@ -32,7 +32,9 @@ Bot(host="localhost", port=8080) {
 
         default(action="I’m sorry, I didn't understand that, come again please.")
 
-        sink(intent="bye, stop", action="Okay, until next time!")
+        sink(intent="bye, stop", action="Until next time!")
+
+        sink(intent="thanks", action="You're welcome!")
 
         initial(intent="_", action="I'm not sure how I can be of your assistance. I can submit reviews for your pets, just let me know if you'd like to do a review.")
 
