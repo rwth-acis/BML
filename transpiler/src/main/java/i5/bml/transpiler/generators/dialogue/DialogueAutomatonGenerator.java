@@ -43,11 +43,26 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ *
+ * <h3>Definition: Default State</h3>
+ * The initial state of the automaton, but also the fallback state. Fallback here means several things, it could be
+ * that the NLU failed to infer an intent, then we fallback to the default state and perform its action. It could also
+ * be that we are in a terminal state and have to fall back to the default state <b>without</b> performing an action.
+ * <p>
+ * <h3 id="terminal">Definition: Terminal State</h3>
+ * An <b>anonymous</b> state that has no outgoing transitions. We perform the specified action and then immediately
+ * jump back to the default state <b>without</b> performing the default's state action
+ */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
 public class DialogueAutomatonGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAutomatonGenerator.class);
 
+    /**
+     * The field is used to name anonymous states in the generated automaton code.
+     * We need it to be a field since it is present in two methods of this class.
+     */
     private int stateCounter = 1;
 
     private final JavaTreeGenerator javaTreeGenerator;
@@ -62,6 +77,21 @@ public class DialogueAutomatonGenerator {
 
     private final String dialogueOutputPath;
 
+    /**
+     * Track actions of states while traversing transition paths. This is important for nested
+     * transitions. Consider for example:
+     * <pre>
+     * A -> [B, C -> [D, E], F]
+     * </pre>
+     * In the resulting automaton, D and E will both be endings of a path. Assuming they are anonymous states,
+     * we cannot add any more transitions to them, hence, they are <b>terminal</b>.
+     * <a href="#terminal">Terminal states</a> have implicit {@link DialogueAutomaton#jumpToWithoutAction(State)}
+     * to make sure that the conversation is reset.
+     * <p>
+     * While traversing, we cannot know which states will be terminal, so we have to wait until the end of the
+     * transition path to modify our terminal states' actions
+     * and add the implicit {@link DialogueAutomaton#jumpToWithoutAction(State)}.
+     */
     private final Map<String, BlockStmt> stateActions = new HashMap<>();
 
     public DialogueAutomatonGenerator(JavaTreeGenerator javaTreeGenerator) {
@@ -460,6 +490,9 @@ public class DialogueAutomatonGenerator {
                 if (functionName.equals("initial")) {
                     addTransition(stmts, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
                 }
+            }
+            case "sink" -> {
+                // Sinks are taken care of separately, once all other states have been visited/created
             }
             default -> {
                 LOGGER.error("Encountered unexpected function name {} while visiting {}", functionName, functionCallContext.getText());
