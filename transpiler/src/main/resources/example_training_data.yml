@@ -58,6 +58,11 @@ nlu:
       - nope
       - nah
 
+  - intent: thanks
+    examples: |
+      - thanks
+      - thank you
+
   - regex: value
     examples: |
       - \d{1,12}
