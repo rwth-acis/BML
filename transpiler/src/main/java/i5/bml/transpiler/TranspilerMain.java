@@ -1,5 +1,6 @@
 package i5.bml.transpiler;
 
+import i5.bml.transpiler.input.InputParser;
 import i5.bml.transpiler.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
