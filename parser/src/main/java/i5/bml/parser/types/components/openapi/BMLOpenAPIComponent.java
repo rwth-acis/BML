@@ -288,6 +288,10 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         return openAPISpec;
     }
 
+    public String url() {
+        return url;
+    }
+
     public Map<String, Pair<String, String>> tagOperationIdPairs() {
         return tagOperationIdPairs;
     }

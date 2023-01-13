@@ -43,7 +43,9 @@ public class OpenAPIGenerator extends Generator {
         visitor.gradleFile().add("hasOpenAPIComponent", true);
 
         // Generate swagger client code
-        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.openAPISpec(), visitor.outputPackage(), apiName, visitor.botOutputPath());
+        // TODO
+        //OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.openAPISpec(), visitor.outputPackage(), apiName, visitor.botOutputPath());
+        OpenAPIUtils.generateOpenAPIClientCode(openAPIComponent.url(), visitor.outputPackage(), apiName, visitor.botOutputPath());
 
         // Generate fields with getters in `ComponentRegistry`
         openAPIComponent.tagOperationIdPairs().values().stream().map(Pair::getLeft).distinct().forEach(tag -> {

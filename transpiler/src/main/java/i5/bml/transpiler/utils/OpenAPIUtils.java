@@ -49,12 +49,13 @@ public class OpenAPIUtils {
                 "-jar %s ".formatted(url.getPath()) +
                 "generate " +
                 "--api-package %sopenapi.%s.apis ".formatted(modifiedOutputPackage, apiName) +
-                "-i %s ".formatted(specFile.getAbsolutePath()) +
+//                "-i %s ".formatted(specFile.getAbsolutePath()) +
+                "-i %s ".formatted(openAPISpec) +
                 "-l java " +
                 "--model-package %sopenapi.%s.models ".formatted(modifiedOutputPackage, apiName) +
                 "-o %s".formatted(botOutputPath.replaceFirst("/src/main/java", ""));
 
-        Measurements.measure("Swagger code generation", () -> {
+        Measurements.measure("OpenAPI code generation", () -> {
             try {
                 // We synchronize the generation to make sure that we do not start compilation without having all the
                 // necessary code generated
