@@ -172,11 +172,20 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
     @Override
     public Node visitStatement(BMLParser.StatementContext ctx) {
-        if (ctx.ifStatement() != null || ctx.forEachStatement() != null || ctx.block() != null) {
+        if (ctx.op != null) {
+            return new BreakStmt();
+        } else if (ctx.ifStatement() != null || ctx.forEachStatement() != null || ctx.block() != null) {
             pushScope(ctx.scope);
-            var result = super.visitStatement(ctx);
+            var node = super.visitStatement(ctx);
             popScope();
-            return result;
+            return node;
+        } else if (ctx.expr != null) {
+            var node = super.visitStatement(ctx);
+            if (node instanceof BlockStmt) {
+                return node;
+            } else {
+                return new ExpressionStmt((Expression) super.visitStatement(ctx));
+            }
         } else {
             return super.visitStatement(ctx);
         }
@@ -224,28 +233,34 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
     @Override
     public Node visitForEachStatement(BMLParser.ForEachStatementContext ctx) {
         VariableDeclarationExpr variable;
-        BlockStmt forEachBody = (BlockStmt) visit(ctx.forEachBody());
-        var iterable = (Expression) visit(ctx.expr);
+        BlockStmt body = (BlockStmt) visit(ctx.forEachBody());
+        var iterable = visit(ctx.expr);
 
-        if (ctx.comma == null) { // List
-            variable = new VariableDeclarationExpr(new VarType(), ctx.Identifier(0).getText());
-        } else { // Map
-            var mapEntryVarName = "entry";
-            variable = new VariableDeclarationExpr(new VarType(), mapEntryVarName);
+        if (iterable instanceof ForStmt forStmt) {
+            forStmt.setBody(body);
+            return forStmt;
+        } else {
+            if (ctx.comma == null) { // List
+                variable = new VariableDeclarationExpr(new VarType(), ctx.Identifier(0).getText());
+            } else { // Map
+                var mapEntryVarName = "entry";
+                variable = new VariableDeclarationExpr(new VarType(), mapEntryVarName);
 
-            forEachBody.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
-                    ctx.Identifier(0).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getKey"))));
-            forEachBody.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
-                    ctx.Identifier(1).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getValue"))));
+                body.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
+                        ctx.Identifier(0).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getKey"))));
+                body.addStatement(0, new VariableDeclarationExpr(new VariableDeclarator(new VarType(),
+                        ctx.Identifier(1).getText(), new MethodCallExpr(new NameExpr(mapEntryVarName), "getValue"))));
 
-            iterable = new MethodCallExpr(iterable, "entrySet");
+                iterable = new MethodCallExpr((Expression) iterable, "entrySet");
+            }
+
+            return new ForEachStmt(variable, (Expression) iterable, body);
         }
-
-        return new ForEachStmt(variable, iterable, forEachBody);
     }
 
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
+        var name = ctx.name.getText();
         if (ctx.op.getType() == BMLParser.ASSIGN) {
             var node = visit(ctx.expr);
             if (wrapAssignmentInTryStmt) {
@@ -254,21 +269,20 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
                 var block = new BlockStmt();
                 var tryBlock = new BlockStmt();
-                var varName = ctx.name.getText();
 
                 if (ctx.expr.type.getName().equals("empty")) {
                     tryBlock.addStatement((Expression) node);
                 } else {
                     var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
-                    block.addStatement(new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, varName, new NullLiteralExpr()))));
-                    tryBlock.addStatement(new AssignExpr(new NameExpr(varName), (Expression) node, AssignExpr.Operator.ASSIGN));
+                    block.addStatement(new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, name, new NullLiteralExpr()))));
+                    tryBlock.addStatement(new AssignExpr(new NameExpr(name), (Expression) node, AssignExpr.Operator.ASSIGN));
                 }
 
-                block.addStatement(new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), varName + "Code", new IntegerLiteralExpr("200")))));
+                block.addStatement(new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), name + "Code", new IntegerLiteralExpr("200")))));
 
                 var catchBlock = new BlockStmt();
                 var catchClause = new CatchClause(new Parameter(StaticJavaParser.parseType("ApiException"), "e"), catchBlock);
-                var catchClauseAssignExpr = new AssignExpr(new NameExpr(varName + "Code"),
+                var catchClauseAssignExpr = new AssignExpr(new NameExpr(name + "Code"),
                         new MethodCallExpr(new NameExpr("e"), "getCode", new NodeList<>()), AssignExpr.Operator.ASSIGN);
                 catchBlock.addStatement(catchClauseAssignExpr);
 
@@ -277,10 +291,14 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
 
                 return block;
             } else {
-                return new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), ctx.name.getText(), (Expression) node)));
+                if (ctx.isReassignment) {
+                    return new ExpressionStmt(new AssignExpr(new NameExpr(name), (Expression) node, AssignExpr.Operator.ASSIGN));
+                } else {
+                    return new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), name, (Expression) node)));
+                }
             }
         } else {
-            var symbol = globalScope.getSymbol(ctx.name.getText());
+            var symbol = globalScope.getSymbol(name);
             var op = switch (ctx.op.getType()) {
                 case BMLParser.ADD_ASSIGN -> AssignExpr.Operator.PLUS;
                 case BMLParser.SUB_ASSIGN -> AssignExpr.Operator.MINUS;
@@ -300,7 +318,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                     var generator = GeneratorRegistry.generatorForType(ctx.expr.type);
                     return generator.generateAddAssignment(ctx, this);
                 } else {
-                    return new AssignExpr(new NameExpr(ctx.name.getText()), (Expression) visit(ctx.expr), op);
+                    return new AssignExpr(new NameExpr(name), (Expression) visit(ctx.expr), op);
                 }
             }
         }
@@ -312,7 +330,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
             return visit(ctx.atom());
         } else if (ctx.op != null) {
             return switch (ctx.op.getType()) {
-                case BMLParser.LBRACE -> new EnclosedExpr((Expression) visit(ctx.expr));
+                case BMLParser.LPAREN -> new EnclosedExpr((Expression) visit(ctx.expr));
 
                 case BMLParser.DOT -> {
                     Generator generator = GeneratorRegistry.generatorForType(ctx.expr.type);

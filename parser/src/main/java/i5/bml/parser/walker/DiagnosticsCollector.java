@@ -359,17 +359,16 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 return;
             }
 
-            // NOTE: getSymbol() only checks the current scope. Hence, we might shadow a variable
-            //       from an outer scope. This is WANTED. We only locally shadow the variable, since
-            //       resolve() starts and the current scope and recursively searches parent scopes
-            symbol = currentScope.getSymbol(name);
+            symbol = currentScope.resolve(name);
             if (symbol != null) {
                 // We simply redefine the type of the variable, when the variable already exists
                 ((VariableSymbol) symbol).setType(ctx.expr.type);
+                ctx.isReassignment = true;
             } else {
                 VariableSymbol v = new VariableSymbol(name);
                 v.setType(ctx.expr.type);
                 currentScope.define(v);
+                ctx.isReassignment = false;
             }
         } else { // Assignment operators with simultaneous arithmetic operation
             // Make sure left-hand side is defined
