@@ -6,7 +6,7 @@ Bot(host="localhost", port=8080) {
 
     Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
-    Dialogue isPrime() {
+    Dialogue primes() {
         @Action
         checkIsPrime(context) {
             n = number(string=context.entity)
@@ -39,6 +39,6 @@ Bot(host="localhost", port=8080) {
 
     @UserStartedChat @UserSentMessage @UserLeftChat
     handleMessage(context) {
-        isPrime.step(context=context);
+        primes.step(context=context);
     }
 }
