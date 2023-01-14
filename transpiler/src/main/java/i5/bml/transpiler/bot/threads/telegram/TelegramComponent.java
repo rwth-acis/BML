@@ -95,26 +95,30 @@ public class TelegramComponent extends TelegramLongPollingBot {
                     return false;
                 }
             } else if (update.getMessage().getText() != null) {
-                if (update.getMessage().getEntities() != null) {
-                    var entity = update.getMessage().getEntities().get(0);
-                    if (entity.getText().equals("/start")) {
-                        telegramEvent.messageEventType(MessageEventType.USER_STARTED_CHAT);
-                        telegramEvent.text("start");
+                if (update.getMessage().isCommand()) {
+                    switch (update.getMessage().getEntities().get(0).getText()) {
+                        case "/start" -> {
+                            telegramEvent.messageEventType(MessageEventType.USER_STARTED_CHAT);
+                            telegramEvent.text("start");
 
-                        // Create Session
-                        // This means that using "/start" in a chat, RESETS the current conversation status
-                        activeSessions.put(chatId, new Session(chatId, MessageEventType.USER_STARTED_CHAT));
-                    } else if (entity.getText().equals("/stop")) {
-                        telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
-                        telegramEvent.text("stop");
-                        activeSessions.remove(chatId);
-                    } else if (entity.getType().equals("bot_command")) {
-                        telegramEvent.messageEventType(MessageEventType.BOT_COMMAND);
-                        telegramEvent.text(update.getMessage().getEntities().get(0).getText());
-                        var args = update.getMessage().getText().split(" ");
-                        telegramEvent.commandArguments(Arrays.stream(args).toList().subList(1, args.length));
-                    } else {
-                        return false;
+                            // Create Session
+                            // This means that using "/start" in a chat, RESETS the current conversation status
+                            activeSessions.put(chatId, new Session(chatId, MessageEventType.USER_STARTED_CHAT));
+                        }
+                        case "/stop" -> {
+                            telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
+                            telegramEvent.text("stop");
+                            activeSessions.remove(chatId);
+                        }
+                        case "bot_command" -> {
+                            telegramEvent.messageEventType(MessageEventType.BOT_COMMAND);
+                            telegramEvent.text(update.getMessage().getEntities().get(0).getText());
+                            var args = update.getMessage().getText().split(" ");
+                            telegramEvent.commandArguments(Arrays.stream(args).toList().subList(1, args.length));
+                        }
+                        default -> {
+                            return false;
+                        }
                     }
                 } else if (!update.getMessage().getText().isEmpty()) {
                     telegramEvent.messageEventType(MessageEventType.USER_SENT_MESSAGE);
