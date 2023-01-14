@@ -5,6 +5,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.LineComment;
@@ -207,7 +208,9 @@ public class DialogueAutomatonGenerator {
                 actionCompilationUnit.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
 
                 // We visit the whole function definition to have a scope created
-                actionMethod.setBody((BlockStmt) javaTreeGenerator.visit(functionDefinitionContext.functionDefinition()));
+                var block = (BlockStmt) javaTreeGenerator.visit(functionDefinitionContext.functionDefinition());
+                addJumpToDefaultStateIfNotPresent(block, true);
+                actionMethod.setBody(block);
 
                 javaTreeGenerator.classStack().pop();
             } else { // Anything else than action definitions goes into dialogue class
@@ -216,9 +219,10 @@ public class DialogueAutomatonGenerator {
                 if (child instanceof BMLParser.DialogueAssignmentContext assignmentContext) { // Assignments (Only other types, states have been forwarded)
                     if (!(assignmentContext.assignment().expr.type instanceof BMLState)) {
                         // We have some "normal" type, add field with getter to class
-                        var field = dialogueClass.addFieldWithInitializer(BMLTypeResolver.resolveBMLTypeToJavaType(assignmentContext.assignment().expr.type),
-                                assignmentContext.assignment().name.getText(), (Expression) javaTreeGenerator.visit(assignmentContext.assignment().expr),
-                                Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
+                        var field = new FieldDeclaration(Modifier.createModifierList(Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL),
+                                new VariableDeclarator(BMLTypeResolver.resolveBMLTypeToJavaType(assignmentContext.assignment().expr.type),
+                                assignmentContext.assignment().name.getText(), (Expression) javaTreeGenerator.visit(assignmentContext.assignment().expr)));
+                        dialogueClass.getMembers().add(3, field);
                         Utils.generateRecordStyleGetter(field, false);
                     }
                 } else if (child instanceof BMLParser.DialogueStateCreationContext stateCreationContext) { // State creation, i.e., state function calls
@@ -242,7 +246,7 @@ public class DialogueAutomatonGenerator {
                     var actionLambdaExpr = generateLambdaExprForAction(stateType);
 
                     // The sink state jumps back to the default state after executing its action
-                    addJumpToDefaultStateIfNotPresent(((LambdaExpr) actionLambdaExpr).getBody().asBlockStmt());
+                    addJumpToDefaultStateIfNotPresent(((LambdaExpr) actionLambdaExpr).getBody().asBlockStmt(), false);
 
                     // Create variable for sink state
                     var sinkName = "state" + stateCounter++;
@@ -341,7 +345,7 @@ public class DialogueAutomatonGenerator {
         for (var prevState : prevStates) {
             var block = stateActions.get(prevState.name());
             if (block != null) {
-                addJumpToDefaultStateIfNotPresent(block);
+                addJumpToDefaultStateIfNotPresent(block, false);
             }
         }
 
@@ -388,18 +392,22 @@ public class DialogueAutomatonGenerator {
         return new ImmutablePair<>(startStates, endStates);
     }
 
-    private void addJumpToDefaultStateIfNotPresent(BlockStmt block) {
+    private void addJumpToDefaultStateIfNotPresent(BlockStmt block, boolean isAction) {
         var notContainsJumpOrActionCall = block.getStatements().stream()
                 .filter(s -> s.isExpressionStmt() && s.asExpressionStmt().getExpression().isMethodCallExpr())
                 .map(s -> s.asExpressionStmt().getExpression().asMethodCallExpr())
-                .noneMatch(m -> {
-                    return m.getNameAsString().equals("jumpTo")
-                            || m.getNameAsString().equals("jumpToWithoutAction")
-                            || (m.getScope().isPresent() && m.getScope().get().asNameExpr().getNameAsString().equals(actionClass.getNameAsString()));
-                });
+                .noneMatch(m -> m.getNameAsString().equals("jumpTo")
+                        || m.getNameAsString().equals("jumpToWithoutAction")
+                        || (m.getScope().isPresent() && m.getScope().get().asNameExpr().getNameAsString().equals(actionClass.getNameAsString())));
 
         if (notContainsJumpOrActionCall) {
-            block.addStatement(new MethodCallExpr("jumpToWithoutAction", new NameExpr("defaultState")));
+            String call;
+            if (isAction) {
+                call = "dialogueAutomaton.jumpToWithoutAction(dialogueAutomaton.defaultState())";
+            } else {
+                call = "jumpToWithoutAction(defaultState)";
+            }
+            block.addStatement(StaticJavaParser.parseExpression(call));
         }
     }
 
@@ -451,7 +459,7 @@ public class DialogueAutomatonGenerator {
     private BlockStmt visitDialogueStateCreation(BMLParser.DialogueStateCreationContext ctx) {
         var pair = addAnonymousStateForFunctionCall(ctx.functionCall());
         if (!ctx.functionCall().functionName.getText().equals("default")) {
-            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt());
+            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt(), false);
         }
         return pair.getLeft();
     }
@@ -500,7 +508,7 @@ public class DialogueAutomatonGenerator {
             case STRING -> {
                 cu.addImport(Utils.renameImport(MessageHelper.class, javaTreeGenerator.outputPackage()), false, false);
                 yield new BlockStmt().addStatement(new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger",
-                        new NodeList<>(new NameExpr("ctx"), (StringLiteralExpr) javaTreeGenerator.visit(stateType.getAction()))));
+                        new NodeList<>(new NameExpr("ctx"), (Expression) javaTreeGenerator.visit(stateType.getAction()))));
             }
             case LIST -> {
                 // Add import for `Random`
