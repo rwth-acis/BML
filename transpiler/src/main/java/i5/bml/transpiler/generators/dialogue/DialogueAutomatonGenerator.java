@@ -142,7 +142,7 @@ public class DialogueAutomatonGenerator {
      * This is the class's workhorse. We iterate over {@code ctx}'s children and dispatch the desired visitor methods.
      * Note that we have to forward declare named states such that they are available for
      * the whole automaton initialization method.
-     * As last step of the method, we add all sink states transition (outgoing edges to eligible states) and
+     * As last step of the method, we add all sink states transitions (outgoing edges from eligible states) and
      * fallback transitions (i.e., NLU fails to infer intent)
      *
      * @param ctx The current {@link BMLParser.DialogueBodyContext}. We use it to iterate over its children and dispatch

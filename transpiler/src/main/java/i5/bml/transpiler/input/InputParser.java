@@ -46,15 +46,16 @@ public class InputParser {
 
         // Collect diagnostics from parse tree
         var diagnosticsCollector = new DiagnosticsCollector();
+        var containsError = false;
         try {
             Measurements.measure("Type checking", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
         } catch (Exception e) {
             LOGGER.error("Type checking failed", e);
+            containsError = true;
         }
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         // Report diagnostics to stderr
-        var containsError = false;
         for (var diagnostic : diagnostics) {
             System.err.printf("%s line %s: %s%n", diagnostic.getSeverity().name().toUpperCase(),
                     diagnostic.getRange().getStart().getLine(),
