@@ -2,11 +2,11 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
 
-    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de")
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:IS_PRIME_TRAINING_DATA_FILE")
 
-    Telegram telegram(botToken="", botName="")
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
 
-    Slack slack(botToken="", appToken="")
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
     Dialogue petStoreReview() {
         @Action
