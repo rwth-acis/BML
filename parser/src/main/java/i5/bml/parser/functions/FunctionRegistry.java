@@ -53,6 +53,8 @@ public class FunctionRegistry {
         registerFunction(BMLNumberFunction.class);
         registerFunction(BMLSendFunction.class);
         registerFunction(BMLStringFunction.class);
+        registerFunction(BMLRangeFunction.class);
+        registerFunction(BMLSqrtFunction.class);
 
         // -- Dialogue functions
         registerFunction(BMLDialogueDefaultFunction.class);

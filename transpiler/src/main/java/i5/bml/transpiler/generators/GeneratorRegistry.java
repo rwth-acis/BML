@@ -6,9 +6,7 @@ import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.transpiler.generators.dialogue.DialogueGenerator;
 import i5.bml.transpiler.generators.dialogue.StateGenerator;
-import i5.bml.transpiler.generators.functions.NumberFunctionGenerator;
-import i5.bml.transpiler.generators.functions.SendFunctionGenerator;
-import i5.bml.transpiler.generators.functions.StringFunctionGenerator;
+import i5.bml.transpiler.generators.functions.*;
 import i5.bml.transpiler.generators.functions.dialogue.DialogueJumpToFunctionGenerator;
 import i5.bml.transpiler.generators.types.annotations.MessageAnnotationGenerator;
 import i5.bml.transpiler.generators.types.annotations.RoutineAnnotationGenerator;
@@ -19,10 +17,7 @@ import i5.bml.transpiler.generators.types.components.nlu.OpenAIGenerator;
 import i5.bml.transpiler.generators.types.components.nlu.RasaGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPIGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPISchemaGenerator;
-import i5.bml.transpiler.generators.types.components.primitives.ListGenerator;
-import i5.bml.transpiler.generators.types.components.primitives.MapGenerator;
-import i5.bml.transpiler.generators.types.components.primitives.NumberGenerator;
-import i5.bml.transpiler.generators.types.components.primitives.StringGenerator;
+import i5.bml.transpiler.generators.types.components.primitives.*;
 import org.antlr.symtab.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +63,7 @@ public class GeneratorRegistry {
 
         // --- Primitive component generators
         registerTypeGenerator(NumberGenerator.class);
+        registerTypeGenerator(BooleanGenerator.class);
         registerTypeGenerator(StringGenerator.class);
         registerTypeGenerator(ListGenerator.class);
         registerTypeGenerator(MapGenerator.class);
@@ -80,6 +76,8 @@ public class GeneratorRegistry {
         registerFunctionGenerator(NumberFunctionGenerator.class);
         registerFunctionGenerator(SendFunctionGenerator.class);
         registerFunctionGenerator(StringFunctionGenerator.class);
+        registerFunctionGenerator(RangeFunctionGenerator.class);
+        registerFunctionGenerator(SqrtFunctionGenerator.class);
 
         // --- Dialogue function generators
         registerFunctionGenerator(DialogueJumpToFunctionGenerator.class);
