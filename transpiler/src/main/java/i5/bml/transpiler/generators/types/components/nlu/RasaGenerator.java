@@ -16,13 +16,14 @@ import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.generators.types.components.InitializableComponent;
+import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.PrinterUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLRasaComponent.class)
-public class RasaGenerator extends Generator implements InitializableComponent {
+public class RasaGenerator extends Generator implements InitializableComponent, UsesEnvVariable {
 
     private final BMLRasaComponent rasaComponent;
 
@@ -46,7 +47,7 @@ public class RasaGenerator extends Generator implements InitializableComponent {
         var type = StaticJavaParser.parseClassOrInterfaceType(RasaComponent.class.getSimpleName());
         var fieldName = "rasa";
         var initializer = new ObjectCreationExpr(null, type,
-                new NodeList<>(new StringLiteralExpr(rasaComponent.url()), new StringLiteralExpr(rasaComponent.trainingFileName())));
+                new NodeList<>(getFromEnv(rasaComponent.url()), getFromEnv(rasaComponent.trainingFileName())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName,
                 initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 

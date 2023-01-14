@@ -15,13 +15,14 @@ import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.generators.types.components.InitializableComponent;
+import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.symtab.Type;
 
 import java.io.IOException;
 
 @CodeGenerator(typeClass = BMLSlackComponent.class)
-public class SlackGenerator extends Generator implements InitializableComponent, IsMessengerComponent {
+public class SlackGenerator extends Generator implements InitializableComponent, IsMessengerComponent, UsesEnvVariable {
 
     private final BMLSlackComponent slackComponent;
 
@@ -57,8 +58,8 @@ public class SlackGenerator extends Generator implements InitializableComponent,
         var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(SlackBotThread.class.getSimpleName()),
                 new NodeList<>(
                         new NameExpr("eventQueue"),
-                        new StringLiteralExpr(slackComponent.getBotToken()),
-                        new StringLiteralExpr(slackComponent.getAppToken())
+                        getFromEnv(slackComponent.getBotToken()),
+                        getFromEnv(slackComponent.getAppToken())
                 ));
         addComponentInitializerMethod(currentClass, "Slack", SlackBotThread.class, threadInstance, visitor.outputPackage());
     }

@@ -3,13 +3,14 @@ package i5.bml.transpiler.bot.threads.rasa;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
-import i5.bml.transpiler.bot.utils.IOUtil;
 import i5.bml.transpiler.bot.utils.PersistentStorage;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -19,13 +20,13 @@ public class RasaComponent {
 
     private final String url;
 
-    private final String trainingFileName;
+    private final String trainingFilePath;
 
     private final OkHttpClient okHttpClient;
 
-    public RasaComponent(String url, String trainingFileName) {
+    public RasaComponent(String url, String trainingFilePath) {
         this.url = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
-        this.trainingFileName = trainingFileName;
+        this.trainingFilePath = trainingFilePath;
         okHttpClient = new OkHttpClient.Builder()
                 .writeTimeout(10, TimeUnit.MINUTES)
                 .readTimeout(10, TimeUnit.MINUTES)
@@ -63,9 +64,10 @@ public class RasaComponent {
     private String trainModel() {
         var ymlContent = "";
         try {
-            ymlContent = IOUtil.getResourceFileAsString(trainingFileName);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read training file", e);
+            ymlContent = Files.readString(new File(trainingFilePath).toPath());
+        } catch (Exception e) {
+            LOGGER.error("Failed to read training file {}", trainingFilePath);
+            throw new RuntimeException(e);
         }
 
         var request = new Request.Builder()

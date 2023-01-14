@@ -14,13 +14,14 @@ import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import i5.bml.transpiler.generators.types.components.InitializableComponent;
+import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.symtab.Type;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @CodeGenerator(typeClass = BMLTelegramComponent.class)
-public class TelegramGenerator extends Generator implements InitializableComponent, IsMessengerComponent {
+public class TelegramGenerator extends Generator implements InitializableComponent, IsMessengerComponent, UsesEnvVariable {
 
     private final BMLTelegramComponent telegramComponent;
 
@@ -57,7 +58,7 @@ public class TelegramGenerator extends Generator implements InitializableCompone
 
         // Add component initializer method to registry
         var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(TelegramBotThread.class.getSimpleName()),
-                new NodeList<>(new NameExpr("eventQueue"), new StringLiteralExpr(telegramComponent.getBotName()), new StringLiteralExpr(telegramComponent.getBotToken())));
+                new NodeList<>(new NameExpr("eventQueue"), getFromEnv(telegramComponent.getBotName()), getFromEnv(telegramComponent.getBotToken())));
         addComponentInitializerMethod(currentClass, "Telegram", TelegramBotThread.class, threadInstance, visitor.outputPackage());
     }
 }
