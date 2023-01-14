@@ -48,6 +48,7 @@ block : LBRACE statement* RBRACE ;
 statement returns [Scope scope] : block
                                 | ifStatement
                                 | forEachStatement
+                                | BREAK
                                 | expr=expression
                                 | assignment ;
 

@@ -79,6 +79,7 @@ IF : 'if' ;
 ELSE : 'else' ;
 FOREACH : 'forEach' ;
 IN : 'in' ;
+BREAK: 'break' ;
 
 // Separators
 LPAREN : '(' ;
