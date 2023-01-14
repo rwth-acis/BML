@@ -137,8 +137,9 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
                 .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
                 .forEach(f -> {
                     var isFieldAccessible = f.canAccess(this);
-                    var expectedType = f.getAnnotation(BMLComponentParameter.class).expectedBMLType();
-                    var value = extractConstValueFromParameter(diagnosticsCollector, ctx, f.getName(), expectedType == BuiltinType.NUMBER);
+                    var annotation = f.getAnnotation(BMLComponentParameter.class);
+                    var expectedType = annotation.expectedBMLType();
+                    var value = extractConstValueFromParameter(diagnosticsCollector, ctx, annotation.name(), expectedType == BuiltinType.NUMBER);
                     try {
                         f.setAccessible(true);
                         f.set(this, value);
