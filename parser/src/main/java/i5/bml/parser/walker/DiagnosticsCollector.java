@@ -402,7 +402,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
             ctx.type = ctx.atom().type;
         } else if (ctx.op != null) {
             ctx.type = switch (ctx.op.getType()) {
-                case BMLParser.LBRACE -> ctx.expr.type;
+                case BMLParser.LPAREN -> ctx.expr.type;
                 case BMLParser.DOT -> {
                     AbstractBMLType prevType = (AbstractBMLType) ctx.expr.type;
                     var currentCtx = ctx.Identifier() != null ? ctx.Identifier() : ctx.functionCall();
@@ -556,7 +556,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                     }
                 }
                 // This should never happen
-                default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op.getText(), ctx.parent.parent.getText()));
+                default -> throw new IllegalStateException("Unexpected ctx.op: %s\nContext: %s".formatted(ctx.op.getText(), ctx.getText()));
             };
         } else if (ctx.functionCall() != null) {
             ctx.type = ((BMLFunctionType) ctx.functionCall().type).getReturnType();
