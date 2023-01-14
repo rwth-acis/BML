@@ -48,7 +48,7 @@ block : LBRACE statement* RBRACE ;
 statement returns [Scope scope] : block
                                 | ifStatement
                                 | forEachStatement
-                                | BREAK
+                                | op=BREAK
                                 | expr=expression
                                 | assignment ;
 
@@ -58,7 +58,7 @@ forEachStatement : FOREACH (Identifier (comma=COMMA Identifier)?) IN expr=expres
 
 forEachBody : statement ;
 
-assignment : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN) expr=expression ;
+assignment returns [boolean isReassignment] : name=Identifier op=(ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN) expr=expression ;
 
 /*
  * Expressions
