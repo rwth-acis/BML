@@ -85,7 +85,7 @@ public class ProjectGenerator {
         simpleLoggerStream.close();
 
         // TODO: Copy training data for Rasa
-        //FileUtils.copyFile(new File("transpiler/src/main/resources/example_training_data.yml"), new File(outputDir + "/src/main/resources/example_training_data.yml"));
+        FileUtils.copyFile(new File("transpiler/src/main/resources/isPrime_training_data.yml"), new File(outputDir + "/src/main/resources/isPrime_training_data.yml"));
 
         var end = System.nanoTime();
 

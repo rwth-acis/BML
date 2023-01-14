@@ -8,7 +8,14 @@ public class BMLRasaComponent extends AbstractBMLType implements CanPopulatePara
     @BMLComponentParameter(name = "url", expectedBMLType = BuiltinType.STRING, isRequired = true)
     private String url;
 
-    public String getUrl() {
+    @BMLComponentParameter(name = "trainingFile", expectedBMLType = BuiltinType.STRING, isRequired = true)
+    private String trainingFileName;
+
+    public String url() {
         return url;
+    }
+
+    public String trainingFileName() {
+        return trainingFileName;
     }
 }

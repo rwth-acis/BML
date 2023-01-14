@@ -19,10 +19,13 @@ public class RasaComponent {
 
     private final String url;
 
+    private final String trainingFileName;
+
     private final OkHttpClient okHttpClient;
 
-    public RasaComponent(String url) {
+    public RasaComponent(String url, String trainingFileName) {
         this.url = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+        this.trainingFileName = trainingFileName;
         okHttpClient = new OkHttpClient.Builder()
                 .writeTimeout(10, TimeUnit.MINUTES)
                 .readTimeout(10, TimeUnit.MINUTES)
@@ -60,7 +63,7 @@ public class RasaComponent {
     private String trainModel() {
         var ymlContent = "";
         try {
-            ymlContent = IOUtil.getResourceFileAsString("example_training_data.yml");
+            ymlContent = IOUtil.getResourceFileAsString(trainingFileName);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read training file", e);
         }

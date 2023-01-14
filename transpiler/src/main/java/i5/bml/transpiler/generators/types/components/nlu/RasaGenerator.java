@@ -45,7 +45,8 @@ public class RasaGenerator extends Generator implements InitializableComponent {
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(RasaComponent.class.getSimpleName());
         var fieldName = "rasa";
-        var initializer = new ObjectCreationExpr(null, type, new NodeList<>(new StringLiteralExpr(rasaComponent.getUrl())));
+        var initializer = new ObjectCreationExpr(null, type,
+                new NodeList<>(new StringLiteralExpr(rasaComponent.url()), new StringLiteralExpr(rasaComponent.trainingFileName())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName,
                 initializer, Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
