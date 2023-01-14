@@ -7,7 +7,6 @@ import i5.bml.parser.types.functions.BMLFunctionType;
 import org.antlr.symtab.Scope;
 import org.antlr.symtab.VariableSymbol;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "range")

@@ -4,7 +4,6 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.messenger.BMLTelegramComponent;
 import i5.bml.transpiler.bot.threads.telegram.TelegramBotThread;

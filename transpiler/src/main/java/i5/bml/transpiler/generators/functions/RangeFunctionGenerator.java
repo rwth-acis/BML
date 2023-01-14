@@ -2,12 +2,10 @@ package i5.bml.transpiler.generators.functions;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
-import com.github.javaparser.ast.type.UnknownType;
 import com.github.javaparser.ast.type.VarType;
 import generatedParser.BMLParser;
 import i5.bml.parser.functions.BMLRangeFunction;
@@ -15,8 +13,6 @@ import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
-
-import java.util.stream.IntStream;
 
 @CodeGenerator(typeClass = BMLRangeFunction.class)
 public class RangeFunctionGenerator extends Generator {
