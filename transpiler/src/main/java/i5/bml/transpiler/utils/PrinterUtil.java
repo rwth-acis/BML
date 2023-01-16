@@ -24,7 +24,7 @@ import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.function.Consumer;
 
-@SuppressWarnings("OptionalGetWithoutIsPresent")
+@SuppressWarnings({"OptionalGetWithoutIsPresent", "ResultOfMethodCallIgnored"})
 public class PrinterUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrinterUtil.class);
@@ -41,9 +41,8 @@ public class PrinterUtil {
         var filePath = "%s/%s.java".formatted(path, fileName);
         var javaFile = new File(filePath);
         try {
-            var javaFilePath = javaFile.toPath();
-            Files.createDirectories(javaFilePath.getParent());
-            Files.createFile(javaFilePath);
+            javaFile.getParentFile().mkdirs();
+            javaFile.createNewFile();
 
             var fileOutputStream = new FileOutputStream(javaFile);
 

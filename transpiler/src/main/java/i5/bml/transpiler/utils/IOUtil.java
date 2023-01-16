@@ -44,16 +44,6 @@ public class IOUtil {
         COMPONENT_DIR_FILTER = FileFilterUtils.notFileFilter(FileFilterUtils.and(componentNameFilter, FileFilterUtils.directoryFileFilter()));
     }
 
-    public static void deleteDirectory(File directoryToBeDeleted) {
-        var children = directoryToBeDeleted.listFiles();
-        if (children != null) {
-            for (File file : children) {
-                deleteDirectory(file);
-            }
-        }
-        directoryToBeDeleted.delete();
-    }
-
     public static void copyFiles(String resourceName, File destDir, String outputPackage, Predicate<String> dirFilter) {
         var resource = IOUtil.class.getClassLoader().getResource(resourceName);
         if (resource == null) {
@@ -173,7 +163,7 @@ public class IOUtil {
         }
     }
 
-    public static void copyFileAndRenameImports(File srcFile, File destFile, String outputPackage) {
+    private static void copyFileAndRenameImports(File srcFile, File destFile, String outputPackage) {
         try (var stream = new FileInputStream(srcFile)) {
             copyFileAndRenameImports(stream, destFile, outputPackage);
         } catch (IOException e) {
@@ -181,7 +171,7 @@ public class IOUtil {
         }
     }
 
-    public static void copyFileAndRenameImports(InputStream inputStream, File destFile, String outputPackage) {
+    private static void copyFileAndRenameImports(InputStream inputStream, File destFile, String outputPackage) {
         try {
             destFile.createNewFile();
         } catch (IOException e) {
@@ -190,6 +180,7 @@ public class IOUtil {
 
         try (var destFileStream = new FileOutputStream(destFile)) {
             var destChannel = destFileStream.getChannel();
+            destChannel.position(0);
             var inputBytes = inputStream.readAllBytes();
             var src = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(inputBytes)));
 

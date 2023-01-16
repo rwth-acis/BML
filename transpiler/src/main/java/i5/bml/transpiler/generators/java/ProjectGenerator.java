@@ -14,7 +14,9 @@ import org.stringtemplate.v4.ST;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
@@ -39,10 +41,7 @@ public class ProjectGenerator {
         // Prepare output directory
         outputPackage = outputPackage.replace("\\.", "/");
 
-        // Delete old files, in case they exist
-        IOUtil.deleteDirectory(new File(outputDir));
-
-        // Create "project" folders
+        // Create "project" folders (use mkdirs() to implicitly create parents)
         new File(outputDir + "/src/main/java/").mkdirs();
         new File(outputDir + "/src/main/resources/").mkdirs();
         new File(outputDir + "/src/test/java/").mkdirs();
@@ -76,16 +75,13 @@ public class ProjectGenerator {
 
         // Copy gitignore
         var gitignoreStream = IOUtil.getResourceAsStream("gitignore_template");
-        Files.copy(gitignoreStream, new File(outputDir + "/.gitignore").toPath());
+        Files.copy(gitignoreStream, new File(outputDir + "/.gitignore").toPath(), StandardCopyOption.REPLACE_EXISTING);
         gitignoreStream.close();
 
         // Copy SLF4J SimpleLogger config
         var simpleLoggerStream = IOUtil.getResourceAsStream("simplelogger.properties");
-        Files.copy(simpleLoggerStream, new File(outputDir + "/simplelogger.properties").toPath());
+        Files.copy(simpleLoggerStream, new File(outputDir + "/simplelogger.properties").toPath(), StandardCopyOption.REPLACE_EXISTING);
         simpleLoggerStream.close();
-
-        // TODO: Copy training data for Rasa
-        FileUtils.copyFile(new File("transpiler/src/main/resources/isPrime_training_data.yml"), new File(outputDir + "/src/main/resources/isPrime_training_data.yml"));
 
         var end = System.nanoTime();
 
