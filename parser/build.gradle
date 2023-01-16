@@ -52,7 +52,7 @@ jacocoTestReport {
     dependsOn test
 
     reports {
-        xml.enabled true
+        xml.required
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
 
