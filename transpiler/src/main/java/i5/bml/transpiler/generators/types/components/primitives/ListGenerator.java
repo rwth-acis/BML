@@ -6,13 +6,18 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.primitives.BMLList;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
+import i5.bml.transpiler.generators.GeneratorRegistry;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +58,17 @@ public class ListGenerator extends Generator {
     }
 
     @Override
+    public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
+        return switch (ctx.functionName.getText()) {
+            case "join" -> {
+                var delimiter = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx();
+                yield new MethodCallExpr(new NameExpr("String"), "join", new NodeList<>((Expression) visitor.visit(delimiter), object));
+            }
+            default -> null;
+        };
+    }
+
+    @Override
     public Node generateInitializer(ParserRuleContext ctx, JavaTreeGenerator visitor) {
         var arguments = ((BMLParser.ListInitializerContext) ctx).expression().stream()
                 .map(e -> (Expression) visitor.visit(e))
@@ -61,5 +77,24 @@ public class ListGenerator extends Generator {
         var compilationUnit = visitor.currentClass().findCompilationUnit().get();
         compilationUnit.addImport(List.class);
         return new MethodCallExpr(new NameExpr("List"), new SimpleName("of"), arguments);
+    }
+
+    @Override
+    public Node generateFieldAccess(Expression object, TerminalNode field) {
+        if (field.getText().equals("code")) {
+            return new NameExpr(object.asNameExpr() + "Code");
+        } else {
+            return new MethodCallExpr(object, new SimpleName("get" + StringUtils.capitalize(field.getText())));
+        }
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    @Override
+    public com.github.javaparser.ast.type.Type generateVariableType(Type type, JavaTreeGenerator visitor) {
+        var cu = visitor.currentClass().findCompilationUnit().get();
+        cu.addImport(List.class);
+        var itemType = ((BMLList) type).getItemType();
+        var javaItemType = GeneratorRegistry.generatorForType(itemType).generateVariableType(itemType, visitor);
+        return new ClassOrInterfaceType(null, "List").setTypeArguments(new NodeList<>(javaItemType));
     }
 }

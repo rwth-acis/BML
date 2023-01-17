@@ -1,22 +1,29 @@
 package i5.bml.parser.types.components.primitives;
 
-import i5.bml.parser.types.AbstractBMLType;
-import i5.bml.parser.types.BMLType;
-import i5.bml.parser.types.BuiltinType;
-import i5.bml.parser.types.Summable;
+import generatedParser.BMLParser;
+import i5.bml.parser.errors.Diagnostics;
+import i5.bml.parser.functions.BMLFunctionParameter;
+import i5.bml.parser.types.*;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static i5.bml.parser.errors.ParserError.EXPECTED_BUT_FOUND;
+
 @BMLType(name = BuiltinType.LIST, isComplex = true)
 public class BMLList extends AbstractBMLType implements Summable {
 
-    private Type itemType;
-
-    public BMLList() {}
+    private final Type itemType;
 
     public BMLList(Type itemType) {
         this.itemType = itemType;
+        var delimiterParameter = new BMLFunctionParameter("delimiter", TypeRegistry.resolveType(BuiltinType.STRING));
+        var joinFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(delimiterParameter), new ArrayList<>());
+        supportedAccesses.put("join", joinFunction);
     }
 
     @Override
@@ -26,6 +33,24 @@ public class BMLList extends AbstractBMLType implements Summable {
 
     @Override
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
+        if (ctx instanceof BMLParser.FunctionCallContext functionCallContext) {
+            var functionName = functionCallContext.functionName.getText();
+            switch (functionName) {
+                case "join" -> {
+                    if (!itemType.equals(TypeRegistry.resolveType(BuiltinType.STRING))) {
+                        Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                                EXPECTED_BUT_FOUND.format(BuiltinType.STRING, itemType), functionCallContext);
+                        return TypeRegistry.resolveType(BuiltinType.OBJECT);
+                    } else {
+                        return supportedAccesses.get("join");
+                    }
+                }
+                default -> {
+                    return TypeRegistry.resolveType(BuiltinType.OBJECT);
+                }
+            }
+        }
+
         return ((AbstractBMLType) itemType).resolveAccess(diagnosticsCollector, ctx);
     }
 
