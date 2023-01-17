@@ -6,6 +6,8 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import generatedParser.BMLParser;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
+import i5.bml.transpiler.generators.types.BMLTypeResolver;
+import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -30,6 +32,10 @@ public abstract class Generator {
     public void populateClassWithFunction(BMLParser.FunctionDefinitionContext functionContext,
                                            BMLParser.AnnotationContext annotationContext, JavaTreeGenerator visitor) {
         throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not support the population of classes");
+    }
+
+    public com.github.javaparser.ast.type.Type generateVariableType(Type type, JavaTreeGenerator visitor) {
+        return BMLTypeResolver.resolveBMLTypeToJavaType(type);
     }
 
     public Node generateArithmeticAssignmentToGlobal(BMLParser.AssignmentContext ctx, BinaryExpr.Operator op, JavaTreeGenerator visitor) {

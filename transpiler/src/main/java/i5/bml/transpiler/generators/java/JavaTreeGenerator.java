@@ -273,7 +273,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 if (ctx.expr.type.getName().equals("empty")) {
                     tryBlock.addStatement((Expression) node);
                 } else {
-                    var type = BMLTypeResolver.resolveBMLTypeToJavaType(ctx.expr.type);
+                    var type = GeneratorRegistry.generatorForType(ctx.expr.type).generateVariableType(ctx.expr.type, this);
                     block.addStatement(new ExpressionStmt(new VariableDeclarationExpr(new VariableDeclarator(type, name, new NullLiteralExpr()))));
                     tryBlock.addStatement(new AssignExpr(new NameExpr(name), (Expression) node, AssignExpr.Operator.ASSIGN));
                 }

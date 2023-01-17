@@ -15,11 +15,14 @@ public class BMLOpenAPISchema extends AbstractBMLType {
 
     // TODO: Track required attributes/properties/fields
 
+    private BMLOpenAPIComponent openAPIComponent;
+
     private String schemaName;
 
     public BMLOpenAPISchema() {}
 
-    public BMLOpenAPISchema(String schemaName, Map<String, Type> supportedAccesses) {
+    public BMLOpenAPISchema(BMLOpenAPIComponent openAPIComponent, String schemaName, Map<String, Type> supportedAccesses) {
+        this.openAPIComponent = openAPIComponent;
         this.schemaName = schemaName;
         this.supportedAccesses = supportedAccesses;
     }
@@ -27,6 +30,10 @@ public class BMLOpenAPISchema extends AbstractBMLType {
     @Override
     public String getName() {
         return schemaName;
+    }
+
+    public BMLOpenAPIComponent openAPIComponent() {
+        return openAPIComponent;
     }
 
     @Override

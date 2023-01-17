@@ -3,7 +3,6 @@ package i5.bml.parser.types.components.openapi;
 import i5.bml.parser.types.BuiltinType;
 import i5.bml.parser.types.TypeRegistry;
 import i5.bml.parser.types.components.primitives.BMLList;
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.antlr.symtab.Type;
 
@@ -20,8 +19,8 @@ public class BMLOpenAPITypeResolver {
     private BMLOpenAPITypeResolver() {
     }
 
-    private static void computeComponentFields(OpenAPI openAPI, String componentName, Map<String, Type> supportedFields) {
-        var componentSchema = openAPI.getComponents().getSchemas().get(componentName);
+    private static void computeComponentFields(BMLOpenAPIComponent openAPI, String componentName, Map<String, Type> supportedFields) {
+        var componentSchema = openAPI.openAPI().getComponents().getSchemas().get(componentName);
         (((Schema<?>) componentSchema).getProperties()).forEach((fieldName, propertySchema) -> {
             var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(propertySchema,
                     "Property", fieldName);
@@ -30,10 +29,12 @@ public class BMLOpenAPITypeResolver {
         });
     }
 
-    public static Type resolveOpenAPITypeToBMLType(OpenAPI openAPI, String type) {
+    public static Type resolveOpenAPITypeToBMLType(BMLOpenAPIComponent openAPI, String type) {
         if (type.startsWith(OPENAPI_ARRAY_TYPE_IDENTIFIER)) {
             var arrayItemType = type.substring(OPENAPI_ARRAY_TYPE_IDENTIFIER.length() + 1);
-            return new BMLList(resolveOpenAPITypeToBMLType(openAPI, arrayItemType));
+            var newType = new BMLList(resolveOpenAPITypeToBMLType(openAPI, arrayItemType));
+            TypeRegistry.registerType(newType);
+            return newType;
         } else if (type.startsWith("object")) {
             // TODO:
             // Nested objects
@@ -56,7 +57,7 @@ public class BMLOpenAPITypeResolver {
                         computeComponentFields(openAPI, type, supportedFields);
 
                         // Add to type registry
-                        var newType = new BMLOpenAPISchema(type, supportedFields);
+                        var newType = new BMLOpenAPISchema(openAPI, type, supportedFields);
                         TypeRegistry.registerType(newType);
                         yield newType;
                     } else {

@@ -35,6 +35,8 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
 
     private String openAPISpec;
 
+    private String apiName;
+
     private Set<String> routes;
 
     private final Set<String> httpMethods = new HashSet<>();
@@ -123,6 +125,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         // Determine route return types & arguments
         openAPI.getPaths().forEach((route, value) -> value.readOperationsMap().forEach((httpMethod, operation) -> {
             AbstractBMLType returnType = (AbstractBMLType) computeRouteReturnTypes(route, httpMethod.name(), operation);
+            if (returnType != null) {
+                returnType.getSupportedAccesses().put("code", TypeRegistry.resolveType(BuiltinType.NUMBER));
+            }
 
             var routeParameters = computeRouteArguments(route, httpMethod.name(), operation);
             var requiredParameters = routeParameters.getLeft();
@@ -162,7 +167,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
             } else {
                 var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(mediaType.getSchema(),
                         "Operation", operation.getOperationId());
-                return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
+                return BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(this, openAPITypeToResolve);
             }
         } else {
             var resolvedOpenAPIType = TypeRegistry.resolveType("empty");
@@ -171,7 +176,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
                 supportedFields.put("code", TypeRegistry.resolveType(BuiltinType.NUMBER));
 
                 // Add to type registry
-                var newType = new BMLOpenAPISchema("empty", supportedFields);
+                var newType = new BMLOpenAPISchema(this, "empty", supportedFields);
                 TypeRegistry.registerType(newType);
                 return newType;
             } else {
@@ -188,7 +193,7 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         }
 
         var openAPITypeToResolve = BMLOpenAPITypeResolver.extractOpenAPITypeFromSchema(schema, "Parameter", parameterName);
-        var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(openAPI, openAPITypeToResolve);
+        var resolvedBMLType = BMLOpenAPITypeResolver.resolveOpenAPITypeToBMLType(this, openAPITypeToResolve);
 
         var parameter = new BMLFunctionParameter(parameterName, resolvedBMLType);
         arguments.add(parameter);
@@ -284,6 +289,10 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
         return new BMLFunctionType((BMLFunctionType) functionType);
     }
 
+    public OpenAPI openAPI() {
+        return openAPI;
+    }
+
     public String openAPISpec() {
         return openAPISpec;
     }
@@ -299,5 +308,13 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
     @Override
     public String encodeToString() {
         return "%s{url='%s'}".formatted(getName(), url);
+    }
+
+    public String apiName() {
+        return apiName;
+    }
+
+    public void apiName(String apiName) {
+        this.apiName = apiName;
     }
 }

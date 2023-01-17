@@ -38,6 +38,7 @@ public class OpenAPIGenerator extends Generator {
     @Override
     public void generateComponent(BMLParser.ComponentContext ctx, JavaTreeGenerator visitor) {
         apiName = ctx.name.getText() + "client";
+        openAPIComponent.apiName(apiName);
 
         // Make sure that dependencies and included in gradle build file
         visitor.gradleFile().add("hasOpenAPIComponent", true);
@@ -130,11 +131,6 @@ public class OpenAPIGenerator extends Generator {
         // Inform assignment visitor about try stmt wrapping
         visitor.wrapAssignmentInTryStmt(true);
 
-        // Import for `tag`
-        packageName = getModelImport(visitor, tag);
-        //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        visitor.currentClass().findCompilationUnit().get().addImport(packageName, false, false);
-
         return methodCallExpr;
     }
 
@@ -144,15 +140,6 @@ public class OpenAPIGenerator extends Generator {
             return visitor.outputPackage() + ".openapi." + apiName + "." + "ApiException";
         } else {
             return "openapi." + apiName + "." + "ApiException";
-        }
-    }
-
-    @NotNull
-    private String getModelImport(JavaTreeGenerator visitor, String clientClassName) {
-        if (!visitor.outputPackage().isEmpty()) {
-            return visitor.outputPackage() + ".openapi." + apiName + ".models." + clientClassName;
-        } else {
-            return "openapi." + apiName + ".models." + clientClassName;
         }
     }
 }
