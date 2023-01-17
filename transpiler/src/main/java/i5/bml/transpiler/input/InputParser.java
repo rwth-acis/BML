@@ -1,9 +1,11 @@
 package i5.bml.transpiler.input;
 
+import generatedParser.BMLParser;
 import i5.bml.parser.Parser;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import i5.bml.transpiler.generators.java.ProjectGenerator;
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
@@ -42,7 +44,13 @@ public class InputParser {
         // Start processing input file
         var inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
         var pair = Measurements.measure("Parsing", () -> Parser.parse(inputString));
-        var tree = pair.getRight().program();
+        BMLParser.ProgramContext tree;
+        try {
+            tree = pair.getRight().program();
+        } catch (Exception e) {
+            LOGGER.error("Parsing failed", e);
+            return;
+        }
 
         // Collect diagnostics from parse tree
         var diagnosticsCollector = new DiagnosticsCollector();
@@ -88,7 +96,7 @@ public class InputParser {
                 .longOpt("output")
                 .argName("path")
                 .hasArg()
-                .desc("define output directory")
+                .desc("define output directory for generated code or JAR")
                 .build();
         options.addOption(outputOption);
 
@@ -96,7 +104,7 @@ public class InputParser {
                 .longOpt("package")
                 .argName("package-names")
                 .hasArg()
-                .desc("define your package name, e.g., com.example.project")
+                .desc("define your package name, e.g., com.example.project, for the code generation (-f java)")
                 .build();
         options.addOption(packageName);
 
@@ -105,7 +113,7 @@ public class InputParser {
                 .argName("jar|java")
                 .hasArg()
                 .required()
-                .desc("format of the output, either jar or java")
+                .desc("format of the output, either JAR or Java")
                 .build();
         options.addOption(formatOption);
 

@@ -41,6 +41,8 @@ public class ProjectGenerator {
         // Prepare output directory
         outputPackage = outputPackage.replace("\\.", "/");
 
+        IOUtil.deleteDirectory(new File(outputDir + "/src"));
+
         // Create "project" folders (use mkdirs() to implicitly create parents)
         new File(outputDir + "/src/main/java/").mkdirs();
         new File(outputDir + "/src/main/resources/").mkdirs();
