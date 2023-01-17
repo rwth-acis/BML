@@ -78,6 +78,7 @@ public class GeneratorRegistry {
         registerFunctionGenerator(StringFunctionGenerator.class);
         registerFunctionGenerator(RangeFunctionGenerator.class);
         registerFunctionGenerator(SqrtFunctionGenerator.class);
+        registerFunctionGenerator(DateFunctionGenerator.class);
 
         // --- Dialogue function generators
         registerFunctionGenerator(DialogueJumpToFunctionGenerator.class);

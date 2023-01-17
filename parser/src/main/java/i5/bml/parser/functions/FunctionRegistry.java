@@ -55,6 +55,7 @@ public class FunctionRegistry {
         registerFunction(BMLStringFunction.class);
         registerFunction(BMLRangeFunction.class);
         registerFunction(BMLSqrtFunction.class);
+        registerFunction(BMLDateFunction.class);
 
         // -- Dialogue functions
         registerFunction(BMLDialogueDefaultFunction.class);
