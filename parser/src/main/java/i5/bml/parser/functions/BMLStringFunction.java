@@ -17,6 +17,8 @@ public class BMLStringFunction implements BMLFunction {
     @Override
     public void defineFunction(Scope scope) {
         var numberParameter = new BMLFunctionParameter("number", TypeRegistry.resolveType(BuiltinType.NUMBER));
+        numberParameter.addType(TypeRegistry.resolveType(BuiltinType.LONG_NUMBER));
+        numberParameter.addType(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
         var stringSymbol = new VariableSymbol(getName());
         functionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(numberParameter), new ArrayList<>());
         stringSymbol.setType(functionType);
