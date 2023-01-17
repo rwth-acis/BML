@@ -55,9 +55,7 @@ Bot(host="localhost", port=8080) {
         ]
     }
 
-    @UserStartedChat
-    @UserSentMessage
-    @UserLeftChat
+    @UserStartedChat @UserSentMessage @UserLeftChat
     collectPetId(context) {
         petStoreReview.step(context=context);
     }
