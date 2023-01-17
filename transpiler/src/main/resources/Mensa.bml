@@ -11,11 +11,12 @@ Bot(host="localhost", port=8080) {
     Dialogue mensa() {
         @Action
         getMenu(context) {
-            meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date="2023-01-16")
+            today = date(format="yyyy-MM-dd")
+            meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date=today)
             if meals.code != 200 {
                 send(text="I'm sorry, it seems like something went wrong while retrieving the menu for today 😔")
             } else {
-                menuResponse = "*TODAY'S MENU (16.01.2023)*\n\n"
+                menuResponse = "*TODAY'S MENU (" + today + ") for RWTH Mensa Academica*\n\n"
                 sides = "_Sides_\n"
                 forEach m in meals {
                     if m.category != "Hauptbeilagen" && m.category != "Nebenbeilage" {

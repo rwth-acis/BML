@@ -14,6 +14,7 @@ import i5.bml.transpiler.generators.java.JavaTreeGenerator;
 
 @CodeGenerator(typeClass = BMLStringFunction.class)
 public class StringFunctionGenerator extends Generator {
+
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var functionType = (BMLFunctionType) ctx.type;
