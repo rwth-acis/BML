@@ -113,6 +113,15 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         return null;
     }
 
+    /**
+     * Visits the body of the bot and generates code for the various components, dialogues and functions defined within it.
+     * Populates the {@link i5.bml.transpiler.bot.threads.Session} class with required dialogues and iterates over child nodes in a procedural manner
+     * (i.e., as they appear in the source text).
+     * Deletes dialogue templates if at least one dialogue is present and writes back the generated {@link ComponentRegistry} class.
+     *
+     * @param ctx The context of the bot body being visited.
+     * @return null since all children have been visited and there is nothing to return.
+     */
     @Override
     public Node visitBotBody(BMLParser.BotBodyContext ctx) {
         var componentRegistryClass = PrinterUtil.readClass(botOutputPath, ComponentRegistry.class);
@@ -170,6 +179,17 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         return result;
     }
 
+    /**
+     * Visit a statement context and generate code for it.
+     * If the statement has an operator, return a new {@link BreakStmt} object.
+     * If the statement is an {@link IfStmt}, {@link ForEachStmt} or {@link BlockStmt}, push the current scope onto the stack,
+     * visit the statement and pop the scope off the stack.
+     * If the statement is an expression, return a new {@link ExpressionStmt} object with the expression generated from visiting the statement.
+     * Otherwise, visit the statement and returns the generated code.
+     *
+     * @param ctx The context of the statement being visited.
+     * @return The generated code for the statement.
+     */
     @Override
     public Node visitStatement(BMLParser.StatementContext ctx) {
         if (ctx.op != null) {
@@ -191,6 +211,15 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         }
     }
 
+    /**
+     * Visit a block context and generate code for it.
+     * Return a new {@link BlockStmt} object with a {@link NodeList} of statements generated from visiting each statement in the block context.
+     * If a statement returns a {@link BlockStmt} object, its statements are flattened and added to the {@link NodeList}.
+     * If a statement is not a {@link Statement}, it is wrapped in an {@link ExpressionStmt}.
+     *
+     * @param ctx The context of the block being visited.
+     * @return The generated code for the block as a {@link BlockStmt} object.
+     */
     @Override
     public Node visitBlock(BMLParser.BlockContext ctx) {
         return new BlockStmt(ctx.statement().stream()
@@ -258,6 +287,12 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         }
     }
 
+    /**
+     * TODO
+     *
+     * @param ctx the parse tree
+     * @return
+     */
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
         var name = ctx.name.getText();
@@ -324,6 +359,16 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         }
     }
 
+    /**
+     * Visits an expression and generates the appropriate code based on the type of expression.
+     * If the expression is an atom, visit the atom.
+     * If the expression has an operator, generates code for the operation based on the operator type.
+     * If the expression is a function call, visit the function call.
+     * If the expression is an initializer, visit the initializer.
+     *
+     * @param ctx The context of the expression being visited.
+     * @return Node representing the generated code for the expression.
+     */
     @Override
     public Node visitExpression(BMLParser.ExpressionContext ctx) {
         if (ctx.atom() != null) {
@@ -386,6 +431,12 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         }
     }
 
+    /**
+     * TODO
+     *
+     * @param ctx the parse tree
+     * @return
+     */
     @Override
     public Node visitAtom(BMLParser.AtomContext ctx) {
         var atom = ctx.token.getText();
@@ -412,7 +463,8 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
                 yield GeneratorRegistry.generatorForType(symbol.getType()).generateNameExpr(ctx);
             }
             // This should never happen
-            default -> throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(atom, ctx));
+            default ->
+                    throw new IllegalStateException("Unknown token was parsed: %s\nContext: %s".formatted(atom, ctx));
         };
     }
 
@@ -432,6 +484,16 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
         return GeneratorRegistry.generatorForType(ctx.type).generateInitializer(ctx, this);
     }
 
+    /**
+     * Visit a dialogue automaton and generate code for it.
+     * Set the dialogue scope to the current context's scope, push the scope onto the stack, and visit the dialogue head.
+     * Initialize a {@link DialogueAutomatonGenerator}, visit the dialogue body with the current scope, and pop the scope off the stack.
+     * <p>
+     * We outsourced the generation of a dialogue automaton into a single class to keep the generator clear.
+     *
+     * @param ctx The context of the dialogue automaton being visited.
+     * @return null since all children have been visited and there is nothing to return.
+     */
     @Override
     public Node visitDialogueAutomaton(BMLParser.DialogueAutomatonContext ctx) {
         dialogueScope = ctx.scope;
