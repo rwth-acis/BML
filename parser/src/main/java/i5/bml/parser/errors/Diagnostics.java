@@ -9,6 +9,15 @@ import org.eclipse.lsp4j.Range;
 
 import java.util.List;
 
+/**
+ * The Diagnostics class provides static methods for adding diagnostic information to a List of Diagnostics.
+ * <p>
+ * It includes methods for adding a {@link Diagnostic} object, a message, and a {@link ParserError},
+ * with options for setting the severity and range of the diagnostic.
+ * It also includes methods for adding diagnostics based on a {@link Token} object.
+ * <p>
+ * Note: The class has a private constructor, since it is a "static" class and should not be instantiated.
+ */
 public class Diagnostics {
 
     private Diagnostics() {
