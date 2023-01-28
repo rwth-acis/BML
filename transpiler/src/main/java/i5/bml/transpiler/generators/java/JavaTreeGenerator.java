@@ -426,8 +426,10 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
             };
         } else if (ctx.functionCall() != null) {
             return visit(ctx.functionCall());
-        } else { // Initializers
-            return visit(ctx.initializer());
+        } else if (ctx.listInitializer() != null) {
+            return visit(ctx.listInitializer());
+        } else { // Map initializer
+            return visit(ctx.mapInitializer());
         }
     }
 

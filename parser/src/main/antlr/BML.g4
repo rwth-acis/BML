@@ -22,9 +22,9 @@ botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 /*
  * Parameter Lists
  */
-elementExpressionPairList returns [Scope scope] : elementExpressionPair (COMMA elementExpressionPair)* COMMA? ;
+elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* COMMA? ;
 
-elementExpressionPair : name=Identifier ASSIGN expr=expression ;
+elementExpressionPair : (name=Identifier ASSIGN)? expr=expression ;
 
 /*
  * Components
@@ -64,11 +64,11 @@ assignment returns [boolean isReassignment] : name=Identifier op=(ASSIGN | MUL_A
  * Expressions
  */
 expression returns [Type type] : op=LPAREN expr=expression RPAREN
-                               | atom
-                               | expr=expression op=DOT (Identifier | functionCall)
-                               | expr=expression op=LBRACK index=expression RBRACK
                                | functionCall
-                               | initializer
+                               | atom
+                               | expr=expression op=DOT (functionCall | Identifier)
+                               | expr=expression op=LBRACK index=expression RBRACK
+                               | (mapInitializer | listInitializer)
                                | op=BANG expr=expression
                                | op=(SUB | ADD) expr=expression
                                | left=expression op=(MUL | DIV | MOD) right=expression
@@ -79,16 +79,13 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | left=expression op=OR right=expression
                                | <assoc=right> cond=expression op=QUESTION thenExpr=expression COLON elseExpr=expression ;
 
+functionCall returns [Type type] : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
+
 atom returns [Type type] : token=IntegerLiteral
                          | token=FloatingPointLiteral
                          | token=StringLiteral
                          | token=BooleanLiteral
                          | token=Identifier ;
-
-functionCall returns [Type type] : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
-
-initializer returns [Type type] : mapInitializer
-            | listInitializer ;
 
 mapInitializer returns [Type type] : LBRACE params=elementExpressionPairList? RBRACE ;
 

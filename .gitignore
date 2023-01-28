@@ -61,7 +61,6 @@ transpiler/src/main/java/i5/bml/transpiler/bot/openapi/
 
 # Bot code gen
 generated-bot
-**/*/Example_with_tokens*
 transpiler/src/main/resources/bot_template/
 transpiler/src/main/resources/bot/
 

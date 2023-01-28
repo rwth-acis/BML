@@ -559,8 +559,10 @@ public class DiagnosticsCollector extends BMLBaseListener {
             };
         } else if (ctx.functionCall() != null) {
             ctx.type = ((BMLFunctionType) ctx.functionCall().type).getReturnType();
-        } else { // Initializers
-            ctx.type = ctx.initializer().type;
+        } else if (ctx.listInitializer() != null) {
+            ctx.type = ctx.listInitializer().type;
+        } else if (ctx.mapInitializer() != null) {
+            ctx.type = ctx.mapInitializer().type;
         }
     }
 
@@ -622,15 +624,6 @@ public class DiagnosticsCollector extends BMLBaseListener {
         functionType.checkParameters(this, ctx.params);
         functionType.initializeType(ctx);
         ctx.type = functionType;
-    }
-
-    @Override
-    public void exitInitializer(BMLParser.InitializerContext ctx) {
-        if (ctx.mapInitializer() != null) {
-            ctx.type = ctx.mapInitializer().type;
-        } else { // list initializer
-            ctx.type = ctx.listInitializer().type;
-        }
     }
 
     @Override
