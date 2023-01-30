@@ -9,9 +9,15 @@ import org.antlr.symtab.Scope;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TODO
+ */
 @BMLFunctionAnnotation(scope = BMLFunctionScope.DIALOGUE, name = "jumpTo")
 public class BMLDialogueJumpToFunction extends AbstractBMLDialogueFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);

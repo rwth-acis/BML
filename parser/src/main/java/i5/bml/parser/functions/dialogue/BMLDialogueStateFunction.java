@@ -7,9 +7,17 @@ import org.antlr.symtab.Scope;
 
 import java.util.ArrayList;
 
+/**
+ * The BMLDialogueStateFunction class implements a BML function for creating a state.
+ * It inherits its optional parameters from {@link AbstractBMLDialogueFunction}. These parameters are {@code intent} and
+ * {@code action}.
+ */
 @BMLFunctionAnnotation(scope = BMLFunctionScope.DIALOGUE, name = "state")
 public class BMLDialogueStateFunction extends AbstractBMLDialogueFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);

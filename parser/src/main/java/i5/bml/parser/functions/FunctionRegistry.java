@@ -6,26 +6,41 @@ import i5.bml.parser.utils.Measurements;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+/**
+ * A utility class that manages a mapping from BML functions scopes to a set of BML functions.
+ * This is useful to determine what functions are available for a given {@link BMLFunctionScope}.
+ */
 public class FunctionRegistry {
 
+    /**
+     * Stores the mapping of {@link BMLFunctionScope} to a set of {@link BMLFunction}.
+     */
     private static final Map<BMLFunctionScope, Set<BMLFunction>> registeredFunctionsInScope = new EnumMap<>(BMLFunctionScope.class);
 
-    private static final Map<String, BMLFunction> registeredFunctions = new HashMap<>();
-
+    /**
+     * Private constructor to prevent instantiation.
+     */
     private FunctionRegistry() {}
 
     static {
         Measurements.measure("Registering functions", FunctionRegistry::init);
     }
 
+    /**
+     * Returns the set of functions for the specified {@link BMLFunctionScope}.
+     *
+     * @param bmlFunctionScope {@link BMLFunctionScope} to get functions for.
+     * @return set of functions for the specified {@link BMLFunctionScope}.
+     */
     public static Set<BMLFunction> getFunctionsForScope(BMLFunctionScope bmlFunctionScope) {
         return registeredFunctionsInScope.get(bmlFunctionScope);
     }
 
-    public static Map<String, BMLFunction> getRegisteredFunctions() {
-        return registeredFunctions;
-    }
-
+    /**
+     * Registers a {@link BMLFunction} with its scope and name.
+     *
+     * @param functionClass class of the BMLFunction to register.
+     */
     private static void registerFunction(Class<?> functionClass) {
         BMLFunctionAnnotation functionAnnotation = functionClass.getAnnotation(BMLFunctionAnnotation.class);
 
@@ -44,10 +59,11 @@ public class FunctionRegistry {
             set.add(functionInstance);
             registeredFunctionsInScope.put(functionAnnotation.scope(), set);
         }
-
-        registeredFunctions.put(functionAnnotation.name(), functionInstance);
     }
 
+    /**
+     * Initializes the registry by registering all BMLFunctions.
+     */
     public static void init() {
         // - Global functions
         registerFunction(BMLNumberFunction.class);
@@ -67,6 +83,5 @@ public class FunctionRegistry {
 
     public static void clear() {
         registeredFunctionsInScope.clear();
-        registeredFunctions.clear();
     }
 }

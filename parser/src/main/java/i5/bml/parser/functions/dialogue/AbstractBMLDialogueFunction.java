@@ -12,14 +12,29 @@ import org.antlr.symtab.VariableSymbol;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * The AbstractBMLDialogueFunction abstract class provides a basic implementation of a BML function.
+ */
 public abstract class AbstractBMLDialogueFunction implements BMLFunction {
 
+    /**
+     * The return type of the state.
+     */
     protected Type stateReturnType;
 
+    /**
+     * A list of optional parameters for the function.
+     */
     protected List<BMLFunctionParameter> optionalParameters;
 
+    /**
+     * The symbol for the function.
+     */
     protected VariableSymbol symbol;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         stateReturnType = TypeRegistry.resolveComplexType(BuiltinType.STATE);

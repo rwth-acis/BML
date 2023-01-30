@@ -13,6 +13,9 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "sqrt")
 public class BMLSqrtFunction implements BMLFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var numberParameter = new BMLFunctionParameter("number", TypeRegistry.resolveType(BuiltinType.NUMBER));

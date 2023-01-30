@@ -12,20 +12,17 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "string")
 public class BMLStringFunction implements BMLFunction {
 
-    private BMLFunctionType functionType;
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var numberParameter = new BMLFunctionParameter("number", TypeRegistry.resolveType(BuiltinType.NUMBER));
         numberParameter.addType(TypeRegistry.resolveType(BuiltinType.LONG_NUMBER));
         numberParameter.addType(TypeRegistry.resolveType(BuiltinType.FLOAT_NUMBER));
         var stringSymbol = new VariableSymbol(getName());
-        functionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(numberParameter), new ArrayList<>());
+        var functionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(numberParameter), new ArrayList<>());
         stringSymbol.setType(functionType);
         scope.define(stringSymbol);
-    }
-
-    public BMLFunctionType getFunctionType() {
-        return functionType;
     }
 }

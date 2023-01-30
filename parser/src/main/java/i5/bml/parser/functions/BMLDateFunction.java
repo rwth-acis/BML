@@ -12,6 +12,9 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "date")
 public class BMLDateFunction implements BMLFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var formatParameter = new BMLFunctionParameter("format", TypeRegistry.resolveType(BuiltinType.STRING));

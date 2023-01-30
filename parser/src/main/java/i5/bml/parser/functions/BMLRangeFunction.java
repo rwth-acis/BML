@@ -12,6 +12,9 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "range")
 public class BMLRangeFunction implements BMLFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var startParameter = new BMLFunctionParameter("start", TypeRegistry.resolveType(BuiltinType.NUMBER));

@@ -7,9 +7,15 @@ import org.antlr.symtab.Scope;
 
 import java.util.ArrayList;
 
+/**
+ * TODO
+ */
 @BMLFunctionAnnotation(scope = BMLFunctionScope.DIALOGUE, name = "default")
 public class BMLDialogueDefaultFunction extends AbstractBMLDialogueFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         super.defineFunction(scope);

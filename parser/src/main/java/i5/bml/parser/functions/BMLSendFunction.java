@@ -11,19 +11,16 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "send")
 public class BMLSendFunction implements BMLFunction {
 
-    private BMLFunctionType functionType;
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var textParameter = new BMLFunctionParameter("text", TypeRegistry.resolveType(BuiltinType.STRING));
         var receiverParameter = new BMLFunctionParameter("receiver", TypeRegistry.resolveType(BuiltinType.USER));
         var sendSymbol = new VariableSymbol(getName());
-        functionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), List.of(textParameter), List.of(receiverParameter));
+        var functionType = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), List.of(textParameter), List.of(receiverParameter));
         sendSymbol.setType(functionType);
         scope.define(sendSymbol);
-    }
-
-    public BMLFunctionType getFunctionType() {
-        return functionType;
     }
 }

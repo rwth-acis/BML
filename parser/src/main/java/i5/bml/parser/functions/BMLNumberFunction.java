@@ -12,6 +12,9 @@ import java.util.List;
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "number")
 public class BMLNumberFunction implements BMLFunction {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void defineFunction(Scope scope) {
         var stringParameter = new BMLFunctionParameter("string", TypeRegistry.resolveType(BuiltinType.STRING));
