@@ -9,6 +9,9 @@ import org.antlr.symtab.VariableSymbol;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TODO
+ */
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "string")
 public class BMLStringFunction implements BMLFunction {
 

@@ -14,12 +14,14 @@ import java.util.Objects;
 public class BMLFunctionParameter extends ParameterSymbol {
 
     /**
-     * The context of the expression
+     * The context of the expression.
      */
     private BMLParser.ExpressionContext exprCtx;
 
     /**
-     * A list of allowed types for this parameter
+     * A list of allowed types for this parameter.
+     * This allows us to have functions such as {@link i5.bml.parser.functions.dialogue.BMLDialogueStateFunction}
+     * that takes several expression types as {@code action} parameter.
      */
     private final List<Type> allowedTypes = new ArrayList<>();
 
@@ -44,7 +46,7 @@ public class BMLFunctionParameter extends ParameterSymbol {
     }
 
     /**
-     * {@inheritDoc}
+     * We call the super method to set the parameter type, but also add it to the list of allowed types.
      */
     @Override
     public void setType(Type type) {

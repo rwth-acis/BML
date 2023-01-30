@@ -8,6 +8,9 @@ import org.antlr.symtab.VariableSymbol;
 
 import java.util.List;
 
+/**
+ * TODO
+ */
 @BMLFunctionAnnotation(scope = BMLFunctionScope.GLOBAL, name = "send")
 public class BMLSendFunction implements BMLFunction {
 
