@@ -254,10 +254,12 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
      *     }
      * </pre>
      *
+     * <p>
+     * The lists or maps we are working on are synchronized or concurrent by construction.
+     *
      * @param ctx the parse tree
      * @return the freshly created forEach statement instance of
      * <a href="https://javadoc.io/doc/com.github.javaparser/javaparser-core/latest/index.html">ForEachStmt</a>
-     * @implNote The lists or maps we are working on are synchronized or concurrent by construction.
      */
     @Override
     public Node visitForEachStatement(BMLParser.ForEachStatementContext ctx) {
