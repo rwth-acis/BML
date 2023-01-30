@@ -23,8 +23,8 @@ public class SendFunctionGenerator extends Generator {
                 .filter(p -> p.getName().equals("receiver"))
                 .findAny();
         var methodCallExpr = new MethodCallExpr(new NameExpr("MessageHelper"), "replyToMessenger");
-        if (receiver.isPresent() && receiver.get().getExprCtx() != null) {
-            methodCallExpr.addArgument((Expression) visitor.visit(receiver.get().getExprCtx()));
+        if (receiver.isPresent() && receiver.get().exprCtx() != null) {
+            methodCallExpr.addArgument((Expression) visitor.visit(receiver.get().exprCtx()));
         } else {
             methodCallExpr.addArgument(new NameExpr("ctx"));
         }
@@ -33,7 +33,7 @@ public class SendFunctionGenerator extends Generator {
                 .filter(p -> p.getName().equals("text"))
                 .findAny();
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present
-        methodCallExpr.addArgument((Expression) visitor.visit(text.get().getExprCtx()));
+        methodCallExpr.addArgument((Expression) visitor.visit(text.get().exprCtx()));
 
         // Add import for `MessageHelper`
         //noinspection OptionalGetWithoutIsPresent -> We can assume that it is present

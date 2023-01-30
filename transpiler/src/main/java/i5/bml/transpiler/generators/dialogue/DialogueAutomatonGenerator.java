@@ -569,7 +569,7 @@ public class DialogueAutomatonGenerator {
                 var functionType = (BMLFunctionType) stateType.getAction().functionCall().type;
 
                 // Since we are generating the jumpTo function (that returns a state), we find the destination and then create the call expr
-                var destinationState = (NameExpr) javaTreeGenerator.visit(functionType.getRequiredParameters().get(0).getExprCtx());
+                var destinationState = (NameExpr) javaTreeGenerator.visit(functionType.getRequiredParameters().get(0).exprCtx());
                 destinationState.setName(destinationState.getNameAsString() + "State");
                 var methodCallExpr = new MethodCallExpr(null, "jumpTo", new NodeList<>(destinationState, new NameExpr("ctx")));
 

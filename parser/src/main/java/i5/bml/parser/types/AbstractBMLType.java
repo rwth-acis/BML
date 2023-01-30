@@ -71,9 +71,9 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
                 continue;
             }
 
-            requiredParameter.setExprCtx(invocationParameter.get().expr);
+            requiredParameter.exprCtx(invocationParameter.get().expr);
             var invocationParameterType = invocationParameter.get().expr.type;
-            if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+            if (requiredParameter.allowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
                 addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
             }
 
@@ -104,9 +104,9 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
                 }
             } else {
                 // We can assume that parameter is present, so we expect the correct type
-                optionalParameter.get().setExprCtx(invocationParameter.expr);
+                optionalParameter.get().exprCtx(invocationParameter.expr);
                 var invocationParameterType = invocationParameter.expr.type;
-                if (optionalParameter.get().getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                if (optionalParameter.get().allowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
                     addTypeErrorMessage(diagnosticsCollector, invocationParameter, optionalParameter.get());
                 }
             }
@@ -117,7 +117,7 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
                                      BMLFunctionParameter parameter) {
         var errorMessage = new StringBuilder();
         errorMessage.append("Expected any of ");
-        for (Type allowedType : parameter.getAllowedTypes()) {
+        for (Type allowedType : parameter.allowedTypes()) {
             errorMessage.append("`").append(allowedType).append("`, ");
         }
         var i = errorMessage.lastIndexOf(", ");

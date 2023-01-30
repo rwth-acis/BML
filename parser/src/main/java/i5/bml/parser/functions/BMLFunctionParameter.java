@@ -75,7 +75,7 @@ public class BMLFunctionParameter extends ParameterSymbol {
      *
      * @return the expression context.
      */
-    public BMLParser.ExpressionContext getExprCtx() {
+    public BMLParser.ExpressionContext exprCtx() {
         return exprCtx;
     }
 
@@ -84,7 +84,7 @@ public class BMLFunctionParameter extends ParameterSymbol {
      *
      * @param exprCtx the expression context to set.
      */
-    public void setExprCtx(BMLParser.ExpressionContext exprCtx) {
+    public void exprCtx(BMLParser.ExpressionContext exprCtx) {
         this.exprCtx = exprCtx;
     }
 
@@ -93,7 +93,7 @@ public class BMLFunctionParameter extends ParameterSymbol {
      *
      * @return the list of allowed types.
      */
-    public List<Type> getAllowedTypes() {
+    public List<Type> allowedTypes() {
         return allowedTypes;
     }
 

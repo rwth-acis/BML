@@ -20,7 +20,6 @@ import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
@@ -96,7 +95,7 @@ public class OpenAPIGenerator extends Generator {
         params.remove(pathParameter.get());
 
         var key = ctx.functionName.getText()
-                + ((StringLiteralExpr) visitor.visit(pathParameter.get().getExprCtx())).asString();
+                + ((StringLiteralExpr) visitor.visit(pathParameter.get().exprCtx())).asString();
         var tagOperationIdPair = openAPIComponent.tagOperationIdPairs().get(key.toLowerCase());
         var tag = StringUtils.capitalize(tagOperationIdPair.getLeft());
         var operationId = tagOperationIdPair.getRight();
@@ -104,10 +103,10 @@ public class OpenAPIGenerator extends Generator {
         params.addAll(((BMLFunctionType) ctx.type).getOptionalParameters());
         var args = params.stream()
                 .map(p -> {
-                    if (p.getExprCtx() == null) {
+                    if (p.exprCtx() == null) {
                         return new NullLiteralExpr();
                     } else {
-                        var node = visitor.visit(p.getExprCtx());
+                        var node = visitor.visit(p.exprCtx());
                         if (p.getType().equals(TypeRegistry.resolveType(BuiltinType.LONG_NUMBER))) {
                             return new CastExpr(PrimitiveType.longType(), (Expression) node);
                         } else {

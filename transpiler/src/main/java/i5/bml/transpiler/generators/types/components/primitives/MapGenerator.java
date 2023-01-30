@@ -105,7 +105,7 @@ public class MapGenerator extends Generator {
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var params = new ArrayList<>(((BMLFunctionType) ctx.type).getRequiredParameters());
-        var args = params.stream().map(p -> (Expression) visitor.visit(p.getExprCtx())).collect(Collectors.toCollection(NodeList::new));
+        var args = params.stream().map(p -> (Expression) visitor.visit(p.exprCtx())).collect(Collectors.toCollection(NodeList::new));
         var name = ctx.functionName.getText().equals("add") ? "put" : ctx.functionName.getText();
         return new MethodCallExpr(object, name, args);
     }

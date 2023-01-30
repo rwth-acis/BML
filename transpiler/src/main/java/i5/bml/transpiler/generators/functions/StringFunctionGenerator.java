@@ -18,7 +18,7 @@ public class StringFunctionGenerator extends Generator {
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var functionType = (BMLFunctionType) ctx.type;
-        var expr = functionType.getRequiredParameters().get(0).getExprCtx();
+        var expr = functionType.getRequiredParameters().get(0).exprCtx();
         return new MethodCallExpr(new NameExpr("String"), "valueOf", new NodeList<>((Expression) visitor.visit(expr)));
     }
 }

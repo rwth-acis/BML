@@ -21,8 +21,8 @@ public class RangeFunctionGenerator extends Generator {
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var functionType = ((BMLFunctionType) ctx.type);
 
-        var startExpr = functionType.getRequiredParameters().get(0).getExprCtx();
-        var endExpr = functionType.getRequiredParameters().get(1).getExprCtx();
+        var startExpr = functionType.getRequiredParameters().get(0).exprCtx();
+        var endExpr = functionType.getRequiredParameters().get(1).exprCtx();
         var step = functionType.getOptionalParameters().stream()
                 .filter(p -> p.getName().equals("step"))
                 .findAny();
@@ -31,7 +31,7 @@ public class RangeFunctionGenerator extends Generator {
         if (step.isEmpty()) {
             stepExpr = new IntegerLiteralExpr("1");
         } else {
-            stepExpr = (Expression) visitor.visit(functionType.getOptionalParameters().get(0).getExprCtx());
+            stepExpr = (Expression) visitor.visit(functionType.getOptionalParameters().get(0).exprCtx());
         }
 
         var initialization = new NodeList<Expression>(new VariableDeclarationExpr(new VariableDeclarator(new VarType(), "i", (Expression) visitor.visit(startExpr))));

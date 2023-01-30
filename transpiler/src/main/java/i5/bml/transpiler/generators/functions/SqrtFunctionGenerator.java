@@ -19,7 +19,7 @@ public class SqrtFunctionGenerator extends Generator {
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         visitor.currentClass().findCompilationUnit().get().addImport(Math.class);
-        var numberExpr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx();
+        var numberExpr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).exprCtx();
         return new MethodCallExpr(new NameExpr("Math"), "sqrt", new NodeList<>((Expression) visitor.visit(numberExpr)));
     }
 }

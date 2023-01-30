@@ -17,7 +17,7 @@ public class NumberFunctionGenerator extends Generator {
 
     @Override
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
-        var expr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx();
+        var expr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).exprCtx();
         return new MethodCallExpr(new NameExpr("Integer"), "parseInt", new NodeList<>((Expression) visitor.visit(expr)));
     }
 }

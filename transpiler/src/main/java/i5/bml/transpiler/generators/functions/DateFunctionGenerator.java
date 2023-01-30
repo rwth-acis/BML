@@ -23,7 +23,7 @@ public class DateFunctionGenerator extends Generator {
         cu.addImport(LocalDate.class);
         cu.addImport(DateTimeFormatter.class);
 
-        var formatExpr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx().getText();
+        var formatExpr = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).exprCtx().getText();
         var call = "LocalDate.parse(LocalDate.now().format(DateTimeFormatter.ofPattern(%s)), DateTimeFormatter.ofPattern(%s)).toString()".formatted(formatExpr, formatExpr);
         return StaticJavaParser.parseExpression(call);
     }

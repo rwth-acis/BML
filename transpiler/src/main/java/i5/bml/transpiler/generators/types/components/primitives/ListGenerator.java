@@ -61,7 +61,7 @@ public class ListGenerator extends Generator {
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         return switch (ctx.functionName.getText()) {
             case "join" -> {
-                var delimiter = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).getExprCtx();
+                var delimiter = ((BMLFunctionType) ctx.type).getRequiredParameters().get(0).exprCtx();
                 yield new MethodCallExpr(new NameExpr("String"), "join", new NodeList<>((Expression) visitor.visit(delimiter), object));
             }
             default -> null;

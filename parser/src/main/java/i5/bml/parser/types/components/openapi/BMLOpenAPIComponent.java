@@ -64,9 +64,9 @@ public class BMLOpenAPIComponent extends AbstractBMLType implements CanPopulateP
             if (invocationParameter.isEmpty()) {
                 Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(), MISSING_PARAM.format(name), ctx);
             } else {
-                requiredParameter.setExprCtx(invocationParameter.get().expr);
+                requiredParameter.exprCtx(invocationParameter.get().expr);
                 var invocationParameterType = invocationParameter.get().expr.type;
-                if (requiredParameter.getAllowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
+                if (requiredParameter.allowedTypes().stream().noneMatch(t -> t.equals(invocationParameterType))) {
                     // TODO: Convert to map object
                     addTypeErrorMessage(diagnosticsCollector, invocationParameter.get(), requiredParameter);
                 }

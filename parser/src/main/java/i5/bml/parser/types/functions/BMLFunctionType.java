@@ -37,7 +37,7 @@ public class BMLFunctionType extends AbstractBMLType {
         BMLFunctionParameter newParameter = new BMLFunctionParameter(p.getName());
         newParameter.superSetType(p.getType());
 
-        for (Type allowedType : p.getAllowedTypes()) {
+        for (Type allowedType : p.allowedTypes()) {
             newParameter.addType(((AbstractBMLType) allowedType).deepCopy());
         }
 
