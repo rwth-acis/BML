@@ -17,12 +17,13 @@ import i5.bml.transpiler.bot.threads.openai.OpenAIComponent;
 import i5.bml.transpiler.generators.CodeGenerator;
 import i5.bml.transpiler.generators.Generator;
 import i5.bml.transpiler.generators.java.JavaTreeGenerator;
+import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
 
 @CodeGenerator(typeClass = BMLOpenAIComponent.class)
-public class OpenAIGenerator extends Generator {
+public class OpenAIGenerator extends Generator implements UsesEnvVariable {
 
     private final BMLOpenAIComponent openAIComponent;
 
@@ -44,7 +45,7 @@ public class OpenAIGenerator extends Generator {
         var type = StaticJavaParser.parseClassOrInterfaceType(OpenAIComponent.class.getSimpleName());
         var fieldName = "openAI";
         var initializer = new ObjectCreationExpr(null, type,
-                new NodeList<>(new StringLiteralExpr(openAIComponent.key()), new StringLiteralExpr(openAIComponent.model()), new IntegerLiteralExpr(openAIComponent.tokens())));
+                new NodeList<>(getFromEnv(openAIComponent.key()), new StringLiteralExpr(openAIComponent.model()), new IntegerLiteralExpr(openAIComponent.tokens())));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName, initializer,
                 Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
