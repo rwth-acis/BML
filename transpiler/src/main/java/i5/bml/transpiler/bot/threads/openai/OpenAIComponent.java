@@ -1,12 +1,17 @@
 package i5.bml.transpiler.bot.threads.openai;
 
-import com.theokanning.openai.OpenAiService;
 import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.service.OpenAiService;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
+import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // TODO: Thread-safety?
 
 public class OpenAIComponent {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenAIComponent.class);
 
     private final OpenAiService service;
 
@@ -18,6 +23,11 @@ public class OpenAIComponent {
         service = new OpenAiService(token);
         this.model = model;
         this.tokens = tokens;
+        try {
+            service.listModels();
+        } catch (Exception e) {
+            LOGGER.error("Failed to connect to OpenAI API", e);
+        }
     }
 
     public String invokeModel(MessageEvent messageEvent) {
