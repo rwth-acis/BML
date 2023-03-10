@@ -121,7 +121,7 @@ public class DiagnosticsCollector extends BMLBaseListener {
                 .forEach(a -> supportedAccesses.putAll(((AbstractBMLType) a.type).getSupportedAccesses()));
 
         // Create symbol for context variable (with supported accesses included)
-        var contextSymbol = new VariableSymbol("context");
+        var contextSymbol = new VariableSymbol(ctx.parameterName.getText());
         contextSymbol.setType(contextType);
         currentScope.define(contextSymbol);
     }
