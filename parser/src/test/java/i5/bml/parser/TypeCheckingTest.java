@@ -53,9 +53,9 @@ class TypeCheckingTest {
 
     @Test
     void testFloatingPointConversion() {
-        var pair = Parser.parse(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
+        var parser = Parser.bmlParser(TestUtils.readFileIntoString(TYPE_CHECKING_BASE_PATH + "arithmetic.bml"));
         var diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+        new ParseTreeWalker().walk(diagnosticsCollector, parser.program());
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();
 
         final boolean[] floatConversionWasDone = new boolean[]{false};
@@ -71,8 +71,8 @@ class TypeCheckingTest {
             }
         });
 
-        pair.getRight().reset();
-        new ParseTreeWalker().walk(typeCheckWalker, pair.getRight().program());
+        parser.reset();
+        new ParseTreeWalker().walk(typeCheckWalker, parser.program());
 
         Assertions.assertTrue(floatConversionWasDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));
         Assertions.assertTrue(floatConversionWasNotDone[0], () -> "Found diagnostics:\n%s".formatted(TestUtils.prettyPrintDiagnostics(diagnostics)));

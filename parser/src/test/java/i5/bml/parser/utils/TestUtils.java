@@ -49,11 +49,11 @@ public class TestUtils {
 
         var diagnosticsCollector = new DiagnosticsCollector();
         var syntaxErrorListener = new SyntaxErrorListener();
-        var pair = Parser.parse(TestUtils.readFileIntoString(fileName));
-        pair.getRight().removeErrorListeners();
-        pair.getRight().addErrorListener(syntaxErrorListener);
+        var parser = Parser.bmlParser(TestUtils.readFileIntoString(fileName));
+        parser.removeErrorListeners();
+        parser.addErrorListener(syntaxErrorListener);
         try {
-            new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+            new ParseTreeWalker().walk(diagnosticsCollector, parser.program());
         } catch (RecognitionException e) {
             LOGGER.error("Walking parse tree of file {} failed", fileName, e);
         } catch (RuntimeException ignore) {}
@@ -63,10 +63,10 @@ public class TestUtils {
     public static void assertErrors(String relativeFilePath, List<String> expectedErrors) {
         clearRegistries();
 
-        var pair = Parser.parse(TestUtils.readFileIntoString(relativeFilePath));
+        var parser = Parser.bmlParser(TestUtils.readFileIntoString(relativeFilePath));
         var diagnosticsCollector = new DiagnosticsCollector();
         try {
-            new ParseTreeWalker().walk(diagnosticsCollector, pair.getRight().program());
+            new ParseTreeWalker().walk(diagnosticsCollector, parser.program());
         } catch (Exception e) {
             LOGGER.error("Walking parse tree of file {} failed", relativeFilePath, e);
         }
