@@ -3,10 +3,12 @@ package i5.bml.parser;
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.SyntaxErrorListener;
+import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -35,11 +37,9 @@ public class Parser {
         return diagnosticsCollector.getCollectedDiagnostics();
     }
 
-    public static Pair<BMLLexer, BMLParser> parse(String inputString) {
+    public static BMLParser bmlParser(String inputString) {
         var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
-        var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
-
-        return new ImmutablePair<>(bmlLexer, bmlParser);
+        return new BMLParser(new CommonTokenStream(bmlLexer));
     }
 
     public static void drawParseTree(BMLParser bmlParser) {
