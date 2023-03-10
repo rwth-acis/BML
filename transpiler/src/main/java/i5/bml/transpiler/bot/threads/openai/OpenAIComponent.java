@@ -26,7 +26,7 @@ public class OpenAIComponent {
 
     private final String prompt;
 
-    private final Map<String, StringBuffer> activeConversations = new HashMap<>();
+    private final Map<String, StringBuilder> activeConversations = new HashMap<>();
 
     public OpenAIComponent(String token, String model, int tokens, String prompt) {
         service = new OpenAiService(token);
@@ -47,7 +47,7 @@ public class OpenAIComponent {
         if (history != null) {
             history.append("\n").append(messageEvent.text().replaceAll("\n", ""));
         } else {
-            history = new StringBuffer(prompt + "\n" + messageEvent.text().replaceAll("\n", ""));
+            history = new StringBuilder(prompt + "\n" + messageEvent.text().replaceAll("\n", ""));
         }
 
         var completionRequest = CompletionRequest.builder()
