@@ -297,6 +297,7 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
      */
     @Override
     public Node visitAssignment(BMLParser.AssignmentContext ctx) {
+        super.visitAssignment(ctx);
         var name = ctx.name.getText();
         if (ctx.op.getType() == BMLParser.ASSIGN) {
             var node = visit(ctx.expr);

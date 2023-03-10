@@ -1,11 +1,10 @@
 package i5.bml.transpiler.input;
 
-import generatedParser.BMLParser;
 import i5.bml.parser.Parser;
+import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import i5.bml.transpiler.generators.java.ProjectGenerator;
-import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
@@ -43,22 +42,34 @@ public class InputParser {
 
         // Start processing input file
         var inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
-        var pair = Measurements.measure("Parsing", () -> Parser.parse(inputString));
-        BMLParser.ProgramContext tree;
-        try {
-            tree = pair.getRight().program();
-        } catch (Exception e) {
-            LOGGER.error("Parsing failed", e);
-            return;
+        var bmlParser = Measurements.measure("Preparing parser", () -> Parser.bmlParser(inputString));
+
+        var syntaxErrorListener = new SyntaxErrorListener();
+        bmlParser.removeErrorListeners();
+        bmlParser.addErrorListener(syntaxErrorListener);
+
+        var tree = Measurements.measure("Lexing & Parsing", bmlParser::program);
+        var containsError = false;
+
+        // Report syntax errors to stderr
+        for (var diagnostic : syntaxErrorListener.getCollectedSyntaxErrors()) {
+            System.err.printf("%s line %s: %s%n", diagnostic.getSeverity().name().toUpperCase(),
+                    diagnostic.getRange().getStart().getLine(),
+                    diagnostic.getMessage());
+
+            if (diagnostic.getSeverity() == DiagnosticSeverity.Error) {
+                containsError = true;
+            }
         }
+
+        // Even if we encountered a syntax error, ANTLR can recover from it to still provide a semantic analysis, if possible
 
         // Collect diagnostics from parse tree
         var diagnosticsCollector = new DiagnosticsCollector();
-        var containsError = false;
         try {
-            Measurements.measure("Type checking", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
+            Measurements.measure("Semantic analysis", () -> ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree));
         } catch (Exception e) {
-            LOGGER.error("Type checking failed", e);
+            LOGGER.error("Semantic analysis failed", e);
             containsError = true;
         }
         var diagnostics = diagnosticsCollector.getCollectedDiagnostics();

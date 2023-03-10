@@ -87,11 +87,21 @@ public class ProjectGenerator {
 
         var end = System.nanoTime();
 
-        LOGGER.info("Compiling BML code took %.2f ms".formatted((end - start) / 1_000_000d));
+        var bmlCodeCompilationTime = (end - start) / 1_000_000d;
+        LOGGER.info("Compiling BML code took %.2f ms".formatted(bmlCodeCompilationTime));
 
+        start = System.nanoTime();
         if (outputFormat.equals("jar")) {
             Measurements.measure("Compiling & packaging generated Java code to JAR", this::outputJar);
+
+            IOUtil.deleteDirectory(new File(outputDir + "/src"));
+            IOUtil.deleteDirectory(new File(outputDir + "/build"));
+            IOUtil.deleteDirectory(new File(outputDir + "/build.gradle"));
+            IOUtil.deleteDirectory(new File(outputDir + "/simplelogger.properties"));
         }
+
+        end = System.nanoTime();
+        LOGGER.info("Total time taken %.2f ms".formatted(bmlCodeCompilationTime + ((end - start) / 1_000_000d)));
     }
 
     private void outputJar() {
