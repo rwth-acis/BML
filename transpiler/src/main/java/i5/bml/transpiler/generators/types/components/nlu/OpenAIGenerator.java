@@ -44,8 +44,12 @@ public class OpenAIGenerator extends Generator implements UsesEnvVariable {
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(OpenAIComponent.class.getSimpleName());
         var fieldName = "openAI";
-        var initializer = new ObjectCreationExpr(null, type,
-                new NodeList<>(getFromEnv(openAIComponent.key()), new StringLiteralExpr(openAIComponent.model()), new IntegerLiteralExpr(openAIComponent.tokens())));
+        var initializer = new ObjectCreationExpr(null, type, new NodeList<>(
+                getFromEnv(openAIComponent.key()),
+                new StringLiteralExpr(openAIComponent.model()),
+                new IntegerLiteralExpr(openAIComponent.tokens()),
+                new StringLiteralExpr(openAIComponent.prompt())
+        ));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName, initializer,
                 Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
@@ -66,9 +70,8 @@ public class OpenAIGenerator extends Generator implements UsesEnvVariable {
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         var compilationUnit = currentClass.findCompilationUnit().get();
         compilationUnit.addImport(Utils.renameImport(ComponentRegistry.class, visitor.outputPackage()), false, false);
-        compilationUnit.addImport(Utils.renameImport(MessageHelper.class, visitor.outputPackage()), false, false);
 
-        var call = "MessageHelper.replyToMessenger(ctx, ComponentRegistry.openAI().invokeModel(ctx.event()))";
+        var call = "ComponentRegistry.openAI().invokeModel(ctx.event())";
         return StaticJavaParser.parseExpression(call);
     }
 }

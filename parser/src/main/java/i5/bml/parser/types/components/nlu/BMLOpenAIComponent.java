@@ -27,11 +27,14 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
     @BMLComponentParameter(name = "tokens", expectedBMLType = BuiltinType.NUMBER, isRequired = false)
     private String tokens;
 
+    @BMLComponentParameter(name = "prompt", expectedBMLType = BuiltinType.STRING, isRequired = false)
+    private String prompt;
+
     @Override
     public void initializeType(ParserRuleContext ctx) {
         var contextType = TypeRegistry.resolveComplexType(BuiltinType.CONTEXT);
         var contextParameter = new BMLFunctionParameter("context", contextType);
-        var processFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), List.of(contextParameter), new ArrayList<>());
+        var processFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(contextParameter), new ArrayList<>());
         supportedAccesses.put("process", processFunction);
     }
 
@@ -60,5 +63,9 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
 
     public String tokens() {
         return tokens;
+    }
+
+    public String prompt() {
+        return prompt;
     }
 }
