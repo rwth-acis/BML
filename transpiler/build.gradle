@@ -49,7 +49,7 @@ dependencies {
     implementation 'org.reflections:reflections:0.10.2'
 
     // OpenAI API Support
-    implementation 'com.theokanning.openai-gpt3-java:client:0.8.1'
+    implementation 'com.theokanning.openai-gpt3-java:service:0.11.0'
 
     // Invoked by transpiler before actual code generation to guarantee code "correctness"
     implementation project(':parser')
@@ -102,7 +102,7 @@ abstract class ExecutableJarTask extends DefaultTask {
     @TaskAction
     void createExecutableJars() {
         originalJars.forEach { jar ->
-            def jarName = "$outputDir/${jar.name}";
+            def jarName = "$outputDir/${jar.name}"
             def jarFile = new File(jarName.subSequence(0, jarName.length() - 4) as String)
             jarFile.withOutputStream { out ->
                 out.write(launchScript.bytes)
