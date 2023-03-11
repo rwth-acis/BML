@@ -8,9 +8,8 @@ Bot(host="localhost", port=8080) {
 
     Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
-    Dialogue mensa() {
-        @Action
-        getMenu(context) {
+    Dialogue mensaDialogue() {
+        @Action getMenu(context) {
             today = date(format="yyyy-MM-dd")
             meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date=today)
             if meals.code != 200 {
@@ -43,8 +42,7 @@ Bot(host="localhost", port=8080) {
         initial(intent="menu", action=getMenu)
     }
 
-    @UserStartedChat @UserSentMessage @UserLeftChat
-    collectPetId(context) {
-        mensa.step(context=context)
+    @UserStartedChat @UserSentMessage @UserLeftChat handleMensaDialogue(ctx) {
+        mensaDialogue.step(context=ctx)
     }
 }
