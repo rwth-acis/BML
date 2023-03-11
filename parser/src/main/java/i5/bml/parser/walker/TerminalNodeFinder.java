@@ -8,15 +8,14 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Queue;
 
-public class TokenFinder extends BMLBaseListener {
+public class TerminalNodeFinder extends BMLBaseListener {
 
-    public static Pair<ParseTree, Scope> findToken(ParseTree root, int row, int column) {
+    public static Pair<ParseTree, Scope> findTerminalNode(ParseTree root, int row, int column) {
         Queue<ParseTree> toVisit = new ArrayDeque<>();
         toVisit.add(root);
         ParseTree curr;

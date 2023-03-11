@@ -3,15 +3,12 @@ package i5.bml.parser;
 import generatedParser.BMLLexer;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.SyntaxErrorListener;
-import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
-import i5.bml.parser.walker.TokenFinder;
+import i5.bml.parser.walker.TerminalNodeFinder;
 import org.antlr.symtab.Scope;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -26,14 +23,18 @@ public class Parser {
 
     private Parser() {}
 
-    public static Pair<ParseTree, Scope> findToken(ParseTree parseTree, int row, int column) {
-        return TokenFinder.findToken(parseTree, row, column);
+    public static Pair<ParseTree, Scope> findTerminalNode(ParseTree parseTree, int row, int column) {
+        return TerminalNodeFinder.findTerminalNode(parseTree, row, column);
     }
 
     public static Pair<ParseTree, List<Diagnostic>> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
         var bmlParser = bmlParser(inputString);
 
-        DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
+        var syntaxErrorListener = new SyntaxErrorListener();
+        bmlParser.removeErrorListeners();
+        bmlParser.addErrorListener(syntaxErrorListener);
+
+        var diagnosticsCollector = new DiagnosticsCollector();
         var tree = bmlParser.program();
         try {
             ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree);
@@ -41,6 +42,7 @@ public class Parser {
             e.printStackTrace();
         }
 
+        diagnosticsCollector.getCollectedDiagnostics().addAll(syntaxErrorListener.getCollectedSyntaxErrors());
         return new ImmutablePair<>(tree, diagnosticsCollector.getCollectedDiagnostics());
     }
 
