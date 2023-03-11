@@ -15,7 +15,7 @@ program : botDeclaration EOF ;
  */
 botDeclaration returns [Scope scope] : head=botHead body=botBody ;
 
-botHead : BOT name=Identifier? LPAREN params=elementExpressionPairList RPAREN ;
+botHead : BOT name=Identifier? LPAREN params=elementExpressionPairList? RPAREN ;
 
 botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
 
@@ -24,7 +24,7 @@ botBody : LBRACE (functionDefinition | component | dialogueAutomaton)* RBRACE ;
  */
 elementExpressionPairList : elementExpressionPair (COMMA elementExpressionPair)* COMMA? ;
 
-elementExpressionPair : (name=Identifier ASSIGN)? expr=expression ;
+elementExpressionPair : name=Identifier ASSIGN expr=expression ;
 
 /*
  * Components
