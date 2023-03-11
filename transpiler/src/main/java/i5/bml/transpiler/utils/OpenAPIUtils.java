@@ -4,9 +4,10 @@ import i5.bml.parser.utils.Measurements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class OpenAPIUtils {
 
@@ -46,7 +47,7 @@ public class OpenAPIUtils {
                 "-DapiTests=false " +
                 "-Dmodels " +
                 "-DmodelTests=false " +
-                "-jar %s ".formatted(url.getPath()) +
+                "-jar %s ".formatted(botOutputPath + "../../../" + swaggerBinary) +
                 "generate " +
                 "--api-package %sopenapi.%s.apis ".formatted(modifiedOutputPackage, apiName) +
 //                "-i %s ".formatted(specFile.getAbsolutePath()) +
@@ -54,6 +55,27 @@ public class OpenAPIUtils {
                 "-l java " +
                 "--model-package %sopenapi.%s.models ".formatted(modifiedOutputPackage, apiName) +
                 "-o %s".formatted(botOutputPath.replaceFirst("/src/main/java", ""));
+
+//        var command = new String[]{System.getenv("JAVA_HOME"),
+//                "-DhideGenerationTimestamp=false",
+//                "-DsupportingFiles=ApiKeyAuth.java,Authentication.java,HttpBasicAuth.java,OAuth.java," +
+//                        "OAuthFlow.java,ApiCallback.java,ApiClient.java,ApiException.java,ApiResponse.java," +
+//                        "Configuration.java,GzipRequestInterceptor.java,JSON.java,Pair.java,ProgressRequestBody.java," +
+//                        "ProgressResponseBody.java,StringUtil.java",
+//                "-DmodelDocs=false",
+//                "-DapiDocs=false",
+//                "-Dapis",
+//                "-DapiTests=false",
+//                "-Dmodels",
+//                "-DmodelTests=false",
+//                "-jar %s".formatted(url.getPath()),
+//                "generate",
+//                "--api-package %sopenapi.%s.apis".formatted(modifiedOutputPackage, apiName),
+////                "-i %s ".formatted(specFile.getAbsolutePath()) +
+//                "-i %s".formatted(openAPISpec),
+//                "-l java",
+//                "--model-package %sopenapi.%s.models ".formatted(modifiedOutputPackage, apiName),
+//                "-o %s".formatted(botOutputPath.replaceFirst("/src/main/java", ""))};
 
         Measurements.measure("OpenAPI code generation", () -> {
             try {

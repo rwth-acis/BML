@@ -54,6 +54,7 @@ public class ProjectGenerator {
         var componentNames = new String[]{"dialogue", "threads/openai", "threads/rasa", "threads/slack", "threads/telegram"};
         Predicate<String> dirFilter = srcFile -> Arrays.stream(componentNames).anyMatch(srcFile::startsWith);
         Measurements.measure("Copying bot template files", () -> IOUtil.copyFiles("bot", destDir, outputPackage, dirFilter));
+        FileUtils.copyInputStreamToFile(IOUtil.getResourceAsStream("swagger-codegen-cli-3.0.36.jar"), new File(outputDir + "/swagger-codegen-cli-3.0.36.jar"));
 
         // Replace templates in build.gradle template
         var gradleTemplate = IOUtil.getResourceAsString("build_template");
