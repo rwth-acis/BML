@@ -48,16 +48,11 @@ public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
         // Set capabilities of the LS and inform client about them
         var capabilities = initializeResult.getCapabilities();
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
-        capabilities.setCompletionProvider(new CompletionOptions());
+        var completionOptions = new CompletionOptions();
+        completionOptions.setTriggerCharacters(List.of("."));
+        capabilities.setCompletionProvider(completionOptions);
         capabilities.setCodeActionProvider(false);
         capabilities.setDiagnosticProvider(new DiagnosticRegistrationOptions());
-        var semanticTokensOptions = new SemanticTokensWithRegistrationOptions();
-        semanticTokensOptions.setLegend(new SemanticTokensLegend(List.of(SemanticTokenTypes.Number, SemanticTokenTypes.Comment),
-                List.of(SemanticTokenModifiers.Declaration, SemanticTokenModifiers.Definition)));
-        semanticTokensOptions.setRange(false);
-        semanticTokensOptions.setFull(true);
-        capabilities.setSemanticTokensProvider(semanticTokensOptions);
-        capabilities.setHoverProvider(true);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

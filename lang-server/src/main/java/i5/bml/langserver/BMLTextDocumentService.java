@@ -1,6 +1,10 @@
 package i5.bml.langserver;
 
 import i5.bml.parser.Parser;
+import i5.bml.parser.types.AbstractBMLType;
+import i5.bml.parser.types.functions.BMLFunctionType;
+import org.antlr.symtab.VariableSymbol;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.messages.Either3;
@@ -15,34 +19,53 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     private final BMLLanguageServer bmlLanguageServer;
 
+    private ParseTree parseTree;
+
     public BMLTextDocumentService(BMLLanguageServer bmlLanguageServer) {
         this.bmlLanguageServer = bmlLanguageServer;
     }
 
     @Override
-    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
-        // Provide completion item.
+    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
         return CompletableFuture.supplyAsync(() -> {
             List<CompletionItem> completionItems = new ArrayList<>();
             try {
-                // Sample Completion item for sayHello
-                CompletionItem completionItem = new CompletionItem();
-                // Define the text to be inserted in to the file if the completion item is selected.
-                completionItem.setInsertText("Bot(host=\"\", port=\"\") {\n    \n}");
-                // Set the label that shows when the completion drop down appears in the Editor.
-                completionItem.setLabel("Bot()");
-                // Set the completion kind. This is a snippet.
-                // That means it replace character which trigger the completion and
-                // replace it with what defined in inserted text.
-                completionItem.setKind(CompletionItemKind.Snippet);
-                // This will set the details for the snippet code which will help user to
-                // understand what this completion item is.
-                completionItem.setDetail("Create Bot body");
+                if (completionParams.getContext().getTriggerCharacter().equalsIgnoreCase(".")) {
+                    var column = completionParams.getPosition().getCharacter() - 2;
+                    var pair = Parser.findTerminalNode(parseTree, completionParams.getPosition().getLine() + 1, column);
 
-                // Add the sample completion item to the list.
-                completionItems.add(completionItem);
+                    if (pair == null) {
+                        System.out.println("Couldn't find anything for request: " + completionParams);
+                    } else if (pair.getLeft() == null) {
+                        System.out.println("Couldn't find token for request: " + completionParams);
+                    } else if (pair.getRight() == null) {
+                        System.out.println("Couldn't find scope for token: " + pair.getLeft().getText());
+                    } else {
+                        var symbol = pair.getRight().resolve(pair.getLeft().getText());
+                        if (symbol == null) {
+                            System.out.println("Couldn't find resolve symbol " + pair.getLeft().getText() + " for request: " + completionParams);
+                        } else {
+                            ((AbstractBMLType) ((VariableSymbol) symbol).getType()).getSupportedAccesses().forEach((name, type) -> {
+                                CompletionItem completionItem = new CompletionItem();
+                                if (type instanceof BMLFunctionType functionType) {
+                                    completionItem.setInsertText(name + "()");
+                                    completionItem.setLabel(name + "()");
+                                    completionItem.setKind(CompletionItemKind.Function);
+                                    completionItem.setDetail(functionType.toString());
+                                } else {
+                                    completionItem.setInsertText(name);
+                                    completionItem.setLabel(name);
+                                    completionItem.setKind(CompletionItemKind.Field);
+                                    completionItem.setDetail(name);
+                                }
+
+                                completionItems.add(completionItem);
+                            });
+                        }
+                    }
+                }
             } catch (Exception e) {
-                //TODO: Handle the exception.
+                e.printStackTrace();
             }
 
             // Return the list of completion items.
@@ -57,12 +80,13 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
-        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Hover Request: " + params.toString()));
-        return CompletableFuture.supplyAsync(() -> {
-            var h = new Hover();
-            h.setContents(List.of(Either.forLeft("This is a"), Either.forLeft("hover message")));
-            return h;
-        });
+//        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Hover Request: " + params.toString()));
+//        return CompletableFuture.supplyAsync(() -> {
+//            var h = new Hover();
+//            h.setContents(List.of(Either.forLeft("This is a"), Either.forLeft("hover message")));
+//            return h;
+//        });
+        return TextDocumentService.super.hover(params);
     }
 
     @Override
@@ -273,8 +297,11 @@ public class BMLTextDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         List<Diagnostic> diagnostics = null;
         try {
-            diagnostics = Parser.parseAndCollectDiagnostics(params.getTextDocument().getText(), new StringBuilder());
+            var pair = Parser.parseAndCollectDiagnostics(params.getTextDocument().getText(), new StringBuilder());
+            parseTree = pair.getLeft();
+            diagnostics = pair.getRight();
         } catch (Exception e) {
+            e.printStackTrace(System.out);
             bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
         }
         if (diagnostics != null) {
@@ -290,8 +317,11 @@ public class BMLTextDocumentService implements TextDocumentService {
     public void didChange(DidChangeTextDocumentParams params) {
         List<Diagnostic> diagnostics = null;
         try {
-            diagnostics = Parser.parseAndCollectDiagnostics(params.getContentChanges().get(0).getText(), new StringBuilder());
+            var pair = Parser.parseAndCollectDiagnostics(params.getContentChanges().get(0).getText(), new StringBuilder());
+            parseTree = pair.getLeft();
+            diagnostics = pair.getRight();
         } catch (Exception e) {
+            e.printStackTrace(System.out);
             bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "PARSING FAILED: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())));
         }
 
@@ -300,6 +330,7 @@ public class BMLTextDocumentService implements TextDocumentService {
                 diagnostic.getRange().getStart().setLine(diagnostic.getRange().getStart().getLine() - 1);
                 diagnostic.getRange().getEnd().setLine(diagnostic.getRange().getEnd().getLine() - 1);
             }
+            bmlLanguageServer.getClient().refreshDiagnostics();
             bmlLanguageServer.getClient().publishDiagnostics(new PublishDiagnosticsParams(params.getTextDocument().getUri(), diagnostics));
         }
     }
