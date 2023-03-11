@@ -81,7 +81,12 @@ public class OpenAPIUtils {
             try {
                 // We synchronize the generation to make sure that we do not start compilation without having all the
                 // necessary code generated
-                Runtime.getRuntime().exec(command).onExit().get();
+                var process = Runtime.getRuntime().exec(command);
+                process.onExit().get();
+                if (process.exitValue() != 0) {
+                    var errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                    LOGGER.error("Failed to execute swagger code generation:\n{}", errorReader.lines().collect(Collectors.joining()));
+                }
             } catch (Exception e) {
                 LOGGER.error("Failed to execute swagger code generation", e);
             }
