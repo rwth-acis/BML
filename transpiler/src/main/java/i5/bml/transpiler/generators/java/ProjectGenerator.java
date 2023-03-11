@@ -87,8 +87,8 @@ public class ProjectGenerator {
 
         var end = System.nanoTime();
 
-        var bmlCodeCompilationTime = (end - start) / 1_000_000d;
-        LOGGER.info("Compiling BML code took %.2f ms".formatted(bmlCodeCompilationTime));
+        var bmlCodeCompilationTime = end - start;
+        LOGGER.info("Compiling BML code took {}", Measurements.calculateUnit(bmlCodeCompilationTime));
 
         start = System.nanoTime();
         if (outputFormat.equals("jar")) {
@@ -101,7 +101,7 @@ public class ProjectGenerator {
         }
 
         end = System.nanoTime();
-        LOGGER.info("Total time taken %.2f ms".formatted(bmlCodeCompilationTime + ((end - start) / 1_000_000d)));
+        LOGGER.info("Total time taken {}", Measurements.calculateUnit(bmlCodeCompilationTime + (end - start)));
     }
 
     private void outputJar() {
