@@ -5,9 +5,13 @@ import generatedParser.BMLParser;
 import i5.bml.parser.errors.SyntaxErrorListener;
 import i5.bml.parser.utils.Measurements;
 import i5.bml.parser.walker.DiagnosticsCollector;
+import i5.bml.parser.walker.TokenFinder;
+import org.antlr.symtab.Scope;
 import org.antlr.v4.gui.TreeViewer;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -20,21 +24,24 @@ import java.util.List;
 
 public class Parser {
 
-    private Parser() {
+    private Parser() {}
+
+    public static Pair<ParseTree, Scope> findToken(ParseTree parseTree, int row, int column) {
+        return TokenFinder.findToken(parseTree, row, column);
     }
 
-    public static List<Diagnostic> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
-        var bmlLexer = new BMLLexer(CharStreams.fromString(inputString));
-        var bmlParser = new BMLParser(new CommonTokenStream(bmlLexer));
-        var syntaxErrorListener = new SyntaxErrorListener();
-        bmlParser.removeErrorListeners();
-        bmlParser.addErrorListener(syntaxErrorListener);
+    public static Pair<ParseTree, List<Diagnostic>> parseAndCollectDiagnostics(String inputString, StringBuilder report) {
+        var bmlParser = bmlParser(inputString);
 
         DiagnosticsCollector diagnosticsCollector = new DiagnosticsCollector();
-        new ParseTreeWalker().walk(diagnosticsCollector, bmlParser.program());
+        var tree = bmlParser.program();
+        try {
+            ParseTreeWalker.DEFAULT.walk(diagnosticsCollector, tree);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        diagnosticsCollector.getCollectedDiagnostics().addAll(syntaxErrorListener.getCollectedSyntaxErrors());
-        return diagnosticsCollector.getCollectedDiagnostics();
+        return new ImmutablePair<>(tree, diagnosticsCollector.getCollectedDiagnostics());
     }
 
     public static BMLParser bmlParser(String inputString) {
