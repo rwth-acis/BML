@@ -2,7 +2,7 @@ Bot(host="localhost", port=8080) {
 
     OpenAPI mensaAPI(url="https://marcluque.com/openmensa.json")
 
-    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:IS_PRIME_TRAINING_DATA_FILE")
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:MENSA_TRAINING_DATA_FILE")
 
     Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
 
@@ -10,8 +10,7 @@ Bot(host="localhost", port=8080) {
 
     Dialogue mensaDialogue() {
         @Action getMenu(context) {
-            today = date(format="yyyy-MM-dd")
-            meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date=today)
+            meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date=date(format="yyyy-MM-dd"))
             if meals.code != 200 {
                 send(text="I'm sorry, it seems like something went wrong while retrieving the menu for today 😔")
             } else {
@@ -21,7 +20,7 @@ Bot(host="localhost", port=8080) {
                     if m.category != "Hauptbeilagen" && m.category != "Nebenbeilage" {
                         menuResponse += "_" + m.category + "_ - " + string(number=m.prices.students) + "€\n"
                         menuResponse += m.name + "\n"
-                        menuResponse += "_Allergens_: " + m.notes.join(delimiter=", ") + "\n\n"
+                        menuResponse += "_Notes_: " + m.notes.join(delimiter=", ") + "\n\n"
                     } else {
                         sides += m.name + "\n"
                     }
