@@ -43,7 +43,7 @@ public class Measurements {
         LOGGER.info("{} took {}", name, calculateUnit(time - (post - prev)));
     }
 
-    private static String calculateUnit(long time) {
+    public static String calculateUnit(long time) {
         if (time < 1_000) {
             return time + " ns";
         } else if (time < 1_000_000) {

@@ -38,6 +38,8 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
     }
 
     public void collectParameters() {
+        requiredParameters = new ArrayList<>();
+        optionalParameters = new ArrayList<>();
         Arrays.stream(this.getClass().getDeclaredFields())
                 .filter(f -> f.isAnnotationPresent(BMLComponentParameter.class))
                 .map(f -> f.getAnnotation(BMLComponentParameter.class))
