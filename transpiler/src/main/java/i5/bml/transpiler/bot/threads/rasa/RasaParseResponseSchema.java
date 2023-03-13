@@ -2,6 +2,7 @@ package i5.bml.transpiler.bot.threads.rasa;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public record RasaParseResponseSchema(Entity[] entities, Intent intent, Intent[] intent_ranking, String text) {
 
@@ -26,10 +27,15 @@ public record RasaParseResponseSchema(Entity[] entities, Intent intent, Intent[]
 
     @Override
     public String toString() {
-        return "RasaParseResponseSchema[" +
-                "entities=" + Arrays.toString(entities) + ", " +
-                "intent=" + intent + ", " +
-                "intent_ranking=" + Arrays.toString(intent_ranking) + ", " +
-                "text=" + text + ']';
+        StringBuilder sb = new StringBuilder();
+        for (Intent i : intent_ranking) {
+            sb.append("    ").append(i).append(",\n");
+        }
+        sb.delete(sb.length() - 2, sb.length());
+        return "RasaParseResponseSchema[\n" +
+                "  entities=" + Arrays.toString(entities) + ",\n" +
+                "  intent=" + intent + ",\n" +
+                "  intent_ranking=[\n" + sb.toString() + "\n  ]\n" +
+                "  text=" + text + "\n]";
     }
 }

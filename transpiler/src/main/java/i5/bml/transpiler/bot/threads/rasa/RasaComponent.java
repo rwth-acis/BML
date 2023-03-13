@@ -125,13 +125,13 @@ public class RasaComponent {
 
             try {
                 var responseSchema = new Gson().fromJson(code200Response.body().string(), RasaParseResponseSchema.class);
-                LOGGER.debug(responseSchema.toString());
                 if (responseSchema.entities().length > 0) {
                     messageEvent.entity(responseSchema.entities()[0].value());
                 } else {
                     messageEvent.entity("{no_entity_found}");
                 }
                 messageEvent.intent(responseSchema.intent().name());
+                LOGGER.debug("Rasa response:\n{}", responseSchema);
             } catch (IOException e) {
                 throw new IllegalStateException("Rasa parsing message failed while retrieving response body", e);
             }
