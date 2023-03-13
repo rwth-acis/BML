@@ -102,11 +102,13 @@ public class JavaTreeGenerator extends BMLBaseVisitor<Node> {
     @Override
     public Node visitBotHead(BMLParser.BotHeadContext ctx) {
         PrinterUtil.readAndWriteClass(botOutputPath, BotConfig.class, clazz -> {
-            for (var pair : ctx.params.elementExpressionPair()) {
-                var type = BMLTypeResolver.resolveBMLTypeToJavaType(pair.expr.type);
-                var name = pair.name.getText().toUpperCase();
-                clazz.addFieldWithInitializer(type, name, (Expression) visit(pair.expr),
-                        Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
+            if (ctx.params != null) {
+                for (var pair : ctx.params.elementExpressionPair()) {
+                    var type = BMLTypeResolver.resolveBMLTypeToJavaType(pair.expr.type);
+                    var name = pair.name.getText().toUpperCase();
+                    clazz.addFieldWithInitializer(type, name, (Expression) visit(pair.expr),
+                            Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
+                }
             }
         });
 
