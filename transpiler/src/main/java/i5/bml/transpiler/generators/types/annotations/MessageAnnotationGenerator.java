@@ -1,5 +1,6 @@
 package i5.bml.transpiler.generators.types.annotations;
 
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.*;
@@ -36,7 +37,14 @@ public class MessageAnnotationGenerator extends Generator {
                 handlerMethod.addParameter(MessageEventContext.class.getSimpleName(), "ctx");
 
                 visitor.classStack().push(clazz);
-                handlerMethod.setBody((BlockStmt) visitor.visitFunctionDefinition(functionContext));
+                var body = (BlockStmt) visitor.visitFunctionDefinition(functionContext);
+                var usesIntentOrEntity = body.findFirst(MethodCallExpr.class, m -> m.getNameAsString().equals("intent") || m.getNameAsString().equals("entity"));
+                if (usesIntentOrEntity.isPresent()) {
+                    // TODO: Throw error if NLU not present
+                    var invokeModel = "ComponentRegistry.rasa().invokeModel(ctx.event())";
+                    body.addStatement(0, StaticJavaParser.parseExpression(invokeModel));
+                }
+                handlerMethod.setBody(body);
                 visitor.classStack().pop();
             } else {
                 methods.get(0).addAnnotation(new NormalAnnotationExpr(new Name(MessageEventHandlerMethod.class.getSimpleName()),
