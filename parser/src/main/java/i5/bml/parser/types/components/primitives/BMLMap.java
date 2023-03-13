@@ -48,13 +48,10 @@ public class BMLMap extends AbstractBMLType {
     public void initializeType(ParserRuleContext ctx) {
         var addFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), new ArrayList<>(), new ArrayList<>());
         supportedAccesses.put("add", addFunction);
-        var removeFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.VOID), new ArrayList<>(), new ArrayList<>());
+        var removeFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.BOOLEAN), new ArrayList<>(), new ArrayList<>());
         supportedAccesses.put("remove", removeFunction);
-    }
-
-    @Override
-    public void checkParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
-        throw new UnsupportedOperationException("%s doesn't support checking parameters".formatted(getName()));
+        var containsFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.BOOLEAN), new ArrayList<>(), new ArrayList<>());
+        supportedAccesses.put("contains", containsFunction);
     }
 
     @Override
@@ -101,7 +98,7 @@ public class BMLMap extends AbstractBMLType {
                 } else if (functionType.getRequiredParameters().stream().noneMatch(p -> p.getName().equals("value"))) {
                     functionType.getRequiredParameters().add(new BMLFunctionParameter("value", valueType));
                 }
-            } else if (functionName.equals("remove")) {
+            } else if (functionName.equals("remove") || functionName.equals("contains")) {
                 var invocationKeyParameter = functionCallCtx.params.elementExpressionPair().get(0);
 
                 if (keyType == null) {

@@ -106,8 +106,13 @@ public class MapGenerator extends Generator {
     public Node generateFunctionCall(Expression object, BMLParser.FunctionCallContext ctx, JavaTreeGenerator visitor) {
         var params = new ArrayList<>(((BMLFunctionType) ctx.type).getRequiredParameters());
         var args = params.stream().map(p -> (Expression) visitor.visit(p.exprCtx())).collect(Collectors.toCollection(NodeList::new));
-        var name = ctx.functionName.getText().equals("add") ? "put" : ctx.functionName.getText();
-        return new MethodCallExpr(object, name, args);
+        var name = ctx.functionName.getText();
+        return switch (name) {
+            case "add" -> new MethodCallExpr(object, "put", args);
+            case "remove" -> new EnclosedExpr(new BinaryExpr(new MethodCallExpr(object, name, args), new NullLiteralExpr(), BinaryExpr.Operator.NOT_EQUALS));
+            case "contains" -> new MethodCallExpr(object, "containsKey", args);
+            default -> throw new UnsupportedOperationException("%s is not supported by Map".formatted(name));
+        };
     }
 
     @Override
