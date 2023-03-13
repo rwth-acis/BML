@@ -18,6 +18,7 @@ import i5.bml.transpiler.generators.types.components.nlu.RasaGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPIGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPISchemaGenerator;
 import i5.bml.transpiler.generators.types.components.primitives.*;
+import i5.bml.transpiler.generators.types.messenger.UserGenerator;
 import org.antlr.symtab.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class GeneratorRegistry {
         registerTypeGenerator(ContextGenerator.class);
 
         // --- Messenger component generators
+        registerTypeGenerator(UserGenerator.class);
         registerTypeGenerator(SlackGenerator.class);
         registerTypeGenerator(TelegramGenerator.class);
 
