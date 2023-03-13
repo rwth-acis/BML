@@ -127,6 +127,10 @@ public class DialogueAutomatonGenerator {
      */
     private final Map<String, BlockStmt> stateActions = new HashMap<>();
 
+    private final Map<String, Boolean> actionJumps = new HashMap<>();
+
+    private final Set<String> nonTerminalStates = new HashSet<>();
+
     public DialogueAutomatonGenerator(JavaTreeGenerator javaTreeGenerator) {
         this.javaTreeGenerator = javaTreeGenerator;
         dialogueOutputPath = javaTreeGenerator.botOutputPath() + "dialogue";
@@ -155,6 +159,8 @@ public class DialogueAutomatonGenerator {
 
         // Read freshly copied classes
         dialogueClass = PrinterUtil.readClass(dialogueOutputPath, newDialogueClassName);
+        var fallbackIntent = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
+        dialogueClass.getFieldByName("fallbackIntent").get().getVariable(0).setInitializer(fallbackIntent);
         actionClass = PrinterUtil.readClass(dialogueOutputPath, newActionsClassName);
     }
 
@@ -186,8 +192,8 @@ public class DialogueAutomatonGenerator {
             if (child instanceof BMLParser.DialogueFunctionDefinitionContext functionDefinitionContext) { // Action definitions
                 javaTreeGenerator.classStack().push(actionClass);
 
-                var actionMethod = actionClass.addMethod(functionDefinitionContext.functionDefinition().head.functionName.getText(),
-                        Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
+                var actionName = functionDefinitionContext.functionDefinition().head.functionName.getText();
+                var actionMethod = actionClass.addMethod(actionName, Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
                 actionMethod.addParameter(MessageEventContext.class.getSimpleName(), "ctx");
                 actionMethod.addParameter(dialogueClass.getNameAsString(), "dialogueAutomaton");
 
@@ -196,8 +202,12 @@ public class DialogueAutomatonGenerator {
 
                 // We visit the whole function definition to have a scope created
                 var block = (BlockStmt) javaTreeGenerator.visit(functionDefinitionContext.functionDefinition());
-                addJumpToDefaultStateIfNotPresent(block, true);
                 actionMethod.setBody(block);
+
+                var actionContainsJumps = block.findFirst(MethodCallExpr.class, m -> {
+                    return m.getNameAsString().equals("jumpTo") || m.getNameAsString().equals("jumpToWithoutAction");
+                });
+                actionJumps.put(actionName, actionContainsJumps.isPresent());
 
                 javaTreeGenerator.classStack().pop();
             } else { // Anything else than action definitions goes into dialogue class
@@ -266,6 +276,13 @@ public class DialogueAutomatonGenerator {
         // Add import for `BotConfig`
         dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
 
+        // Add implicit jumpTo for terminal states
+        stateActions.forEach((stateName, block) -> {
+            if (block != null && !nonTerminalStates.contains(stateName)) {
+                addJumpToDefaultStateIfNotPresent(block, false);
+            }
+        });
+
         // Finally, write back action and dialogue classes
         PrinterUtil.writeClass(dialogueOutputPath, dialogueCompilationUnit, dialogueClass);
         PrinterUtil.writeClass(dialogueOutputPath, actionCompilationUnit, actionClass);
@@ -327,14 +344,6 @@ public class DialogueAutomatonGenerator {
                 if (startStates.isEmpty()) {
                     startStates = prevStates;
                 }
-            }
-        }
-
-        // Add jump to default state (without executing action)
-        for (var prevState : prevStates) {
-            var block = stateActions.get(prevState.name());
-            if (block != null) {
-                addJumpToDefaultStateIfNotPresent(block, false);
             }
         }
 
@@ -419,7 +428,8 @@ public class DialogueAutomatonGenerator {
         var actionMethod = clazz.addMethod("action", Modifier.Keyword.PUBLIC);
         actionMethod.addMarkerAnnotation(Override.class);
         actionMethod.addParameter("MessageEventContext", "ctx");
-        actionMethod.setBody(generateBlockForStateAction(stateType, cu, clazz));
+        var actionBlock = generateBlockForStateAction(stateType, cu, clazz);
+        actionMethod.setBody(actionBlock);
 
         // Add import for action parameter of type `MessageEventContext`
         cu.addImport(Utils.renameImport(MessageEventContext.class, javaTreeGenerator.outputPackage()), false, false);
@@ -439,6 +449,8 @@ public class DialogueAutomatonGenerator {
         initMethodBody.addStatement(new MethodCallExpr(new NameExpr("namedStates"), "put",
                 new NodeList<>(new StringLiteralExpr(name), new NameExpr(stateName))));
 
+        stateActions.put(stateName, actionBlock);
+
         // Add import for `className` to dialogue class
         dialogueCompilationUnit.addImport(javaTreeGenerator.outputPackage() + "dialogue.states." + className);
 
@@ -452,20 +464,19 @@ public class DialogueAutomatonGenerator {
     private BlockStmt visitDialogueStateCreation(BMLParser.DialogueStateCreationContext ctx) {
         var pair = addAnonymousStateForFunctionCall(ctx.functionCall());
         if (!ctx.functionCall().functionName.getText().equals("default")) {
-            addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt(), false);
+            //addJumpToDefaultStateIfNotPresent(pair.getRight().getBody().asBlockStmt(), false);
         }
         return pair.getLeft();
     }
 
     private void addJumpToDefaultStateIfNotPresent(BlockStmt block, boolean isAction) {
-        var notContainsJumpOrActionCall = block.getStatements().stream()
-                .filter(s -> s.isExpressionStmt() && s.asExpressionStmt().getExpression().isMethodCallExpr())
-                .map(s -> s.asExpressionStmt().getExpression().asMethodCallExpr())
-                .noneMatch(m -> m.getNameAsString().equals("jumpTo")
-                        || m.getNameAsString().equals("jumpToWithoutAction")
-                        || (m.getScope().isPresent() && m.getScope().get().asNameExpr().getNameAsString().equals(actionClass.getNameAsString())));
+        var containsJumpOrActionCall = block.findAll(MethodCallExpr.class, m -> {
+            return m.getNameAsString().equals("jumpTo")
+                    || m.getNameAsString().equals("jumpToWithoutAction")
+                    || actionJumps.containsKey(m.getNameAsString());
+        });
 
-        if (notContainsJumpOrActionCall) {
+        if (containsJumpOrActionCall.isEmpty()) {
             String call;
             if (isAction) {
                 call = "dialogueAutomaton.jumpToWithoutAction(dialogueAutomaton.defaultState())";
@@ -481,7 +492,7 @@ public class DialogueAutomatonGenerator {
         for (String intent : intents) {
             intent = intent.replace(" ", "");
             Expression intentExpr;
-            if (intent.equals("fallback")) {
+            if (intent.equals("fallback") || intent.equals("_")) {
                 intentExpr = new FieldAccessExpr(new NameExpr(BotConfig.class.getSimpleName()), "NLU_FALLBACK_INTENT");
                 dialogueCompilationUnit.addImport(Utils.renameImport(BotConfig.class, javaTreeGenerator.outputPackage()), false, false);
             } else {
@@ -491,6 +502,7 @@ public class DialogueAutomatonGenerator {
                     new NodeList<>(intentExpr, new NameExpr(to)));
             block.addStatement(transition);
         }
+        nonTerminalStates.add(from);
     }
 
     /**
@@ -601,6 +613,8 @@ public class DialogueAutomatonGenerator {
                 if (functionName.equals("initial")) {
                     addTransition(stmts, "defaultState", stateName, ((BMLState) functionType.getReturnType()).getIntent());
                 }
+
+                stateActions.put(stateName, actionLambdaExpr.getBody().asBlockStmt());
             }
             case "sink" -> {
                 // Sinks are taken care of separately, once all other states have been visited/created
