@@ -83,7 +83,7 @@ public class ProjectGenerator {
 
         // Copy SLF4J SimpleLogger config
         var simpleLoggerStream = IOUtil.getResourceAsStream("simplelogger.properties");
-        Files.copy(simpleLoggerStream, new File(outputDir + "/simplelogger.properties").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(simpleLoggerStream, new File(outputDir + "/src/main/resources/simplelogger.properties").toPath(), StandardCopyOption.REPLACE_EXISTING);
         simpleLoggerStream.close();
 
         var end = System.nanoTime();
@@ -98,7 +98,8 @@ public class ProjectGenerator {
             IOUtil.deleteDirectory(new File(outputDir + "/src"));
             IOUtil.deleteDirectory(new File(outputDir + "/build"));
             IOUtil.deleteDirectory(new File(outputDir + "/build.gradle"));
-            IOUtil.deleteDirectory(new File(outputDir + "/simplelogger.properties"));
+            IOUtil.deleteDirectory(new File(outputDir + "/gradle"));
+            FileUtils.forceDelete(new File(outputDir + "/swagger-codegen-cli-3.0.36.jar"));
         }
 
         end = System.nanoTime();
