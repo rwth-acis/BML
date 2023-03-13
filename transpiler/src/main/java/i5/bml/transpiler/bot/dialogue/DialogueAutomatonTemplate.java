@@ -1,5 +1,6 @@
 package i5.bml.transpiler.bot.dialogue;
 
+import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.events.messenger.MessageEventContext;
 
 import java.util.*;
@@ -14,6 +15,8 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
 
     private State defaultState;
 
+    private String fallbackIntent;
+
     public DialogueAutomatonTemplate() {
         initTransitions();
     }
@@ -27,11 +30,8 @@ public class DialogueAutomatonTemplate implements DialogueAutomaton {
     public void step(MessageEventContext ctx) {
         var newState = currentState.nextState(ctx.intent());
 
-        // No state matches, check if wildcard is declared
-        currentState = Objects.requireNonNullElseGet(newState, () -> {
-            // Go to default state if no wildcard state is declared
-            return Objects.requireNonNullElse(currentState.nextState("_"), defaultState);
-        });
+        // No state matches, use fallback
+        currentState = Objects.requireNonNullElseGet(newState, () -> currentState.nextState(fallbackIntent));
 
         currentState.action(ctx);
 
