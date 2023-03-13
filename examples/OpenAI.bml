@@ -1,0 +1,11 @@
+Bot() {
+    OpenAI openAI(key="env:OPENAI_TOKEN", model="text-davinci-003", tokens=256)
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    @UserStartedChat @UserSentMessage sendResponse(ctx) {
+        send(text="ChatGPT's response:\n" + openAI.process(context=ctx))
+    }
+}

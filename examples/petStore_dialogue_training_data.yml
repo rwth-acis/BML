@@ -1,0 +1,74 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - Hey
+      - Hi
+      - hey there
+      - hi there
+      - hello
+      - sup
+      - start
+      - /start
+
+  - intent: bye
+    examples: |
+      - Bye
+      - Gotta go
+      - see you
+      - goodbye
+
+  - intent: stop
+    examples: |
+      - Stop
+      - /stop
+      - I don't want to
+      - Stop it
+      - Okay, enough
+
+  - intent: functions
+    examples: |
+      - What can you do?
+      - What kind of functionality do you have?
+      - What can I make you do?
+
+  - intent: options
+    examples: |
+      - Tell me what options you have
+      - Show me your options
+      - What kind of options do you have?
+
+  - intent: review
+    examples: |
+      - Make a review
+      - Review
+      - I want to do a review
+      - Do a review
+
+  - intent: yes
+    examples: |
+      - yes
+      - yap
+      - ya
+
+  - intent: no
+    examples: |
+      - no
+      - nope
+      - nah
+
+  - intent: thanks
+    examples: |
+      - thanks
+      - thank you
+
+  - regex: value
+    examples: |
+      - \d{1,12}
+
+  - intent: number
+    examples: |
+      - [3](value)
+      - [1](value)
+      - [321](value)

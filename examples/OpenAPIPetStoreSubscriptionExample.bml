@@ -1,0 +1,61 @@
+Bot(host="localhost", port=8080) {
+
+    OpenAPI petStore(url="https://petstore3.swagger.io/api/v3/openapi.json")
+
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:PETSTORE_SUBSCRIPTION_TRAINING_DATA_FILE")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    Map subscribedUsers()
+
+    @UserSentMessage
+    subscribeUser(ctx) {
+        if ctx.intent == "number" {
+            pet = petStore.get(path="/pet/{petId}", petId=number(string=ctx.entity))
+
+            if pet.code == 200 {
+                if !subscribedUsers.contains(key=ctx.user) {
+                    subscribedUsers.add(key=ctx.user, value=pet.id)
+                    send(text="Thank you, I'll keep you posted about " + pet.name + " with id " + string(number=pet.id))
+                } else {
+                    send(text="You are already subscribed to " + pet.name + " 🧐")
+                }
+            } else if pet.code == 400 {
+                send(text="I'm sorry, it seems like " + ctx.entity + " is an invalid id. Please make sure that you are providing a valid number.")
+            } else { // code == 404
+                send(text="I'm sorry, it seems there is no pet with id " + ctx.entity + " 🥺")
+            }
+        } else if ctx.intent == "subscribe" {
+            send(text="Please provide the id of the pet you are interested in. Note that ids are positive numbers.")
+        } else if ctx.intent == "stop" || ctx.intent == "unsubscribe" {
+            if subscribedUsers.remove(key=ctx.user)
+                send(text="You were unsubscribed!")
+            else
+                send(text="You weren't unsubscribed 🧐")
+        } else if ctx.intent == "greet" {
+            send(text="Hi there! 👋")
+        } else if ctx.intent == "bye" {
+            send(text="See you! 👋")
+        } else if ctx.intent == "thanks" {
+            send(text="You are welcome!")
+        } else {
+            send(text="I'm sorry, I'm not sure how I can be of your assistance. All I can to is (un)subscribe you to the petstore https://petstore3.swagger.io for a pet you are interested in.")
+        }
+    }
+
+    @UserStartedChat
+    welcomeUser(ctx) {
+        send(text="Hi there!")
+    }
+
+    @Routine(rate="100ms")
+    reportPetStatus(ctx) {
+        forEach user, petId in subscribedUsers {
+            pet = petStore.get(path="/pet/{petId}", petId=petId)
+            msg = pet.name + " is **" + pet.status + "**!"
+            send(receiver=user, text=msg)
+        }
+    }
+}

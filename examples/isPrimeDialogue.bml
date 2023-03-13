@@ -1,0 +1,44 @@
+Bot(host="localhost", port=8080) {
+
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:IS_PRIME_TRAINING_DATA_FILE")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    Dialogue primes() {
+        @Action
+        checkIsPrime(context) {
+            n = number(string=context.entity)
+            isPrime = true
+            if (n <= 3)
+                isPrime = n > 1
+            else if (n % 2 == 0 || n % 3 == 0)
+                isPrime = false
+            else {
+                end = sqrt(number=n)
+                forEach i in range(start=5, end=end, step=6) {
+                    if (n % i == 0 || n % (i + 2) == 0) {
+                        isPrime = false
+                        break
+                    }
+                }
+            }
+
+            if (isPrime)
+                send(text=context.entity + " is a prime! 🎉")
+            else
+                send(text=context.entity + " is a not prime 😔")
+        }
+
+        defaultAnswer = "I'm the prime bot. You can ask me any number and I will tell you whether it's a prime number"
+        default(action=defaultAnswer)
+        initial(intent="_, functions, options", action=defaultAnswer)
+        initial(intent="prime", action=checkIsPrime)
+    }
+
+    @UserStartedChat @UserSentMessage @UserLeftChat
+    handleMessage(context) {
+        primes.step(context=context);
+    }
+}

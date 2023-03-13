@@ -1,0 +1,55 @@
+version: "3.1"
+
+nlu:
+  - intent: stop
+    examples: |
+      - Stop
+      - /stop
+      - I don't want to
+      - Stop it
+      - Okay, enough
+
+  - intent: greet
+    examples: |
+      - Hey
+      - Hi
+      - hey there
+      - hi there
+      - hello
+      - sup
+      - start
+      - /start
+
+  - intent: bye
+    examples: |
+      - Bye
+      - Gotta go
+      - see you
+      - goodbye
+
+  - intent: unsubscribe
+    examples: |
+      - Unsubscribe
+      - Please unsubscribe me
+      - Unsub me please
+
+  - intent: subscribe
+    examples: |
+      - Subscribe
+      - Please subscribe me
+      - Sub me please
+
+  - intent: thanks
+    examples: |
+      - thanks
+      - thank you
+
+  - regex: value
+    examples: |
+      - \d{1,12}
+
+  - intent: number
+    examples: |
+      - [3](value)
+      - [1](value)
+      - [321](value)
