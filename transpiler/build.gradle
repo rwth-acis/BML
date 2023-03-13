@@ -94,7 +94,7 @@ abstract class ExecutableJarTask extends DefaultTask {
     ConfigurableFileTree originalJars = project.fileTree("${project.buildDir}/libs") { include("*.jar") }
 
     @OutputDirectory
-    File outputDir = new File("${project.rootDir}")
+    File outputDir = new File(System.getenv('BMLC_OUT') == null ? "${project.rootDir}" : System.getenv('BMLC_OUT'))
 
     @InputFile
     File launchScript = new File("${project.rootDir}/launch.sh")
