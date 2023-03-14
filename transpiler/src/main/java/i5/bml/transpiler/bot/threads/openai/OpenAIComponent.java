@@ -4,6 +4,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,12 +47,17 @@ public class OpenAIComponent {
     }
 
     public String invokeModel(MessageEvent messageEvent) {
-        var messages = activeConversations.computeIfAbsent(messageEvent.username(), k -> {
-            var chatMessages = new ArrayList<ChatMessage>();
-            chatMessages.add(new ChatMessage("user", prompt));
-            return chatMessages;
-        });
-        messages.add(new ChatMessage("user", messageEvent.text()));
+        var messages = activeConversations.get(messageEvent.username());
+        if (messages == null) {
+            messages = new ArrayList<>();
+            if (!prompt.isEmpty()) {
+                messages.add(new ChatMessage("system", prompt));
+            }
+            messages.add(new ChatMessage("user", messageEvent.text()));
+            activeConversations.put(messageEvent.username(), messages);
+        } else {
+            messages.add(new ChatMessage("user", messageEvent.text()));
+        }
 
         var completionRequest = ChatCompletionRequest.builder()
                 .model(model)
@@ -61,8 +67,8 @@ public class OpenAIComponent {
                 .n(1) // We only want one choice for completion
                 .build();
         LOGGER.debug(completionRequest.toString());
-        var response = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage().getContent();
-        messages.add(new ChatMessage("system", response));
+        String response = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage().getContent();
+        messages.add(new ChatMessage("assistant", response));
         return response;
     }
 }
