@@ -5,10 +5,7 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.*;
 import generatedParser.BMLParser;
 import i5.bml.parser.types.components.nlu.BMLOpenAIComponent;
 import i5.bml.transpiler.bot.components.ComponentRegistry;
@@ -21,6 +18,10 @@ import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import i5.bml.transpiler.utils.Utils;
 import org.antlr.symtab.Type;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
 
 @CodeGenerator(typeClass = BMLOpenAIComponent.class)
 public class OpenAIGenerator extends Generator implements UsesEnvVariable {
@@ -48,6 +49,11 @@ public class OpenAIGenerator extends Generator implements UsesEnvVariable {
                 getFromEnv(openAIComponent.key()),
                 new StringLiteralExpr(openAIComponent.model()),
                 new IntegerLiteralExpr(openAIComponent.tokens()),
+                new MethodCallExpr(new NameExpr(Duration.class.getSimpleName()), "of",
+                        new NodeList<>(
+                                new LongLiteralExpr(openAIComponent.duration()),
+                                new FieldAccessExpr(new NameExpr(ChronoUnit.class.getSimpleName()), openAIComponent.timeUnit().name())
+                        )),
                 new StringLiteralExpr(openAIComponent.prompt())
         ));
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName, initializer,
@@ -60,6 +66,10 @@ public class OpenAIGenerator extends Generator implements UsesEnvVariable {
         //noinspection OptionalGetWithoutIsPresent -> We can assume presence
         var compilationUnit = currentClass.findCompilationUnit().get();
         compilationUnit.addImport(Utils.renameImport(OpenAIComponent.class, visitor.outputPackage()), false, false);
+
+        // Add imports for `Duration` and `ChronoUnit`
+        compilationUnit.addImport(Duration.class);
+        compilationUnit.addImport(ChronoUnit.class);
     }
 
     @Override

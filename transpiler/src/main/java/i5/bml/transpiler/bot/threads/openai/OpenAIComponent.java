@@ -1,13 +1,15 @@
 package i5.bml.transpiler.bot.threads.openai;
 
-import com.theokanning.openai.completion.CompletionRequest;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.service.OpenAiService;
 import i5.bml.transpiler.bot.events.messenger.MessageEvent;
-import i5.bml.transpiler.bot.threads.Session;
-import i5.bml.transpiler.bot.threads.slack.SlackBotThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +28,11 @@ public class OpenAIComponent {
 
     private final String prompt;
 
-    private final Map<String, StringBuilder> activeConversations = new HashMap<>();
+    private final Map<String, List<ChatMessage>> activeConversations = new HashMap<>();
 
-    public OpenAIComponent(String token, String model, int tokens, String prompt) {
-        service = new OpenAiService(token);
+    public OpenAIComponent(String token, String model, int tokens, Duration timeout, String prompt) {
+        LOGGER.info("Using {} timeout", timeout);
+        service = new OpenAiService(token, timeout);
         this.model = model;
         this.tokens = tokens;
         this.prompt = prompt;
@@ -43,23 +46,23 @@ public class OpenAIComponent {
     }
 
     public String invokeModel(MessageEvent messageEvent) {
-        var history = activeConversations.get(messageEvent.username());
-        if (history != null) {
-            history.append("\n").append(messageEvent.text().replaceAll("\n", ""));
-        } else {
-            history = new StringBuilder(prompt + "\n" + messageEvent.text().replaceAll("\n", ""));
-        }
+        var messages = activeConversations.computeIfAbsent(messageEvent.username(), k -> {
+            var chatMessages = new ArrayList<ChatMessage>();
+            chatMessages.add(new ChatMessage("user", prompt));
+            return chatMessages;
+        });
+        messages.add(new ChatMessage("user", messageEvent.text()));
 
-        var completionRequest = CompletionRequest.builder()
-                .prompt(history.toString())
+        var completionRequest = ChatCompletionRequest.builder()
                 .model(model)
-                .echo(false)
+                .messages(messages)
                 .user(messageEvent.username())
                 .maxTokens(tokens)
                 .n(1) // We only want one choice for completion
                 .build();
-        var response = service.createCompletion(completionRequest).getChoices().get(0).getText();
-        activeConversations.put(messageEvent.username(), history.append("\n").append(response.replaceAll("\n", "")));
+        LOGGER.debug(completionRequest.toString());
+        var response = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage().getContent();
+        messages.add(new ChatMessage("system", response));
         return response;
     }
 }

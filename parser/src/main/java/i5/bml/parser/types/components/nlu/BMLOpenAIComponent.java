@@ -10,8 +10,11 @@ import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.sql.Time;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
 
@@ -27,6 +30,13 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
     @BMLComponentParameter(name = "tokens", expectedBMLType = BuiltinType.NUMBER, isRequired = false)
     private String tokens;
 
+    @BMLComponentParameter(name = "timeout", expectedBMLType = BuiltinType.STRING, isRequired = false)
+    private String timeout;
+
+    private String duration;
+
+    private ChronoUnit timeUnit;
+
     @BMLComponentParameter(name = "prompt", expectedBMLType = BuiltinType.STRING, isRequired = false)
     private String prompt;
 
@@ -36,6 +46,26 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
         var contextParameter = new BMLFunctionParameter("context", contextType);
         var processFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(contextParameter), new ArrayList<>());
         supportedAccesses.put("process", processFunction);
+    }
+
+    @Override
+    public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
+        super.populateParameters(diagnosticsCollector, ctx);
+        duration = timeout.split("[a-zA-Z]+")[0];
+        timeUnit = switch (timeout.split("\\d+")[1]) {
+            case "ns" -> ChronoUnit.NANOS;
+            case "µs" -> ChronoUnit.MICROS;
+            case "ms" -> ChronoUnit.MILLIS;
+            case "s" -> ChronoUnit.SECONDS;
+            case "m" -> ChronoUnit.MINUTES;
+            case "h" -> ChronoUnit.HOURS;
+            case "d" -> ChronoUnit.DAYS;
+            default -> {
+                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                        "Can't recognize time unit, allowed time units are: ns, µs, ms, s, m, h, d", ctx);
+                yield ChronoUnit.HOURS;
+            }
+        };
     }
 
     @Override
@@ -63,6 +93,14 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
 
     public String tokens() {
         return tokens;
+    }
+
+    public String duration() {
+        return duration;
+    }
+
+    public ChronoUnit timeUnit() {
+        return timeUnit;
     }
 
     public String prompt() {
