@@ -14,7 +14,6 @@ import org.stringtemplate.v4.ST;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
@@ -28,10 +27,13 @@ public class ProjectGenerator {
 
     private final String outputFormat;
 
-    public ProjectGenerator(String outputDir, String outputPackage, String outputFormat) {
+    private final boolean cachingEnabled;
+
+    public ProjectGenerator(String outputDir, String outputPackage, String outputFormat, boolean cachingEnabled) {
         this.outputDir = outputDir;
         this.outputPackage = outputPackage;
         this.outputFormat = outputFormat;
+        this.cachingEnabled = cachingEnabled;
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ProjectGenerator.class);
@@ -42,6 +44,10 @@ public class ProjectGenerator {
         outputPackage = outputPackage.replace("\\.", "/");
 
         IOUtil.deleteDirectory(new File(outputDir + "/src"));
+        if (!cachingEnabled) {
+            IOUtil.deleteDirectory(new File(outputDir + "/.gradle"));
+            IOUtil.deleteDirectory(new File(outputDir + "/gradle"));
+        }
 
         // Create "project" folders (use mkdirs() to implicitly create parents)
         new File(outputDir + "/src/main/java/").mkdirs();
@@ -77,9 +83,11 @@ public class ProjectGenerator {
         Files.write(new File(outputDir + "/build.gradle").toPath(), gradleFile.render().getBytes());
 
         // Copy gitignore
-        var gitignoreStream = IOUtil.getResourceAsStream("gitignore_template");
-        Files.copy(gitignoreStream, new File(outputDir + "/.gitignore").toPath(), StandardCopyOption.REPLACE_EXISTING);
-        gitignoreStream.close();
+        if (!outputFormat.equals("jar")) {
+            var gitignoreStream = IOUtil.getResourceAsStream("gitignore_template");
+            Files.copy(gitignoreStream, new File(outputDir + "/.gitignore").toPath(), StandardCopyOption.REPLACE_EXISTING);
+            gitignoreStream.close();
+        }
 
         // Copy SLF4J SimpleLogger config
         var simpleLoggerStream = IOUtil.getResourceAsStream("simplelogger.properties");
@@ -98,8 +106,15 @@ public class ProjectGenerator {
             IOUtil.deleteDirectory(new File(outputDir + "/src"));
             IOUtil.deleteDirectory(new File(outputDir + "/build"));
             IOUtil.deleteDirectory(new File(outputDir + "/build.gradle"));
-            IOUtil.deleteDirectory(new File(outputDir + "/gradle"));
+
+            if (!cachingEnabled) {
+                IOUtil.deleteDirectory(new File(outputDir + "/.gradle"));
+                IOUtil.deleteDirectory(new File(outputDir + "/gradle"));
+            }
+
+            IOUtil.deleteDirectory(new File(outputDir + "/.swagger-codegen"));
             FileUtils.forceDelete(new File(outputDir + "/swagger-codegen-cli-3.0.36.jar"));
+            IOUtil.forceDeleteIfFileExists(outputDir + "/.swagger-codegen-ignore");
         }
 
         end = System.nanoTime();

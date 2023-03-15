@@ -159,7 +159,20 @@ public class IOUtil {
             file = new File("%s%s/%s.java".formatted(botOutputPath, packageName, clazz.getSimpleName()));
             FileUtils.forceDelete(file);
         } catch (Exception e) {
-            LOGGER.error("Failed to delete file {}", file, e);
+            LOGGER.error("Failed to delete file {}: {}", file, e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
+        }
+    }
+
+    public static void forceDeleteIfFileExists(String filePath) {
+        var file = new File(filePath);
+        if (file.exists()) {
+            try {
+                FileUtils.forceDelete(file);
+            } catch (IOException e) {
+                LOGGER.error("Failed to delete file {}: {}", file, e.getMessage());
+                LOGGER.debug("Stacktrace:", e);
+            }
         }
     }
 

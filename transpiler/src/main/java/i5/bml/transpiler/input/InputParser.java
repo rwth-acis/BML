@@ -28,6 +28,8 @@ public class InputParser {
 
     private String outputFormat;
 
+    private boolean cachingEnabled;
+
     public void parse(String[] args) throws IOException {
         // Parse options
         var options = initOptions();
@@ -94,7 +96,7 @@ public class InputParser {
 
         // We only invoke code generation if we did not encounter _errors_
         if (!containsError) {
-            new ProjectGenerator(outputDir, outputPackage, outputFormat).invokeCodeGeneration(tree, start);
+            new ProjectGenerator(outputDir, outputPackage, outputFormat, cachingEnabled).invokeCodeGeneration(tree, start);
         }
     }
 
@@ -135,6 +137,12 @@ public class InputParser {
                 .build();
         options.addOption(formatOption);
 
+        var cacheOption = Option.builder("c")
+                .longOpt("cache")
+                .desc("allow compiler to maintain Gradle packages in output directory (faster compilation)")
+                .build();
+        options.addOption(cacheOption);
+
         return options;
     }
 
@@ -144,5 +152,6 @@ public class InputParser {
         outputPackage = cmd.hasOption("package") ? cmd.getOptionValue("package") : "";
         inputFilePath = cmd.getOptionValue("input");
         outputFormat = cmd.getOptionValue("format");
+        cachingEnabled = cmd.hasOption("cache");
     }
 }
