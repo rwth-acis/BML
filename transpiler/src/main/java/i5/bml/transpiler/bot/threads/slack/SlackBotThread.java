@@ -46,9 +46,10 @@ public class SlackBotThread implements Runnable {
             var authTestResponse = app.getClient().authTest(r -> r.token(botToken));
             botId = authTestResponse.getBotId();
         } catch (IOException | SlackApiException e) {
-            LOGGER.error("Failed to retrieve `botId` via `authTest`", e);
+            LOGGER.error("Failed to retrieve `botId` via `authTest`: {}", e.getMessage());
             // We cannot run the bot without the botId
-            return;
+            // We have to rethrow to make sure that the component initialization receives the failure signal
+            throw new RuntimeException(e);
         }
 
         /*
@@ -74,7 +75,9 @@ public class SlackBotThread implements Runnable {
             client = socketModeApp.getClient();
             LOGGER.info("Successfully initialized Slack bot");
         } catch (Exception e) {
-            throw new IllegalStateException("Connecting with Slack failed", e);
+            LOGGER.error("Failed to initialize Slack: {}", e.getMessage());
+            // We have to rethrow to make sure that the component initialization receives the failure signal
+            throw new RuntimeException(e);
         }
     }
 

@@ -33,11 +33,9 @@ public class ComponentRegistry {
             CompletableFuture.allOf(futures).get();
             LOGGER.info("Component initialization done!");
         } catch (InterruptedException e) {
-            LOGGER.error("Component initialization was interrupted: {}", e.getMessage());
             LOGGER.debug("Stacktrace:", e);
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-            LOGGER.error("Component initialization failed: {}", e.getMessage());
             LOGGER.debug("Stacktrace:", e);
         }
     }
