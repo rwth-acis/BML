@@ -47,7 +47,7 @@ public class EventHandlerRegistry {
                 try {
                     handler.invoke(null, new MessageEventContext(messageEvent));
                 } catch (Exception e) {
-                    LOGGER.error("Execution of handler for message event {} failed:\n{}", messageEvent.messageEventType(), e.getCause().getMessage());
+                    LOGGER.error("Execution of handler for message event {} failed: {}", messageEvent.messageEventType(), e.getCause().getMessage());
                     LOGGER.debug("Stacktrace:", e);
                 }
             }

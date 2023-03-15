@@ -41,7 +41,14 @@ public class InputParser {
         var start = System.nanoTime();
 
         // Start processing input file
-        var inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
+        final String inputString;
+        try {
+            inputString = FileUtils.readFileToString(new File(inputFilePath), Charset.defaultCharset());
+        } catch (IOException e) {
+            LOGGER.error("An error occurred while trying to read {}: {}", inputFilePath, e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
+            return;
+        }
         var bmlParser = Measurements.measure("Preparing parser", () -> Parser.bmlParser(inputString));
 
         var syntaxErrorListener = new SyntaxErrorListener();

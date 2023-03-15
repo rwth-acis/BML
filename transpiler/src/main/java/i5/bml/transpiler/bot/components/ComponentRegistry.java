@@ -1,7 +1,6 @@
 package i5.bml.transpiler.bot.components;
 
 import i5.bml.transpiler.bot.events.Event;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,8 @@ public class ComponentRegistry {
                     try {
                         return (CompletableFuture<?>) m.invoke(null, threadPool, eventQueue);
                     } catch (Exception e) {
-                        LOGGER.error("Component initialization failed for {}", m.getDeclaringClass().getSimpleName(), ExceptionUtils.getRootCause(e));
+                        LOGGER.error("Component initialization failed for {}: {}", m.getDeclaringClass().getSimpleName(), e.getMessage());
+                        LOGGER.debug("Stacktrace:", e);
                         return CompletableFuture.failedFuture(e);
                     }
                 })
@@ -33,10 +33,12 @@ public class ComponentRegistry {
             CompletableFuture.allOf(futures).get();
             LOGGER.info("Component initialization done!");
         } catch (InterruptedException e) {
-            LOGGER.error("Component initialization was interrupted", ExceptionUtils.getRootCause(e));
+            LOGGER.error("Component initialization was interrupted: {}", e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
-            LOGGER.error("Component initialization failed", ExceptionUtils.getRootCause(e));
+            LOGGER.error("Component initialization failed: {}", e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
         }
     }
 }
