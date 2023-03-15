@@ -21,6 +21,7 @@ import org.antlr.symtab.Type;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @CodeGenerator(typeClass = BMLOpenAIComponent.class)
@@ -45,17 +46,23 @@ public class OpenAIGenerator extends Generator implements UsesEnvVariable {
         // Add field
         var type = StaticJavaParser.parseClassOrInterfaceType(OpenAIComponent.class.getSimpleName());
         var fieldName = "openAI";
-        var initializer = new ObjectCreationExpr(null, type, new NodeList<>(
-                getFromEnv(openAIComponent.key()),
-                new StringLiteralExpr(openAIComponent.model()),
-                new IntegerLiteralExpr(openAIComponent.tokens()),
-                new MethodCallExpr(new NameExpr(Duration.class.getSimpleName()), "of",
-                        new NodeList<>(
-                                new LongLiteralExpr(openAIComponent.duration()),
-                                new FieldAccessExpr(new NameExpr(ChronoUnit.class.getSimpleName()), openAIComponent.timeUnit().name())
-                        )),
-                new StringLiteralExpr(openAIComponent.prompt())
-        ));
+        var initializerArgs = new NodeList<Expression>();
+        initializerArgs.add(getFromEnv(openAIComponent.key()));
+        initializerArgs.add(new StringLiteralExpr(openAIComponent.model()));
+        initializerArgs.add(new IntegerLiteralExpr(openAIComponent.tokens().isEmpty() ? "-1" : openAIComponent.tokens()));
+        if (openAIComponent.duration() != null) {
+            initializerArgs.add(new MethodCallExpr(new NameExpr(Duration.class.getSimpleName()), "of", new NodeList<>(
+                    new LongLiteralExpr(openAIComponent.duration()),
+                    new FieldAccessExpr(new NameExpr(ChronoUnit.class.getSimpleName()), openAIComponent.timeUnit().name())
+            )));
+        } else {
+            initializerArgs.add(new MethodCallExpr(new NameExpr(Duration.class.getSimpleName()), "of", new NodeList<>(
+                    new LongLiteralExpr("10"),
+                    new FieldAccessExpr(new NameExpr(ChronoUnit.class.getSimpleName()), "SECONDS")
+            )));
+        }
+        initializerArgs.add(new StringLiteralExpr(openAIComponent.prompt()));
+        var initializer = new ObjectCreationExpr(null, type, initializerArgs);
         FieldDeclaration field = currentClass.addFieldWithInitializer(type, fieldName, initializer,
                 Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 

@@ -51,21 +51,23 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
     @Override
     public void populateParameters(DiagnosticsCollector diagnosticsCollector, BMLParser.ElementExpressionPairListContext ctx) {
         super.populateParameters(diagnosticsCollector, ctx);
-        duration = timeout.split("[a-zA-Z]+")[0];
-        timeUnit = switch (timeout.split("\\d+")[1]) {
-            case "ns" -> ChronoUnit.NANOS;
-            case "µs" -> ChronoUnit.MICROS;
-            case "ms" -> ChronoUnit.MILLIS;
-            case "s" -> ChronoUnit.SECONDS;
-            case "m" -> ChronoUnit.MINUTES;
-            case "h" -> ChronoUnit.HOURS;
-            case "d" -> ChronoUnit.DAYS;
-            default -> {
-                Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
-                        "Can't recognize time unit, allowed time units are: ns, µs, ms, s, m, h, d", ctx);
-                yield ChronoUnit.HOURS;
-            }
-        };
+        if (!timeout.isEmpty()) {
+            duration = timeout.split("[a-zA-Z]+")[0];
+            timeUnit = switch (timeout.split("\\d+")[1]) {
+                case "ns" -> ChronoUnit.NANOS;
+                case "µs" -> ChronoUnit.MICROS;
+                case "ms" -> ChronoUnit.MILLIS;
+                case "s" -> ChronoUnit.SECONDS;
+                case "m" -> ChronoUnit.MINUTES;
+                case "h" -> ChronoUnit.HOURS;
+                case "d" -> ChronoUnit.DAYS;
+                default -> {
+                    Diagnostics.addDiagnostic(diagnosticsCollector.getCollectedDiagnostics(),
+                            "Can't recognize time unit, allowed time units are: ns, µs, ms, s, m, h, d", ctx);
+                    yield ChronoUnit.HOURS;
+                }
+            };
+        }
     }
 
     @Override

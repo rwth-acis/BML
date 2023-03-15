@@ -31,7 +31,7 @@ public class TelegramBotThread implements Runnable {
             TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             var telegramBot = new TelegramComponent(eventQueue, botName, botToken);
             telegramBotsApi.registerBot(telegramBot);
-            LOGGER.info("Successfully initialized Telegram bot");
+            LOGGER.info("Successfully initialized Telegram bot with name {}", botName);
         } catch (TelegramApiException e) {
             // We have to throw a new exception and can't let TelegramApiException bubble up to the component initializer
             throw new RuntimeException(e.getMessage());

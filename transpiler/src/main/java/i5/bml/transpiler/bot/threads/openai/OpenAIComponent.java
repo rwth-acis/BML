@@ -31,16 +31,18 @@ public class OpenAIComponent {
 
     private final Map<String, List<ChatMessage>> activeConversations = new HashMap<>();
 
-    public OpenAIComponent(String token, String model, int tokens, Duration timeout, String prompt) {
+    public OpenAIComponent(String apiKey, String model, int tokens, Duration timeout, String prompt) {
+        service = new OpenAiService(apiKey, timeout);
         LOGGER.info("Using {} timeout", timeout);
-        service = new OpenAiService(token, timeout);
         this.model = model;
         this.tokens = tokens;
+        LOGGER.info("Using {} tokens", tokens == -1 ? "inf" : tokens);
         this.prompt = prompt;
         try {
             service.listModels();
         } catch (Exception e) {
-            LOGGER.error("Failed to connect to OpenAI API", e);
+            LOGGER.error("Failed to connect to OpenAI API: {}", e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
             return;
         }
         LOGGER.info("Successfully initialized connection to OpenAI API");
@@ -59,16 +61,24 @@ public class OpenAIComponent {
             messages.add(new ChatMessage("user", messageEvent.text()));
         }
 
-        var completionRequest = ChatCompletionRequest.builder()
+        var completionRequestBuilder = ChatCompletionRequest.builder()
                 .model(model)
                 .messages(messages)
                 .user(messageEvent.username())
-                .maxTokens(tokens)
-                .n(1) // We only want one choice for completion
-                .build();
+                .n(1); // We only want one choice for completion
+        if (tokens != -1) {
+            completionRequestBuilder.maxTokens(tokens);
+        }
+
+        var completionRequest = completionRequestBuilder.build();
         LOGGER.debug(completionRequest.toString());
-        String response = service.createChatCompletion(completionRequest).getChoices().get(0).getMessage().getContent();
-        messages.add(new ChatMessage("assistant", response));
-        return response;
+
+        var result = service.createChatCompletion(completionRequest);
+        LOGGER.debug(result.toString());
+
+        String responseContent = result.getChoices().get(0).getMessage().getContent();
+        messages.add(new ChatMessage("assistant", responseContent));
+
+        return responseContent;
     }
 }
