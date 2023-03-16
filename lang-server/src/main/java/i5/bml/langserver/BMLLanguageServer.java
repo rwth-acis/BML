@@ -53,6 +53,7 @@ public class BMLLanguageServer implements LanguageServer, LanguageClientAware {
         capabilities.setCompletionProvider(completionOptions);
         capabilities.setCodeActionProvider(false);
         capabilities.setDiagnosticProvider(new DiagnosticRegistrationOptions());
+        capabilities.setHoverProvider(true);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

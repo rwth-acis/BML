@@ -54,9 +54,8 @@ public class BMLTextDocumentService implements TextDocumentService {
                                     completionItem.setDetail(functionType.toString());
                                 } else {
                                     completionItem.setInsertText(name);
-                                    completionItem.setLabel(name);
+                                    completionItem.setLabel("%s : %s".formatted(name, type));
                                     completionItem.setKind(CompletionItemKind.Field);
-                                    completionItem.setDetail(name);
                                 }
 
                                 completionItems.add(completionItem);
@@ -80,13 +79,19 @@ public class BMLTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
-//        bmlLanguageServer.getClient().logMessage(new MessageParams(MessageType.Info, "Hover Request: " + params.toString()));
-//        return CompletableFuture.supplyAsync(() -> {
-//            var h = new Hover();
-//            h.setContents(List.of(Either.forLeft("This is a"), Either.forLeft("hover message")));
-//            return h;
-//        });
-        return TextDocumentService.super.hover(params);
+        return CompletableFuture.supplyAsync(() -> {
+            var column = params.getPosition().getCharacter() - 2;
+            var pair = Parser.findTerminalNode(parseTree, params.getPosition().getLine() + 1, column);
+            var hover = new Hover();
+            hover.setContents(List.of());
+            if (pair != null) {
+                var symbol = pair.getRight().resolve(pair.getLeft().getText());
+                if (symbol != null) {
+                    hover.setContents(List.of(Either.forLeft(((AbstractBMLType) ((VariableSymbol) symbol).getType()).toString())));
+                }
+            }
+            return hover;
+        });
     }
 
     @Override
