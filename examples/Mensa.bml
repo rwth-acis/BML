@@ -8,21 +8,21 @@ Bot() {
     Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
     Dialogue mensaDialogue() {
-        @Action getMenu(context) {
+        @Action getMenu(ctx) {
             today = date(format="yyyy-MM-dd")
             meals = mensaAPI.get(path="/canteens/{id}/days/{date}/meals", id=187, date=today)
             if meals.code != 200 {
-                send(text="I'm sorry, it seems like something went wrong while retrieving the menu for today 😔")
+                send(text="I'm sorry, it seems like something went wrong while retrieving the menu for RWTH Mensa Academica 😔")
             } else {
                 menuResponse = "*TODAY'S MENU (" + today + ") for RWTH Mensa Academica*\n\n"
                 sides = "_Sides_\n"
-                forEach m in meals {
-                    if m.category != "Hauptbeilagen" && m.category != "Nebenbeilage" {
-                        menuResponse += "_" + m.category + "_ - " + string(number=m.prices.students) + "€\n"
-                        menuResponse += m.name + "\n"
-                        menuResponse += "_Notes_: " + m.notes.join(delimiter=", ") + "\n\n"
+                forEach meal in meals {
+                    if meal.category != "Hauptbeilagen" && meal.category != "Nebenbeilage" {
+                        menuResponse += "_" + meal.category + "_ - " + string(number=meal.prices.students) + "€\n"
+                        menuResponse += meal. + "\n"
+                        menuResponse += "_Notes_: " + meal.notes.join(delimiter=", ") + "\n\n"
                     } else {
-                        sides += m.name + "\n"
+                        sides += meal.name + "\n"
                     }
                 }
                 send(text=menuResponse + sides)
@@ -34,10 +34,13 @@ Bot() {
         sink(intent="bye, stop", action="Until next time!")
         sink(intent="thanks", action="You're welcome!")
 
-        initial(intent="_", action="I'm not sure how I can be of your assistance. All I can do for you is retrieve the RWTH Academica mensa menu")
+        initial(intent="_", action="I'm not sure how I can be of your assistance. All I can do for you is retrieve the menu of the RWTH Mensa Academica")
+
         greetings = ["Hi there, fellow human! 🤖", "Hi, nice to meet you!", "Hello, pleasure to meet you!", "Hi there! 👋"]
         initial(intent="greet", action=greetings)
+        
         initial(intent="functions, options", action="I'm a simple mensa bot, I can retrieve today's RWTH Academica mensa menu")
+        
         initial(intent="menu", action=getMenu)
     }
 

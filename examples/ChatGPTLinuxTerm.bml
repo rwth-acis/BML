@@ -1,0 +1,11 @@
+Bot() {
+    OpenAI openAI(key="env:OPENAI_TOKEN", model="gpt-3.5-turbo", tokens=2200, timeout="1m", prompt="I want you to act as a linux terminal. I will type commands and you will reply with what the terminal should show. I want you to only reply with the terminal output inside one unique code block, and nothing else. do not write explanations. do not type commands unless I instruct you to do so. When I need to tell you something in English, I will do so by putting text inside curly brackets {like this}.")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    @UserStartedChat @UserSentMessage sendResponse(ctx) {
+        send(text=openAI.process(context=ctx))
+    }
+}

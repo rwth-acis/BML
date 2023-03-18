@@ -46,6 +46,17 @@ nlu:
       - Menu
       - What's today's menu?    
 
+  - intent: mensa
+    examples: |
+      - [Forum Cafete](name)
+      - [Bistro Templergraben](name)
+      - [Mensa Ahorn](name)
+      - [Mensa Vita](name)
+      - [Mensa Bayernallee](name)
+      - [Mensa EUPS](name)
+      - [Gastro Goethe](name)
+      - [Mensa Academica](name)
+
   - intent: thanks
     examples: |
       - thanks

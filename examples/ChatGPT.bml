@@ -1,0 +1,12 @@
+Bot() {
+    // models: text-davinci-003, gpt-3.5-turbo, code-davinci-002
+    OpenAI openAI(key="env:OPENAI_TOKEN", model="gpt-3.5-turbo", tokens=2000, timeout="1m")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    @UserStartedChat @UserSentMessage sendResponse(ctx) {
+        send(text=openAI.process(context=ctx))
+    }
+}
