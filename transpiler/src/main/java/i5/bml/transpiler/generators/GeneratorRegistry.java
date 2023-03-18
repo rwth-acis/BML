@@ -77,6 +77,7 @@ public class GeneratorRegistry {
         // -- Function generators
         registerFunctionGenerator(NumberFunctionGenerator.class);
         registerFunctionGenerator(SendFunctionGenerator.class);
+        registerFunctionGenerator(SendInlineKeyboardFunctionGenerator.class);
         registerFunctionGenerator(StringFunctionGenerator.class);
         registerFunctionGenerator(RangeFunctionGenerator.class);
         registerFunctionGenerator(SqrtFunctionGenerator.class);

@@ -68,6 +68,7 @@ public class FunctionRegistry {
         // - Global functions
         registerFunction(BMLNumberFunction.class);
         registerFunction(BMLSendFunction.class);
+        registerFunction(BMLSendInlineKeyboardFunction.class);
         registerFunction(BMLStringFunction.class);
         registerFunction(BMLRangeFunction.class);
         registerFunction(BMLSqrtFunction.class);

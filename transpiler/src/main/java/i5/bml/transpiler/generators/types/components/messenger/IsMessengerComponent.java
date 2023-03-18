@@ -15,13 +15,14 @@ import org.apache.commons.lang3.StringUtils;
 public interface IsMessengerComponent {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    default void addBranchToMessageHelper(JavaTreeGenerator visitor, Class<?> messengerUserClass, Expression thenExpr, String helperMethod,
+    default void addBranchToMessageHelper(JavaTreeGenerator visitor, String[] replyToMessengerParamTypes,
+                                          Class<?> messengerUserClass, Expression thenExpr, String helperMethod,
                                           Class<?>... classesToImport) {
         PrinterUtil.readAndWriteClass(visitor.botOutputPath(), MessageHelper.class, clazz -> {
             var methodDeclaration = StaticJavaParser.parseMethodDeclaration(helperMethod);
             clazz.addMember(methodDeclaration);
 
-            var replyToMessengerBody = clazz.getMethodsBySignature("replyToMessenger", "User", "String").get(0).getBody().get();
+            var replyToMessengerBody = clazz.getMethodsBySignature("replyToMessenger", replyToMessengerParamTypes).get(0).getBody().get();
             var ifStmt = replyToMessengerBody.stream()
                     .filter(node -> node instanceof Statement stmt
                             && stmt.isIfStmt()

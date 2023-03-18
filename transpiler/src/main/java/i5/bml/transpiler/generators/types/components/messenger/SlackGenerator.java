@@ -50,7 +50,7 @@ public class SlackGenerator extends Generator implements InitializableComponent,
 
         // Add methods to `MessageHelper`
         var expr = StaticJavaParser.parseExpression("sendSlackMessage(slackUser.slackClient(), slackUser.botToken(), slackUser.channelId(), msg)");
-        addBranchToMessageHelper(visitor, SlackUser.class, expr, SEND_SLACK_MESSAGE, SocketModeClient.class,
+        addBranchToMessageHelper(visitor, new String[]{"User", "String"}, SlackUser.class, expr, SEND_SLACK_MESSAGE, SocketModeClient.class,
                 SlackApiException.class, IOException.class);
 
         // Add component initializer method to registry

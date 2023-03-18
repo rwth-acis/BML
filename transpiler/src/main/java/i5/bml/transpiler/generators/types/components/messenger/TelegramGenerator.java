@@ -17,7 +17,13 @@ import i5.bml.transpiler.generators.types.components.UsesEnvVariable;
 import i5.bml.transpiler.utils.IOUtil;
 import org.antlr.symtab.Type;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @CodeGenerator(typeClass = BMLTelegramComponent.class)
 public class TelegramGenerator extends Generator implements InitializableComponent, IsMessengerComponent, UsesEnvVariable {
@@ -31,6 +37,25 @@ public class TelegramGenerator extends Generator implements InitializableCompone
                     send.setChatId(chatId);
                     send.setText(msg);
                     send.setParseMode("markdown");
+                    telegramComponent.execute(send);
+                } catch (TelegramApiException e) {
+                    LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the telegram bot {}: {}", msg, chatId, telegramComponent.getBotUsername(), e.getMessage());
+                }
+            }""";
+
+    private static final String SEND_TELEGRAM_MESSAGE_WITH_INLINE_KEYBOARD = """
+            private static void sendTelegramMessageWithInlineKeyboard(TelegramComponent telegramComponent, List<List<String>> buttonRows, Long chatId, String msg) {
+                try {
+                    var send = new SendMessage();
+                    send.setChatId(chatId);
+                    send.setText(msg);
+                    send.setParseMode("markdown");
+                    List<KeyboardRow> keyboardRowList = buttonRows.stream()
+                            .map(stringList -> stringList.stream()
+                                    .map(KeyboardButton::new)
+                                    .collect(Collectors.toCollection(KeyboardRow::new)))
+                            .collect(Collectors.toCollection(ArrayList<KeyboardRow>::new));
+                    send.setReplyMarkup(new ReplyKeyboardMarkup(keyboardRowList));
                     telegramComponent.execute(send);
                 } catch (TelegramApiException e) {
                     LOGGER.error("An error occurred while sending the msg '{}' to the chat with id {} using the telegram bot {}: {}", msg, chatId, telegramComponent.getBotUsername(), e.getMessage());
@@ -51,10 +76,16 @@ public class TelegramGenerator extends Generator implements InitializableCompone
         // Copy required implementation for Telegram
         IOUtil.copyDirAndRenameImports("threads/telegram", visitor);
 
-        // Add methods to `MessageHelper`
+        // Add SEND_TELEGRAM_MESSAGE to `MessageHelper`
         var expr = StaticJavaParser.parseExpression("sendTelegramMessage(telegramUser.telegramComponent(), telegramUser.chatId(), msg)");
-        addBranchToMessageHelper(visitor, TelegramUser.class, expr, SEND_TELEGRAM_MESSAGE, TelegramComponent.class,
-                TelegramApiException.class, SendMessage.class);
+        addBranchToMessageHelper(visitor, new String[]{"User", "String"}, TelegramUser.class, expr, SEND_TELEGRAM_MESSAGE,
+                TelegramComponent.class, TelegramApiException.class, SendMessage.class);
+
+        // Add SEND_TELEGRAM_MESSAGE_WITH_INLINE_KEYBOARD to `MessageHelper`
+        expr = StaticJavaParser.parseExpression("sendTelegramMessageWithInlineKeyboard(telegramUser.telegramComponent(), buttonRows, telegramUser.chatId(), msg)");
+        addBranchToMessageHelper(visitor, new String[]{"User", "String", "List<List<String>>"}, TelegramUser.class, expr,
+                SEND_TELEGRAM_MESSAGE_WITH_INLINE_KEYBOARD,
+                ReplyKeyboardMarkup.class, KeyboardRow.class, KeyboardButton.class, ArrayList.class, Collectors.class);
 
         // Add component initializer method to registry
         var threadInstance = new ObjectCreationExpr(null, StaticJavaParser.parseClassOrInterfaceType(TelegramBotThread.class.getSimpleName()),
