@@ -1,13 +1,13 @@
 Bot() {
     OpenAPI canteenAPI(url="https://marcluque.com/opencanteen.json")
 
-    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:canteen_TRAINING_DATA_FILE")
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:MENSA_BOT_TRAINING_DATA_FILE")
 
     Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
 
     Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
-    SQL sql(db="mysql", servername="env:MYSQL_SERVERNAME", databasename="env:MYSQL_DATABASENAME", username="env:MYSQL_USERNAME", password="env:MYSQL_PASSWORD")
+    MySQL sql(servername="env:MYSQL_SERVERNAME", databasename="env:MYSQL_DATABASENAME", username="env:MYSQL_USERNAME", password="env:MYSQL_PASSWORD")
 
     Map canteenIds()
 
