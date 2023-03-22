@@ -1,5 +1,5 @@
 Bot() {
-    OpenAPI canteenAPI(url="https://marcluque.com/opencanteen.json")
+    OpenAPI canteenAPI(url="https://marcluque.com/openmensa.json")
 
     Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:MENSA_BOT_TRAINING_DATA_FILE")
 
@@ -35,23 +35,23 @@ Bot() {
             canteenId = canteenIds.get(key=ctx.entity)
             day = canteenAPI.get(path="/canteens/{canteen_id}/days/{date}", id=canteenId, date=today)
             if day.closed {
-                send(text="Oh no, it seems like " + ctx.entity + " is closed today 😔")
+                send(text="Oh no, it seems like {ctx.entity} is closed today 😔")
                 return
             }
 
             meals = canteenAPI.get(path="/canteens/{id}/days/{date}/meals", id=canteenId, date=today)
             if meals.code != 200 {
-                send(text="I'm sorry, it seems like something went wrong while retrieving the menu for RWTH canteen Academica 😔")
+                send(text="I'm sorry, it seems like something went wrong while retrieving the menu for {ctx.entity} 😔")
             } else {
-                menuResponse = "*TODAY'S MENU (" + today + ") for " + ctx.entity + "*\n\n"
+                menuResponse = "*TODAY'S MENU ({today}) for {ctx.entity}*\n\n"
                 sides = "_Sides_\n"
                 forEach meal in meals {
                     if meal.category != "Hauptbeilagen" && meal.category != "Nebenbeilage" {
-                        menuResponse += "_" + meal.category + "_ - " + string(number=meal.prices.students) + "€\n"
-                        menuResponse += meal. + "\n"
-                        menuResponse += "_Notes_: " + meal.notes.join(delimiter=", ") + "\n\n"
+                        menuResponse += "_{meal.category}_ - {string(number=meal.prices.students)}€\n"
+                        menuResponse += "{meal.name}\n"
+                        menuResponse += "_Notes_: {meal.notes.join(delimiter=", ")}\n\n"
                     } else {
-                        sides += meal.name + "\n"
+                        sides += "{meal.name}\n"
                     }
                 }
                 send(text=menuResponse + sides)
@@ -60,7 +60,7 @@ Bot() {
 
         getRating(ctx) {
             currContext.add(key="dish", value=ctx.entity)
-            send(text="Please tell me how many stars you would like to give " + ctx.entity + " at " + currContext.get(key="canteen") + "?")
+            send(text="Please tell me how many stars you would like to give {ctx.entity} at {currContext.get(key="canteen")}?")
         }
 
         submitRating(ctx) {
@@ -74,8 +74,8 @@ Bot() {
                             mensaId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish), rating=number(string=ctx.entity))
                 send(text="Your rating was successfully processed")
             } else {
-                send(text="You've already rated " + dish + " at " + canteen + " with " + result[0].stars + " 🧐")
-                send(text="I updated your rating to now be " + ctx.entity)
+                send(text="You've already rated {dish} at {canteen} with {result[0].stars} 🧐")
+                send(text="I updated your rating to now be {ctx.entity}")
             }
         }
 
@@ -86,19 +86,19 @@ Bot() {
             if result.isEmpty {
                 send(text="There seems to be no rating for {dish} at {canteen} 😲")
             } else {
-                send(text="People rated " + dish + " at " + canteen + " with " + string(number=result[0].avg) + "/5 stars")
+                send(text="People rated {dish} at {canteen} with {string(number=result[0].avg)}/5 stars")
             }
         }
 
         default(action="I’m sorry, I didn't get that, come again please.")
-        initial(intent="_", action="I'm not sure how I can be of your assistance. All I can do for you is retrieve the menu of a canteen within " + string(number=radius) + " around your location")
+        initial(intent="_", action="I'm not sure how I can be of your assistance. All I can do for you is retrieve the menu of a canteen within {string(number=radius)} around your location")
 
         sink(intent="bye, stop", action="Until next time!")
         sink(intent="thanks", action="You're welcome!")
 
         greetings = ["Hi there, fellow human! 🤖", "Hi, nice to meet you!", "Hello, pleasure to meet you!", "Hi there! 👋"]
         initial(intent="greet", action=greetings)
-        initial(intent="functions, options", action="I'm a simple canteen bot, I can retrieve today's menu for a canteen within " + radius + " km of you. Just ask me for the menu 😉")
+        initial(intent="functions, options", action="I'm a simple canteen bot, I can retrieve today's menu for a canteen within {radius} km of you. Just ask me for the menu 😉")
 
         menu = initial(intent="menu", action="Please send me your location, so I can find the closest canteens")
         menu -> [
