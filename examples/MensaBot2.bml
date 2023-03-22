@@ -1,0 +1,136 @@
+Bot() {
+    OpenAPI canteenAPI(url="https://marcluque.com/opencanteen.json")
+
+    Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:canteen_TRAINING_DATA_FILE")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
+
+    SQL sql(db="mysql", servername="env:MYSQL_SERVERNAME", databasename="env:MYSQL_DATABASENAME", username="env:MYSQL_USERNAME", password="env:MYSQL_PASSWORD")
+
+    Map canteenIds()
+
+    Map dishIds()
+
+    Number radius(value=3)
+
+    Dialogue canteenDialogue() {
+        currContext = {}
+
+        pickCanteen(ctx) {
+            canteens = canteenAPI.get(path="/api/v2/canteens", near[lat]=ctx.entity.latitude, near[lng]=ctx.entity.longitude, near[dist]=radius)
+            sendInlineKeyboard(text="Please pick a canteen", keyboard=canteens.map(f=x: x.name))
+        }
+
+        pickDish(ctx) {
+            currContext.add(key="canteen", value=ctx.entity)
+            meals = canteenAPI.get(path="GET /canteens/{canteen_id}/days/{date}/meals", id=canteenIds.get(ctx.entity), date=date(format="yyyy-MM-dd"))
+            sendInlineKeyboard(text="Please pick a meal", keyboard=meals.map(f=x: x.name))
+            meals.for(f=x: dishIds.add(key=x.name, value=x.id))
+        }
+
+        getMenu(ctx) {
+            today = date(format="yyyy-MM-dd")
+            canteenId = canteenIds.get(key=ctx.entity)
+            day = canteenAPI.get(path="/canteens/{canteen_id}/days/{date}", id=canteenId, date=today)
+            if day.closed {
+                send(text="Oh no, it seems like " + ctx.entity + " is closed today 😔")
+                return
+            }
+
+            meals = canteenAPI.get(path="/canteens/{id}/days/{date}/meals", id=canteenId, date=today)
+            if meals.code != 200 {
+                send(text="I'm sorry, it seems like something went wrong while retrieving the menu for RWTH canteen Academica 😔")
+            } else {
+                menuResponse = "*TODAY'S MENU (" + today + ") for " + ctx.entity + "*\n\n"
+                sides = "_Sides_\n"
+                forEach meal in meals {
+                    if meal.category != "Hauptbeilagen" && meal.category != "Nebenbeilage" {
+                        menuResponse += "_" + meal.category + "_ - " + string(number=meal.prices.students) + "€\n"
+                        menuResponse += meal. + "\n"
+                        menuResponse += "_Notes_: " + meal.notes.join(delimiter=", ") + "\n\n"
+                    } else {
+                        sides += meal.name + "\n"
+                    }
+                }
+                send(text=menuResponse + sides)
+            }
+        }
+
+        getRating(ctx) {
+            currContext.add(key="dish", value=ctx.entity)
+            send(text="Please tell me how many stars you would like to give " + ctx.entity + " at " + currContext.get(key="canteen") + "?")
+        }
+
+        submitRating(ctx) {
+            canteen = currContext.getAndRemove(key="canteen")
+            dish = currContext.getAndRemove(key="dish")
+
+            result = sql.execute("SELECT * WHERE author=? AND mensaId=? AND dishId=?", author=ctx.username,
+                        mensaId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish))
+            if result.isEmpty {
+                sql.execute("INSERT INTO reviews (author,mensaId,dishId,rating) VALUES (?,?,?,?)", author=ctx.username,
+                            mensaId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish), rating=number(string=ctx.entity))
+                send(text="Your rating was successfully processed")
+            } else {
+                send(text="You've already rated " + dish + " at " + canteen + " with " + result[0].stars + " 🧐")
+                send(text="I updated your rating to now be " + ctx.entity)
+            }
+        }
+
+        sendRating(ctx) {
+            canteen = currContext.getAndRemove(key="canteen")
+            dish = ctx.entity
+            result = sql.execute("SELECT AVG(stars) AS avg FROM reviews WHERE dishId=?", dishId=dishIds.get(key=dish))
+            if result.isEmpty {
+                send(text="There seems to be no rating for {dish} at {canteen} 😲")
+            } else {
+                send(text="People rated " + dish + " at " + canteen + " with " + string(number=result[0].avg) + "/5 stars")
+            }
+        }
+
+        default(action="I’m sorry, I didn't get that, come again please.")
+        initial(intent="_", action="I'm not sure how I can be of your assistance. All I can do for you is retrieve the menu of a canteen within " + string(number=radius) + " around your location")
+
+        sink(intent="bye, stop", action="Until next time!")
+        sink(intent="thanks", action="You're welcome!")
+
+        greetings = ["Hi there, fellow human! 🤖", "Hi, nice to meet you!", "Hello, pleasure to meet you!", "Hi there! 👋"]
+        initial(intent="greet", action=greetings)
+        initial(intent="functions, options", action="I'm a simple canteen bot, I can retrieve today's menu for a canteen within " + radius + " km of you. Just ask me for the menu 😉")
+
+        menu = initial(intent="menu", action="Please send me your location, so I can find the closest canteens")
+        menu -> [
+            state(intent="type:location", action=pickCanteen) -> state(intent="type:inline", action=getMenu)
+            state(intent="_", action="I'm sorry, it seems like you didn't send me a location. Try again please") -> menu
+        ]
+
+        askForRating = state(intent="type:inline", action=getRating)
+        askForRating -> [
+            state(intent="number", action=submitRating),
+            state(intent="_", action="I'm sorry, it seems like you didn't send me a rating. Please try again") -> askForRating
+        ]
+        
+        doRating = initial(intent="doRating", action="Please send me your location, so I can find the closest canteens")
+        doRating -> [
+            state(intent="type:location", action=pickCanteen) -> state(intent="type:inline", action=pickDish) -> askForRating
+            state(intent="_", action="I'm sorry, it seems like you didn't send me a location. Please try again") -> doRating
+        ]
+
+        showRating = initial(intent="showRating", action="Please send me your location, so I can find the closest canteens")
+        showRating -> [
+            state(intent="type:location", action=pickCanteen) -> state(intent="type:inline", action=pickDish) -> state(intent="type:inline", action=sendRating)
+            state(intent="_", action="I'm sorry, it seems like you didn't send me a location. Please try again") -> showRating
+        ]
+    }
+
+    @UserStartedChat @UserSentMessage @UserLeftChat canteenDialogue(ctx) {
+        canteenDialogue.step(context=ctx)
+    }
+
+    @BotStarted initCanteenMap(ctx) {
+        canteens = canteenAPI.get(path="/api/v2/canteens", hasCoordinates=true)
+        canteens.for(f=m: canteenIds.add(key=m.name, value=m.id))
+    }
+}
