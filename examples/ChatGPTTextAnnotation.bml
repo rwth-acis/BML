@@ -1,0 +1,18 @@
+Bot() {
+    OpenAI openAI(key="env:OPENAI_TOKEN", model="gpt-3.5-turbo", tokens=2000, timeout="5m")
+
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+
+    Map knowledgeBase()
+
+    @UserStartedChat @UserSentMessage sendResponse(ctx) {
+        gptResponse = openAI.process(context=ctx)
+        annotatedResponse = openAI.annotate(text=gptResponse, keywords=knowledgeBase)
+        send(text=annotatedResponse)
+    }
+
+    @BotStarted initMap(ctx) {
+        knowledgeBase.add(key="other", value="https://de.wikipedia.org/wiki/")
+        knowledgeBase.add(key="medicine", value="https://flexikon.doccheck.com/de/")
+    }
+}
