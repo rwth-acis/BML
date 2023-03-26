@@ -3,7 +3,7 @@ Bot() {
 
     Rasa rasa(url="https://rasa3.tech4comp.dbis.rwth-aachen.de", trainingFile="env:MENSA_BOT_TRAINING_DATA_FILE")
 
-    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="TestBMLBot")
+    Telegram telegram(botToken="env:TELEGRAM_BOT_TOKEN", botName="BMLMensaBot")
 
     Slack slack(botToken="env:SLACK_BOT_TOKEN", appToken="env:SLACK_APP_TOKEN")
 
@@ -20,14 +20,14 @@ Bot() {
 
         pickCanteen(ctx) {
             canteens = canteenAPI.get(path="/api/v2/canteens", near[lat]=ctx.entity.latitude, near[lng]=ctx.entity.longitude, near[dist]=radius)
-            sendInlineKeyboard(text="Please pick a canteen", keyboard=canteens.map(f=x: x.name))
+            sendInlineKeyboard(text="Please pick a canteen", keyboard=canteens.map(f=c: c.name))
         }
 
         pickDish(ctx) {
             currContext.add(key="canteen", value=ctx.entity)
             meals = canteenAPI.get(path="GET /canteens/{canteen_id}/days/{date}/meals", id=canteenIds.get(ctx.entity), date=date(format="yyyy-MM-dd"))
-            sendInlineKeyboard(text="Please pick a meal", keyboard=meals.map(f=x: x.name))
-            meals.for(f=x: dishIds.add(key=x.name, value=x.id))
+            sendInlineKeyboard(text="Please pick a meal", keyboard=meals.map(f=m: m.name))
+            meals.for(f=m: dishIds.add(key=m.name, value=m.id))
         }
 
         getMenu(ctx) {
@@ -60,21 +60,21 @@ Bot() {
 
         getRating(ctx) {
             currContext.add(key="dish", value=ctx.entity)
-            send(text="Please tell me how many stars you would like to give {ctx.entity} at {currContext.get(key="canteen")}?")
+            sendInlineKeyboard(text="Please rate your dish", keyboard=["1", "2", "3", "4", "5"])
         }
 
         submitRating(ctx) {
             canteen = currContext.getAndRemove(key="canteen")
             dish = currContext.getAndRemove(key="dish")
 
-            result = sql.execute("SELECT * WHERE author=? AND mensaId=? AND dishId=?", author=ctx.username,
-                        mensaId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish))
+            result = sql.execute("SELECT * WHERE author=? AND canteenId=? AND dishId=?", author=ctx.username,
+                        canteenId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish))
             if result.isEmpty {
-                sql.execute("INSERT INTO reviews (author,mensaId,dishId,rating) VALUES (?,?,?,?)", author=ctx.username,
-                            mensaId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish), rating=number(string=ctx.entity))
+                sql.execute("INSERT INTO reviews (author,canteenId,dishId,rating) VALUES (?,?,?,?)", author=ctx.username,
+                            canteenId=canteenIds.get(key=canteen), dishId=dishIds.get(key=dish), rating=number(string=ctx.entity))
                 send(text="Your rating was successfully processed")
             } else {
-                send(text="You've already rated {dish} at {canteen} with {result[0].stars} 🧐")
+                send(text="You've already rated {dish} at {canteen} with {result[0].rating} 🧐")
                 send(text="I updated your rating to now be {ctx.entity}")
             }
         }
@@ -82,7 +82,7 @@ Bot() {
         sendRating(ctx) {
             canteen = currContext.getAndRemove(key="canteen")
             dish = ctx.entity
-            result = sql.execute("SELECT AVG(stars) AS avg FROM reviews WHERE dishId=?", dishId=dishIds.get(key=dish))
+            result = sql.execute("SELECT AVG(rating) AS avg FROM reviews WHERE dishId=?", dishId=dishIds.get(key=dish))
             if result.isEmpty {
                 send(text="There seems to be no rating for {dish} at {canteen} 😲")
             } else {
@@ -108,7 +108,7 @@ Bot() {
 
         askForRating = state(intent="type:inline", action=getRating)
         askForRating -> [
-            state(intent="number", action=submitRating),
+            state(intent="type:inline", action=submitRating),
             state(intent="_", action="I'm sorry, it seems like you didn't send me a rating. Please try again") -> askForRating
         ]
         
@@ -125,7 +125,7 @@ Bot() {
         ]
     }
 
-    @UserStartedChat @UserSentMessage @UserLeftChat canteenDialogue(ctx) {
+    @UserStartedChat @UserSentMessage canteenDialogue(ctx) {
         canteenDialogue.step(context=ctx)
     }
 
