@@ -56,8 +56,27 @@ public class TelegramComponent extends TelegramLongPollingBot {
     }
 
     private boolean filterUpdates(MessageEvent telegramEvent, Update update) {
-        if (update.getMyChatMember() != null && update.getMyChatMember().getChat().isGroupChat()) {
-            long chatId = update.getMyChatMember().getChat().getId();
+        // Per definition in https://core.telegram.org/bots/api#update,
+        // only one of the fields `chosen_inline_result`, `my_chat_member`, and `message` can be present in an update,
+        // hence, the else if
+        if (update.hasCallbackQuery()) {
+            telegramEvent.messageEventType(MessageEventType.USER_SENT_MESSAGE);
+            // We do not set telegramEvent.text on purpose, to avoid NLP invocation (intent and entity are already specified)
+            telegramEvent.intent("type:inline");
+            telegramEvent.entity(update.getCallbackQuery().getData());
+
+            var chatId = update.getCallbackQuery().getMessage().getChatId();
+            var activeSession = activeSessions.get(chatId);
+            if (activeSession == null) {
+                activeSession = new Session(chatId, telegramEvent.messageEventType());
+                activeSessions.put(chatId, activeSession);
+            }
+            telegramEvent.session(activeSession);
+
+            telegramEvent.username(update.getCallbackQuery().getFrom().getUserName());
+            telegramEvent.user(new TelegramUser(this, chatId));
+        } else if (update.hasMyChatMember() && update.getMyChatMember().getChat().isGroupChat()) {
+            var chatId = update.getMyChatMember().getChat().getId();
 
             if (update.getMyChatMember().getNewChatMember().getStatus().equals("left")) {
                 telegramEvent.messageEventType(MessageEventType.BOT_REMOVED);
@@ -76,10 +95,16 @@ public class TelegramComponent extends TelegramLongPollingBot {
 
             telegramEvent.username(update.getMyChatMember().getFrom().getUserName());
             telegramEvent.user(new TelegramUser(this, chatId));
-        } else if (update.getMessage() != null) {
+        } else if (update.hasMessage()) {
             long chatId = update.getMessage().getChatId();
 
-            if (update.getMessage().getLeftChatMember() != null
+            if (update.getMessage().hasLocation()) {
+                telegramEvent.messageEventType(MessageEventType.USER_SENT_MESSAGE);
+                // We do not set telegramEvent.text on purpose, to avoid NLP invocation (intent and entity are already specified)
+                telegramEvent.intent("type:location");
+                telegramEvent.entity("%s:%s".formatted(update.getMessage().getLocation().getLongitude(), update.getMessage().getLocation().getLatitude()));
+                telegramEvent.username(update.getMessage().getFrom().getUserName());
+            } else if (update.getMessage().getLeftChatMember() != null
                     && !update.getMessage().getLeftChatMember().getUserName().equals(botName)) {
                 telegramEvent.messageEventType(MessageEventType.USER_LEFT_CHAT);
                 telegramEvent.username(update.getMessage().getLeftChatMember().getUserName());
@@ -131,10 +156,8 @@ public class TelegramComponent extends TelegramLongPollingBot {
                 if (activeSession == null) {
                     activeSession = new Session(chatId, telegramEvent.messageEventType());
                     activeSessions.put(chatId, activeSession);
-                    telegramEvent.session(activeSession);
-                } else {
-                    telegramEvent.session(activeSession);
                 }
+                telegramEvent.session(activeSession);
                 telegramEvent.username(update.getMessage().getFrom().getUserName());
             } else {
                 return false;

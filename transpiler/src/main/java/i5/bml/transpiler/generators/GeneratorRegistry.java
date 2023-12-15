@@ -8,13 +8,14 @@ import i5.bml.transpiler.generators.dialogue.DialogueGenerator;
 import i5.bml.transpiler.generators.dialogue.StateGenerator;
 import i5.bml.transpiler.generators.functions.*;
 import i5.bml.transpiler.generators.functions.dialogue.DialogueJumpToFunctionGenerator;
+import i5.bml.transpiler.generators.types.annotations.BotAnnotationGenerator;
 import i5.bml.transpiler.generators.types.annotations.MessageAnnotationGenerator;
 import i5.bml.transpiler.generators.types.annotations.RoutineAnnotationGenerator;
 import i5.bml.transpiler.generators.types.components.ContextGenerator;
 import i5.bml.transpiler.generators.types.components.messenger.SlackGenerator;
 import i5.bml.transpiler.generators.types.components.messenger.TelegramGenerator;
-import i5.bml.transpiler.generators.types.components.nlu.OpenAIGenerator;
-import i5.bml.transpiler.generators.types.components.nlu.RasaGenerator;
+import i5.bml.transpiler.generators.types.components.nlp.OpenAIGenerator;
+import i5.bml.transpiler.generators.types.components.nlp.RasaGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPIGenerator;
 import i5.bml.transpiler.generators.types.components.openapi.OpenAPISchemaGenerator;
 import i5.bml.transpiler.generators.types.components.primitives.*;
@@ -46,6 +47,7 @@ public class GeneratorRegistry {
         // -- Annotation generators
         registerTypeGenerator(MessageAnnotationGenerator.class);
         registerTypeGenerator(RoutineAnnotationGenerator.class);
+        registerTypeGenerator(BotAnnotationGenerator.class);
 
         // -- Component generators
         registerTypeGenerator(ContextGenerator.class);

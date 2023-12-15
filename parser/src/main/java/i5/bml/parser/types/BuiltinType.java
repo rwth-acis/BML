@@ -30,6 +30,7 @@ public enum BuiltinType {
     MESSENGER_ANNOTATION("MessengerAnnotation", true),
     ACTION_ANNOTATION("ActionAnnotation", true),
     ROUTINE_ANNOTATION("RoutineAnnotation", true),
+    BOT_ANNOTATION("BotAnnotation", true),
 
     /*
      * Data structures
@@ -71,7 +72,7 @@ public enum BuiltinType {
     OPENAI("OpenAI"),
     EMAIL("Email"),
     RSS("RSS"),
-    SQL("SQL");
+    MY_SQL("MySQL");
 
     private final String name;
 

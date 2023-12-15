@@ -1,20 +1,19 @@
-package i5.bml.parser.types.components.nlu;
+package i5.bml.parser.types.components.nlp;
 
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.functions.BMLFunctionParameter;
 import i5.bml.parser.types.*;
+import i5.bml.parser.types.components.primitives.BMLMap;
 import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.sql.Time;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
 
@@ -46,6 +45,18 @@ public class BMLOpenAIComponent extends AbstractBMLType implements CanPopulatePa
         var contextParameter = new BMLFunctionParameter("context", contextType);
         var processFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(contextParameter), new ArrayList<>());
         supportedAccesses.put("process", processFunction);
+
+        var stringType = TypeRegistry.resolveType(BuiltinType.STRING);
+        var textParameter = new BMLFunctionParameter("text", stringType);
+        var mapType = TypeRegistry.resolveType(BuiltinType.MAP);
+        if (mapType == null) {
+            mapType = new BMLMap();
+            ((AbstractBMLType) mapType).initializeType(null);
+            TypeRegistry.registerType(mapType);
+        }
+        var keywordsParameter = new BMLFunctionParameter("keywords", mapType);
+        var annotateFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(textParameter, keywordsParameter), new ArrayList<>());
+        supportedAccesses.put("annotate", annotateFunction);
     }
 
     @Override

@@ -1,18 +1,16 @@
 package i5.bml.parser.types;
 
-import i5.bml.parser.types.annotations.BMLActionAnnotation;
-import i5.bml.parser.types.annotations.BMLAnnotationType;
-import i5.bml.parser.types.annotations.BMLMessengerAnnotation;
-import i5.bml.parser.types.annotations.BMLRoutineAnnotation;
+import i5.bml.parser.types.annotations.*;
 import i5.bml.parser.types.components.BMLContext;
 import i5.bml.parser.types.components.messenger.BMLSlackComponent;
 import i5.bml.parser.types.components.messenger.BMLTelegramComponent;
 import i5.bml.parser.types.components.messenger.BMLUser;
-import i5.bml.parser.types.components.nlu.BMLOpenAIComponent;
-import i5.bml.parser.types.components.nlu.BMLRasaComponent;
+import i5.bml.parser.types.components.nlp.BMLOpenAIComponent;
+import i5.bml.parser.types.components.nlp.BMLRasaComponent;
 import i5.bml.parser.types.components.openapi.BMLOpenAPIComponent;
 import i5.bml.parser.types.components.openapi.BMLOpenAPISchema;
 import i5.bml.parser.types.components.primitives.*;
+import i5.bml.parser.types.components.services.databases.BMLMySQLComponent;
 import i5.bml.parser.types.dialogue.BMLDialogue;
 import i5.bml.parser.types.dialogue.BMLState;
 import i5.bml.parser.types.functions.BMLFunctionType;
@@ -167,6 +165,7 @@ public class TypeRegistry {
             registerType(BMLActionAnnotation.class);
             registerType(BMLMessengerAnnotation.class);
             registerType(BMLRoutineAnnotation.class);
+            registerType(BMLBotAnnotation.class);
 
             // -- Component types
             registerType(BMLContext.class);
@@ -190,6 +189,9 @@ public class TypeRegistry {
             registerType(BMLString.class);
             registerType(BMLList.class);
             registerType(BMLMap.class);
+
+            // --- Database component types
+            registerType(BMLMySQLComponent.class);
 
             // -- Dialogue types
             registerType(BMLDialogue.class);

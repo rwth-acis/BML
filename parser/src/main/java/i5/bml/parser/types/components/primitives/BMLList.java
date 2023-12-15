@@ -24,6 +24,12 @@ public class BMLList extends AbstractBMLType implements Summable {
         var delimiterParameter = new BMLFunctionParameter("delimiter", TypeRegistry.resolveType(BuiltinType.STRING));
         var joinFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.STRING), List.of(delimiterParameter), new ArrayList<>());
         supportedAccesses.put("join", joinFunction);
+
+        var itemParameter = new BMLFunctionParameter("", itemType);
+        var lambdaParameter = new BMLFunctionParameter("f",
+                new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.OBJECT), List.of(itemParameter), new ArrayList<>()));
+        var mapFunction = new BMLFunctionType(TypeRegistry.resolveType(BuiltinType.OBJECT), List.of(lambdaParameter), new ArrayList<>());
+        supportedAccesses.put("map", mapFunction);
     }
 
     @Override
@@ -44,6 +50,9 @@ public class BMLList extends AbstractBMLType implements Summable {
                     } else {
                         return supportedAccesses.get("join");
                     }
+                }
+                case "map" -> {
+
                 }
                 default -> {
                     return TypeRegistry.resolveType(BuiltinType.OBJECT);

@@ -49,6 +49,8 @@ statement returns [Scope scope] : block
                                 | ifStatement
                                 | forEachStatement
                                 | op=BREAK
+                                | op=RETURN
+                                | op=CONTINUE
                                 | expr=expression
                                 | assignment ;
 
@@ -77,7 +79,8 @@ expression returns [Type type] : op=LPAREN expr=expression RPAREN
                                | left=expression op=(EQUAL | NOTEQUAL) right=expression
                                | left=expression op=AND right=expression
                                | left=expression op=OR right=expression
-                               | <assoc=right> cond=expression op=QUESTION thenExpr=expression COLON elseExpr=expression ;
+                               | <assoc=right> cond=expression op=QUESTION thenExpr=expression COLON elseExpr=expression
+                               | lambdaExpression[] ;
 
 functionCall returns [Type type] : functionName=Identifier LPAREN params=elementExpressionPairList? RPAREN ;
 
@@ -90,3 +93,9 @@ atom returns [Type type] : token=IntegerLiteral
 mapInitializer returns [Type type] : LBRACE params=elementExpressionPairList? RBRACE ;
 
 listInitializer returns [Type type] : LBRACK (expression (COMMA expression)*)? RBRACK ;
+
+lambdaExpression[Type itemType] returns [Type type] : params=lambdaParameterList COLON body=lambdaBody ;
+
+lambdaParameterList : Identifier | (LPAREN Identifier (COMMA Identifier)* RPAREN) ;
+
+lambdaBody : expression | block ;

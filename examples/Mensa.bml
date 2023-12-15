@@ -19,7 +19,7 @@ Bot() {
                 forEach meal in meals {
                     if meal.category != "Hauptbeilagen" && meal.category != "Nebenbeilage" {
                         menuResponse += "_" + meal.category + "_ - " + string(number=meal.prices.students) + "€\n"
-                        menuResponse += meal. + "\n"
+                        menuResponse += meal.name + "\n"
                         menuResponse += "_Notes_: " + meal.notes.join(delimiter=", ") + "\n\n"
                     } else {
                         sides += meal.name + "\n"

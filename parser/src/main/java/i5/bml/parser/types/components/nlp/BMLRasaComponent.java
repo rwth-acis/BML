@@ -1,4 +1,4 @@
-package i5.bml.parser.types.components.nlu;
+package i5.bml.parser.types.components.nlp;
 
 import i5.bml.parser.types.*;
 

@@ -16,7 +16,7 @@ public class OpenAPIUtils {
     private OpenAPIUtils() {}
 
     public static void generateOpenAPIClientCode(String openAPISpec, String outputPackage, String apiName, String botOutputPath) {
-        var swaggerBinary = "swagger-codegen-cli-3.0.36.jar";
+        var swaggerBinary = "swagger-codegen-cli-3.0.41.jar";
         var url = OpenAPIUtils.class.getClassLoader().getResource(swaggerBinary);
         if (url == null) {
             LOGGER.error("Could not find {} in resources folder", swaggerBinary);

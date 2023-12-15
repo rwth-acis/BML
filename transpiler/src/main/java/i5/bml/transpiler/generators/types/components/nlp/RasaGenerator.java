@@ -1,4 +1,4 @@
-package i5.bml.transpiler.generators.types.components.nlu;
+package i5.bml.transpiler.generators.types.components.nlp;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.Modifier;
@@ -9,7 +9,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import generatedParser.BMLParser;
-import i5.bml.parser.types.components.nlu.BMLRasaComponent;
+import i5.bml.parser.types.components.nlp.BMLRasaComponent;
 import i5.bml.transpiler.bot.config.BotConfig;
 import i5.bml.transpiler.bot.threads.rasa.RasaComponent;
 import i5.bml.transpiler.generators.CodeGenerator;

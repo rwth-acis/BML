@@ -111,7 +111,12 @@ public class BMLOpenAPITypeResolver {
                 var refParts = itemSchema.get$ref().split("/");
                 arrayType = "." + refParts[refParts.length - 1];
             } else {
-                arrayType = "." + itemSchema.getType();
+                // Check for format
+                if (itemSchema.getFormat() != null && itemSchema.getType().equals("integer")) {
+                    arrayType = "." + itemSchema.getFormat();
+                } else {
+                    arrayType = "." + itemSchema.getType();
+                }
             }
         }
 

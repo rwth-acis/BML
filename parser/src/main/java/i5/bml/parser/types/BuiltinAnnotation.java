@@ -12,6 +12,8 @@ public enum BuiltinAnnotation {
 
     USER_LEFT_CHAT(BMLAnnotationType.MESSENGER, "UserLeftChat"),
 
+    BOT_STARTED(BMLAnnotationType.BOT, "BotStarted"),
+
     BOT_ADDED(BMLAnnotationType.MESSENGER, "BotAdded"),
 
     BOT_REMOVED(BMLAnnotationType.MESSENGER, "BotRemoved"),

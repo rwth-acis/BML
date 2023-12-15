@@ -80,6 +80,8 @@ ELSE : 'else' ;
 FOREACH : 'forEach' ;
 IN : 'in' ;
 BREAK: 'break' ;
+RETURN: 'return' ;
+CONTINUE: 'continue' ;
 
 // Separators
 LPAREN : '(' ;

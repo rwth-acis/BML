@@ -44,18 +44,25 @@ nlu:
       - Show me the menu
       - What's the menu?
       - Menu
-      - What's today's menu?    
+      - What's today's menu?
 
-  - intent: mensa
+  - intent: doRating
     examples: |
-      - [Forum Cafete](name)
-      - [Bistro Templergraben](name)
-      - [Mensa Ahorn](name)
-      - [Mensa Vita](name)
-      - [Mensa Bayernallee](name)
-      - [Mensa EUPS](name)
-      - [Gastro Goethe](name)
-      - [Mensa Academica](name)
+      - I want to rate today's dish
+      - Let me do a rating
+      - Do a rating
+      - Create rating
+      - Make rating
+      - Let's rate the dish
+
+  - intent: showRating
+    examples: |
+      - What's the rating of today's dish?
+      - Show me today's rating
+      - Show rating
+      - Display rating
+      - Give me the rating
+      - Show me the rating
 
   - intent: thanks
     examples: |

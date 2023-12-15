@@ -19,9 +19,12 @@ import i5.bml.parser.types.functions.BMLVoid;
 import org.antlr.symtab.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.lsp4j.Diagnostic;
+import org.mozilla.javascript.ast.FunctionCall;
 
 import java.util.*;
+import java.util.function.Function;
 
 import static i5.bml.parser.errors.ParserError.*;
 
@@ -154,6 +157,16 @@ public class DiagnosticsCollector extends BMLBaseListener {
         checkAlreadyDefinedElseDefine(ctx.Identifier(0).getSymbol());
         if (ctx.comma != null) {
             checkAlreadyDefinedElseDefine(ctx.Identifier(1).getSymbol());
+        }
+    }
+
+    @Override
+    public void enterLambdaExpression(BMLParser.LambdaExpressionContext ctx) {
+        if (ctx.parent.parent.parent.parent instanceof BMLParser.FunctionCallContext functionCallContext) {
+            System.out.println(functionCallContext.type);
+        }
+        for (var param : ctx.params.Identifier()) {
+            checkAlreadyDefinedElseDefine(param.getSymbol());
         }
     }
 
@@ -681,6 +694,11 @@ public class DiagnosticsCollector extends BMLBaseListener {
             // Types are homogeneous -> try to register type
             ctx.type = tryToResolveElseRegister(new BMLList(firstItemType));
         }
+    }
+
+    @Override
+    public void exitLambdaExpression(BMLParser.LambdaExpressionContext ctx) {
+
     }
 
     private Type tryToResolveElseRegister(Type typeToCheck) {

@@ -3,6 +3,7 @@ package i5.bml.parser.types;
 import generatedParser.BMLParser;
 import i5.bml.parser.errors.Diagnostics;
 import i5.bml.parser.functions.BMLFunctionParameter;
+import i5.bml.parser.types.functions.BMLFunctionType;
 import i5.bml.parser.walker.DiagnosticsCollector;
 import org.antlr.symtab.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -141,7 +142,8 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
                     var isFieldAccessible = f.canAccess(this);
                     var annotation = f.getAnnotation(BMLComponentParameter.class);
                     var expectedType = annotation.expectedBMLType();
-                    var value = extractConstValueFromParameter(diagnosticsCollector, ctx, annotation.name(), expectedType == BuiltinType.NUMBER);
+                    Object value = extractConstValueFromParameter(diagnosticsCollector, ctx, annotation.name(), expectedType == BuiltinType.NUMBER);
+                    value = expectedType == BuiltinType.NUMBER ? Integer.parseInt((String) value) : value;
                     try {
                         f.setAccessible(true);
                         f.set(this, value);
@@ -157,7 +159,14 @@ public abstract class AbstractBMLType implements Type, CanPopulateParameters {
 
     public Type resolveAccess(DiagnosticsCollector diagnosticsCollector, ParseTree ctx) {
         if (ctx instanceof BMLParser.FunctionCallContext functionCallContext) {
-            return supportedAccesses.get(functionCallContext.functionName.getText());
+            // We have to make sure that we do not use the same `BMLFunctionType` in several places.
+            // To avoid this, we call `BMLFunctionType`'s copy constructor
+            var functionType = supportedAccesses.get(functionCallContext.functionName.getText());
+            if (functionType != null) {
+                return new BMLFunctionType((BMLFunctionType) functionType);
+            } else {
+                return null;
+            }
         } else {
             return supportedAccesses.get(ctx.getText());
         }

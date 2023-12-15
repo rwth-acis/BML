@@ -19,6 +19,8 @@ import java.util.Map;
 
 import static i5.bml.parser.errors.ParserError.CANT_RESOLVE_IN;
 
+// TODO: This implementation is not well done, it needs a complete rework!
+
 @BMLType(name = BuiltinType.MAP, isComplex = true)
 public class BMLMap extends AbstractBMLType {
 
@@ -76,6 +78,8 @@ public class BMLMap extends AbstractBMLType {
                 return TypeRegistry.resolveType(BuiltinType.OBJECT);
             }
 
+            functionType = new BMLFunctionType(functionType);
+
             if (functionName.equals("add")) {
                 var invocationKeyParameter = functionCallCtx.params.elementExpressionPair().get(0);
                 var invocationValueParameter = functionCallCtx.params.elementExpressionPair().get(1);
@@ -115,11 +119,6 @@ public class BMLMap extends AbstractBMLType {
 
     @Override
     public String toString() {
-        return "BMLMap{keyType=%s, valueType=%s, supportedAccesses=%s}".formatted(keyType, valueType, supportedAccesses);
-    }
-
-    @Override
-    public String encodeToString() {
-        return super.toString();
+        return "BMLMap{keyType=%s, valueType=%s}".formatted(keyType, valueType);
     }
 }

@@ -7,6 +7,8 @@ import i5.bml.transpiler.bot.events.messenger.MessageEvent;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Chat;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -14,8 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-// TODO: Thread-safety?
+import java.util.stream.Collectors;
 
 public class OpenAIComponent {
 
@@ -66,19 +67,77 @@ public class OpenAIComponent {
                 .messages(messages)
                 .user(messageEvent.username())
                 .n(1); // We only want one choice for completion
+        var responseContent = getRequestResult(completionRequestBuilder, false);
+        messages.add(new ChatMessage("assistant", responseContent));
+
+        return responseContent;
+    }
+
+    public String annotateMessage(String message, Map<String, String> keywords) {
+        // Prepare messages
+        var messages = new ArrayList<ChatMessage>();
+        messages.add(new ChatMessage("user", """
+                Identify entities, exclusively nouns as single words, from the messages sent
+                to you that would not be understood by a layman. Only provide
+                entities that are present in the text. Find all the entities according to
+                the previous conditions and respond with a comma-separated list in the
+                format <entity>:<category>. The category is one of the following: %s.
+                Match the categories to the entities that have the best semantic fit. Use
+                the category ’other’ as a fallback if no category matches. Respond with
+                a single ’none’ if no entities are present in the given message. The first
+                message is: %s
+                """.formatted(String.join(", ", keywords.keySet()), message.replaceAll("\n", ""))));
+
+        // Fetch result
+        var completionRequestBuilder = ChatCompletionRequest.builder()
+                .model(model)
+                .messages(messages)
+                .n(1); // We only want one choice for completion
+        var responseContent = getRequestResult(completionRequestBuilder, true);
+
+        if (responseContent.strip().replaceAll("\n", "").equals("none")) {
+            return message;
+        }
+
+        var entities = new HashMap<String, String>();
+        var pairs = responseContent.replaceAll("\\.", "").split(",");
+        for (var pair : pairs) {
+            var splitted = pair.split(":");
+            entities.put(splitted[0].strip(), splitted[1].strip());
+        }
+
+        // Annotate message
+        for (Map.Entry<String, String> entry : entities.entrySet()) {
+            var entity = entry.getKey();
+            var topic = entry.getValue();
+            System.out.println("entity = " + entity);
+            System.out.println("topic = " + topic);
+            var url = keywords.get(topic);
+            if (!url.endsWith("/")) {
+                url += "/";
+            }
+            url += entity.replaceAll(" ", "_");
+            message = message.replaceFirst(" " + entity + " ", " [%s](%s) ".formatted(entity, url));
+        }
+
+        return message;
+    }
+
+    private String getRequestResult(ChatCompletionRequest.ChatCompletionRequestBuilder completionRequestBuilder, boolean log) {
         if (tokens != -1) {
             completionRequestBuilder.maxTokens(tokens);
         }
 
         var completionRequest = completionRequestBuilder.build();
-        LOGGER.debug(completionRequest.toString());
+        if (log) {
+            LOGGER.debug(completionRequest.toString());
+        }
 
         var result = service.createChatCompletion(completionRequest);
-        LOGGER.debug(result.toString());
+        if (log) {
+            LOGGER.debug(result.toString());
+        }
 
-        String responseContent = result.getChoices().get(0).getMessage().getContent();
-        messages.add(new ChatMessage("assistant", responseContent));
-
-        return responseContent;
+        return result.getChoices().get(0).getMessage().getContent();
     }
 }
